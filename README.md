@@ -1,46 +1,182 @@
-# Getting Started with Create React App
+# Quiz Website - Website Giải Bài Tập Trắc Nghiệm
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Mô tả dự án
 
-## Available Scripts
+Quiz Website là một ứng dụng web được xây dựng bằng ReactJS và Tailwind CSS, cung cấp nền tảng để tạo và làm bài trắc nghiệm trực tuyến. Website được thiết kế với giao diện hiện đại, hỗ trợ dark/light mode và responsive design.
 
-In the project directory, you can run:
+## Tính năng chính
 
-### `npm start`
+### 🏠 Trang chủ
+- Hiển thị danh sách các lớp học công khai
+- Thống kê nhanh về website
+- Giao diện thân thiện với người dùng
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 📚 Lớp học
+- Quản lý các lớp học của người dùng
+- Danh sách bài kiểm tra trong từng lớp
+- Thống kê học tập và tiến độ
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### ➕ Tạo lớp
+- Upload file tài liệu (.doc, .docx, .json, .txt)
+- Hỗ trợ kéo thả file
+- Xử lý file tự động để tạo câu hỏi trắc nghiệm
 
-### `npm test`
+### 📖 Làm bài trắc nghiệm
+- Giao diện làm bài với 3 loại câu hỏi:
+  - Chọn một đáp án đúng
+  - Chọn nhiều đáp án đúng
+  - Điền đáp án
+- Minimap hiển thị tiến độ làm bài
+- Timer countdown
+- Navigation giữa các câu hỏi
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 📁 Tài liệu
+- Quản lý file tài liệu đã upload
+- Download tài liệu
+- Tạo lớp học từ tài liệu
+- Thống kê dung lượng và số lượng file
 
-### `npm run build`
+### 🌙 Dark/Light Mode
+- Chuyển đổi theme tự động
+- Lưu trạng thái theme trong localStorage
+- Giao diện nhất quán giữa các mode
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Công nghệ sử dụng
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **React 18** - Framework JavaScript
+- **TypeScript** - Ngôn ngữ lập trình type-safe
+- **Tailwind CSS** - Framework CSS utility-first
+- **React Router** - Routing cho SPA
+- **Context API** - State management
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Cấu trúc dự án
 
-### `npm run eject`
+```
+src/
+├── components/
+│   └── Layout/
+│       ├── Header.tsx
+│       ├── Footer.tsx
+│       └── Layout.tsx
+├── context/
+│   └── ThemeContext.tsx
+├── pages/
+│   ├── HomePage.tsx
+│   ├── ClassesPage.tsx
+│   ├── CreateClassPage.tsx
+│   ├── DocumentsPage.tsx
+│   └── QuizPage.tsx
+├── types/
+│   └── index.ts
+├── App.tsx
+└── index.css
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Cài đặt và chạy dự án
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Yêu cầu hệ thống
+- Node.js (version 16 trở lên)
+- npm hoặc yarn
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Cài đặt
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+1. Clone dự án:
+```bash
+git clone https://github.com/HoanBuCon/Quiz-Website-FE.git
+cd quiz-website
+```
 
-## Learn More
+2. Cài đặt dependencies:
+```bash
+npm install
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+3. Chạy dự án ở môi trường development:
+```bash
+npm start
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+4. Mở trình duyệt và truy cập: `http://localhost:3000`
+
+### Build cho production
+
+```bash
+npm run build
+```
+
+## Cấu hình Tailwind CSS
+
+Dự án đã được cấu hình sẵn Tailwind CSS với:
+- Dark mode support
+- Custom color palette
+- Responsive design
+- Custom components
+
+## Tính năng nổi bật
+
+### 🎨 Giao diện hiện đại
+- Thiết kế clean và professional
+- Responsive trên mọi thiết bị
+- Animation mượt mà
+- Loading states
+
+### 🔄 State Management
+- Context API cho theme management
+- Local state cho các component
+- Persistent theme preference
+
+### 📱 Responsive Design
+- Mobile-first approach
+- Breakpoints cho tablet và desktop
+- Touch-friendly interface
+
+### ⚡ Performance
+- Lazy loading components
+- Optimized bundle size
+- Efficient re-renders
+
+## Hướng dẫn sử dụng
+
+### 1. Tạo lớp học mới
+1. Vào trang "Tạo lớp"
+2. Upload file tài liệu (.doc, .docx, .json, .txt)
+3. Hệ thống sẽ tự động xử lý và tạo câu hỏi
+
+### 2. Làm bài trắc nghiệm
+1. Vào trang "Lớp học"
+2. Chọn lớp học muốn tham gia
+3. Click "Làm bài" để bắt đầu
+4. Sử dụng minimap để điều hướng giữa các câu hỏi
+
+### 3. Quản lý tài liệu
+1. Vào trang "Tài liệu"
+2. Upload, download hoặc xóa file
+3. Tạo lớp học từ tài liệu có sẵn
+
+## Tích hợp Backend
+
+Dự án được thiết kế để dễ dàng tích hợp với backend:
+- API endpoints được chuẩn bị sẵn
+- TypeScript interfaces cho data models
+- Error handling patterns
+- Loading states cho async operations
+
+## Contributing
+
+1. Fork dự án
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some DogshitFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Tạo Pull Request
+
+## License
+
+Dự án này được phát hành dưới MIT License.
+
+## Liên hệ
+
+Nếu có bất kỳ câu hỏi hoặc đề xuất nào, vui lòng tạo issue trên GitHub repository.
+
+---
+
+**Lưu ý**: Đây là phiên bản frontend của dự án. Backend API cần được phát triển riêng để hoàn thiện toàn bộ chức năng.

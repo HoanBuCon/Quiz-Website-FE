@@ -1,25 +1,42 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import Layout from './components/Layout/Layout';
+import HomePage from './pages/HomePage';
+import ClassesPage from './pages/ClassesPage';
+import CreateClassPage from './pages/CreateClassPage';
+import EditQuizPage from './pages/EditQuizPage';
+import DocumentsPage from './pages/DocumentsPage';
+import QuizPage from './pages/QuizPage';
 
+// Component App chính của website
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            {/* Route trang chủ */}
+            <Route path="/" element={<HomePage />} />
+            
+            {/* Route trang lớp học */}
+            <Route path="/classes" element={<ClassesPage />} />
+            
+            {/* Route trang tạo lớp */}
+            <Route path="/create" element={<CreateClassPage />} />
+            
+            {/* Route trang chỉnh sửa quiz */}
+            <Route path="/edit-quiz" element={<EditQuizPage />} />
+            
+            {/* Route trang tài liệu */}
+            <Route path="/documents" element={<DocumentsPage />} />
+            
+            {/* Route trang làm bài trắc nghiệm */}
+            <Route path="/quiz/:quizId" element={<QuizPage />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </ThemeProvider>
   );
 }
 
