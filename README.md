@@ -1,55 +1,65 @@
-# Quiz Website - Website Giải Bài Tập Trắc Nghiệm
+# Quiz Website
 
-## Mô tả dự án
+<div align="center">
+  <a href="https://hoanbucon.id.vn" target="_blank">
+    <img src="./public/readme.png" alt="Preview" />
+  </a>
+</div>
 
-Quiz Website là một ứng dụng web được xây dựng bằng ReactJS và Tailwind CSS, cung cấp nền tảng để tạo và làm bài trắc nghiệm trực tuyến. Website được thiết kế với giao diện hiện đại, hỗ trợ dark/light mode và responsive design.
+<hr />
 
-## Tính năng chính
+## Project Description
 
-### 🏠 Trang chủ
-- Hiển thị danh sách các lớp học công khai
-- Thống kê nhanh về website
-- Giao diện thân thiện với người dùng
+Quiz Website is a web application built with ReactJS and Tailwind CSS, providing a platform for creating and taking online multiple-choice quizzes. The website features a modern user interface, supports dark/light mode, and responsive design.
 
-### 📚 Lớp học
-- Quản lý các lớp học của người dùng
-- Danh sách bài kiểm tra trong từng lớp
-- Thống kê học tập và tiến độ
+## Key Features
 
-### ➕ Tạo lớp
-- Upload file tài liệu (.doc, .docx, .json, .txt)
-- Hỗ trợ kéo thả file
-- Xử lý file tự động để tạo câu hỏi trắc nghiệm
+### 🏠 Home Page
+- Displays a list of public classrooms
+- Quick website statistics
+- User-friendly interface
 
-### 📖 Làm bài trắc nghiệm
-- Giao diện làm bài với 3 loại câu hỏi:
-  - Chọn một đáp án đúng
-  - Chọn nhiều đáp án đúng
-  - Điền đáp án
-- Minimap hiển thị tiến độ làm bài
-- Timer countdown
-- Navigation giữa các câu hỏi
+### 📚 Classrooms
+- Manage user's own classrooms
+- View list of quizzes in each class
+- Track learning progress and performance
 
-### 📁 Tài liệu
-- Quản lý file tài liệu đã upload
-- Download tài liệu
-- Tạo lớp học từ tài liệu
-- Thống kê dung lượng và số lượng file
+### ➕ Create Class
+- Upload document files (.doc, .docx, .json, .txt)
+- Drag-and-drop file upload support
+- Automatically process files to generate quiz questions
+
+### 📖 Take Quiz
+- Quiz interface with 3 types of questions:
+  - Single correct answer
+  - Multiple correct answers
+  - Fill-in-the-blank
+- Minimap showing quiz progress
+- Countdown timer
+- Navigation between questions
+
+### 📁 Documents
+- Manage uploaded document files
+- Download documents
+- Create classrooms from documents
+- File size and quantity statistics
 
 ### 🌙 Dark/Light Mode
-- Chuyển đổi theme tự động
-- Lưu trạng thái theme trong localStorage
-- Giao diện nhất quán giữa các mode
+- Automatic theme switching
+- Save theme state in localStorage
+- Consistent UI across both modes
 
-## Công nghệ sử dụng
+## Technologies Used
 
-- **React 18** - Framework JavaScript
-- **TypeScript** - Ngôn ngữ lập trình type-safe
-- **Tailwind CSS** - Framework CSS utility-first
-- **React Router** - Routing cho SPA
-- **Context API** - State management
+- **React 18** – JavaScript Framework
+- **TypeScript** – Type-safe programming language
+- **Tailwind CSS** – Utility-first CSS framework
+- **React Router** – SPA routing
+- **Context API** – State management
 
-## Cấu trúc dự án
+## Project Structure
+
+
 
 ```
 src/
@@ -72,62 +82,62 @@ src/
 └── index.css
 ```
 
-## Cài đặt và chạy dự án
+## Installation and Running
 
-### Yêu cầu hệ thống
-- Node.js (version 16 trở lên)
-- npm hoặc yarn
+### System Requirements
+- Node.js (version 16 or higher)
+- npm or yarn
 
-### Cài đặt
+### Installation
 
-1. Clone dự án:
+1. Clone the repository:
 ```bash
 git clone https://github.com/HoanBuCon/Quiz-Website-FE.git
 cd quiz-website
 ```
 
-2. Cài đặt dependencies:
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Chạy dự án ở môi trường development:
+3. Run the project in development mode:
 ```bash
 npm start
 ```
 
-4. Mở trình duyệt và truy cập: `http://localhost:3000`
+4. Open your browser and visit: `http://localhost:3000`
 
-### Build cho production
+### Build for Production
 
 ```bash
 npm run build
 ```
 
-## Cấu hình Tailwind CSS
+## Tailwind CSS Configuration
 
-Dự án đã được cấu hình sẵn Tailwind CSS với:
-- Dark mode support
+This project is pre-configured with Tailwind CSS including:
+- Dark mode and Light mode support
 - Custom color palette
 - Responsive design
 - Custom components
 
-## Tính năng nổi bật
+## Highlight Features
 
-### 🎨 Giao diện hiện đại
-- Thiết kế clean và professional
-- Responsive trên mọi thiết bị
-- Animation mượt mà
+### 🎨 Modern UI
+- Clean and professional design
+- Responsive across all devices
+- Smooth animations
 - Loading states
 
 ### 🔄 State Management
-- Context API cho theme management
-- Local state cho các component
+- Context API for theme management
+- Local state for components
 - Persistent theme preference
 
 ### 📱 Responsive Design
 - Mobile-first approach
-- Breakpoints cho tablet và desktop
+- Breakpoints for tablet and desktop
 - Touch-friendly interface
 
 ### ⚡ Performance
@@ -135,48 +145,49 @@ Dự án đã được cấu hình sẵn Tailwind CSS với:
 - Optimized bundle size
 - Efficient re-renders
 
-## Hướng dẫn sử dụng
+## User Guide
 
-### 1. Tạo lớp học mới
-1. Vào trang "Tạo lớp"
-2. Upload file tài liệu (.doc, .docx, .json, .txt)
-3. Hệ thống sẽ tự động xử lý và tạo câu hỏi
+### 1. Create a New Class
+1. Go to the "Create Class" page
+2. Upload a document file (.doc, .docx, .json, .txt)
+3. The system will automatically process and generate questions
 
-### 2. Làm bài trắc nghiệm
-1. Vào trang "Lớp học"
-2. Chọn lớp học muốn tham gia
-3. Click "Làm bài" để bắt đầu
-4. Sử dụng minimap để điều hướng giữa các câu hỏi
+### 2. Take a Quiz
+1. Go to the "Classrooms" page
+2. Select a class to join
+3. Click "Take Quiz" to start
+4. Use the minimap to navigate between questions
 
-### 3. Quản lý tài liệu
-1. Vào trang "Tài liệu"
-2. Upload, download hoặc xóa file
-3. Tạo lớp học từ tài liệu có sẵn
+### 3. Manage Documents
+1. Go to the "Documents" page
+2. Upload, download, or delete files
+3. Create a class from existing documents
 
-## Tích hợp Backend
+## Backend Integration
 
-Dự án được thiết kế để dễ dàng tích hợp với backend:
-- API endpoints được chuẩn bị sẵn
-- TypeScript interfaces cho data models
+The project is designed for easy backend integration:
+- API endpoints are pre-defined
+- TypeScript interfaces for data models
 - Error handling patterns
-- Loading states cho async operations
+- Loading states for async operations
 
 ## Contributing
 
-1. Fork dự án
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some DogshitFeature'`)
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
+5. Create a Pull Request
 
 ## License
 
-Dự án này được phát hành dưới MIT License.
+This project is licensed under the MIT License.
 
-## Liên hệ
+## Contact
 
-Nếu có bất kỳ câu hỏi hoặc đề xuất nào, vui lòng tạo issue trên GitHub repository.
+- https://hoanbucon.id.vn/  
+- For any questions or suggestions, please create an issue in the GitHub repository.
 
 ---
 
-**Lưu ý**: Đây là phiên bản frontend của dự án. Backend API cần được phát triển riêng để hoàn thiện toàn bộ chức năng.
+**Note**: This is the frontend version of the project. A separate backend API needs to be developed to fully enable all functionalities.
