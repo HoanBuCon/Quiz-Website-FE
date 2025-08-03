@@ -16,6 +16,15 @@ const CreateClassPage: React.FC = () => {
   const [isCreateNewClass, setIsCreateNewClass] = useState(true);
   const [existingClasses, setExistingClasses] = useState<any[]>([]);
 
+  // Kiểm tra xem form có hợp lệ không
+  const isFormValid = () => {
+    if (isCreateNewClass) {
+      return className.trim() !== '' && classDescription.trim() !== '';
+    } else {
+      return selectedClassId !== '';
+    }
+  };
+
   // Load danh sách lớp học có sẵn
   useEffect(() => {
     const savedClasses = localStorage.getItem('classrooms') || '[]';
@@ -25,6 +34,17 @@ const CreateClassPage: React.FC = () => {
 
   // Xử lý khi file được chọn
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Kiểm tra validation trước
+    if (!isFormValid()) {
+      event.target.value = ''; // Reset input
+      if (isCreateNewClass) {
+        alert('Vui lòng nhập tên và mô tả lớp học trước khi tải File');
+      } else {
+        alert('Vui lòng chọn lớp học trước khi tải File');
+      }
+      return;
+    }
+    
     const files = event.target.files;
     if (files) {
       handleFiles(Array.from(files));
@@ -47,6 +67,16 @@ const CreateClassPage: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
+    
+    // Kiểm tra validation trước
+    if (!isFormValid()) {
+      if (isCreateNewClass) {
+        alert('Vui lòng nhập tên và mô tả lớp học trước khi tải File');
+      } else {
+        alert('Vui lòng chọn lớp học trước khi tải File');
+      }
+      return;
+    }
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(Array.from(e.dataTransfer.files));
@@ -122,6 +152,16 @@ const CreateClassPage: React.FC = () => {
 
   // Xử lý chuyển đến trang tạo quiz thủ công
   const handleCreateManualQuiz = () => {
+    // Kiểm tra validation trước
+    if (!isFormValid()) {
+      if (isCreateNewClass) {
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
+      } else {
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
+      }
+      return;
+    }
+    
     const quizId = `manual-${Date.now()}-${Math.random()}`;
     const classId = createNewClass(quizId);
     
@@ -428,9 +468,23 @@ const CreateClassPage: React.FC = () => {
                     Tạo Quiz thủ công bằng cách nhập câu hỏi và đáp án trực tiếp
                   </p>
                   
+                  {!isFormValid() && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400 mb-3">
+                      {isCreateNewClass 
+                        ? 'Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz'
+                        : 'Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz'
+                      }
+                    </p>
+                  )}
+                  
                   <button
                     onClick={handleCreateManualQuiz}
-                    className="btn-primary"
+                    disabled={!isFormValid()}
+                    className={`${
+                      isFormValid() 
+                        ? 'btn-primary' 
+                        : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                    }`}
                   >
                     Tạo bài trắc nghiệm
                   </button>
@@ -451,16 +505,30 @@ const CreateClassPage: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Tải lên file câu hỏi
             </h3>
+            
+            {!isFormValid() && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  {isCreateNewClass 
+                    ? 'Vui lòng nhập tên và mô tả lớp học trước khi tải File'
+                    : 'Vui lòng chọn lớp học trước khi tải File'
+                  }
+                </p>
+              </div>
+            )}
+            
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-                dragActive
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-300 dark:border-gray-600'
+                !isFormValid()
+                  ? 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50 cursor-not-allowed'
+                  : dragActive
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    : 'border-gray-300 dark:border-gray-600'
               }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
+              onDragEnter={isFormValid() ? handleDrag : undefined}
+              onDragLeave={isFormValid() ? handleDrag : undefined}
+              onDragOver={isFormValid() ? handleDrag : undefined}
+              onDrop={isFormValid() ? handleDrop : undefined}
             >
               <div className="space-y-4">
                 <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
@@ -479,14 +547,26 @@ const CreateClassPage: React.FC = () => {
                   </svg>
                 </div>
                   <div>
-                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                   <h3 className={`text-lg font-medium mb-2 ${
+                     isFormValid() 
+                       ? 'text-gray-900 dark:text-white' 
+                       : 'text-gray-500 dark:text-gray-400'
+                   }`}>
                      Kéo thả File vào đây hoặc click để chọn File
                    </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      <p className={`mb-4 ${
+                        isFormValid() 
+                          ? 'text-gray-600 dark:text-gray-400' 
+                          : 'text-gray-500 dark:text-gray-500'
+                      }`}>
                     Hỗ trợ File .txt, .json, .doc, .docx
                   </p>
                   
-                  <label className="btn-primary cursor-pointer">
+                  <label className={`cursor-pointer ${
+                    isFormValid() 
+                      ? 'btn-primary' 
+                      : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                  }`}>
                     Chọn file
                                          <input
                        type="file"
@@ -494,6 +574,7 @@ const CreateClassPage: React.FC = () => {
                        accept=".txt,.json,.doc,.docx"
                        onChange={handleFileSelect}
                        className="hidden"
+                       disabled={!isFormValid()}
                      />
                   </label>
                 </div>
