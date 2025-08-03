@@ -231,7 +231,7 @@ const ClassesPage: React.FC = () => {
                         
                         {/* Dropdown Menu */}
                         {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                          <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                          <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
                             <div className="p-2">
                               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                 Chọn bài kiểm tra:

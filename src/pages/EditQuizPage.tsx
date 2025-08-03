@@ -25,6 +25,38 @@ const EditQuizPage: React.FC = () => {
     try {
       setIsPublishing(true);
 
+      // Validation trước khi xuất bản
+      const invalidQuestions = [];
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        
+        if (!q.question.trim()) {
+          invalidQuestions.push(`Câu ${i + 1}: Chưa có nội dung câu hỏi`);
+          continue;
+        }
+        
+        if (q.type === 'text') {
+          if (!q.correctAnswers[0]?.trim()) {
+            invalidQuestions.push(`Câu ${i + 1}: Câu hỏi tự luận chưa có đáp án đúng`);
+          }
+        } else {
+          const validOptions = q.options?.filter(opt => opt.trim()) || [];
+          if (validOptions.length < 2) {
+            invalidQuestions.push(`Câu ${i + 1}: Câu hỏi trắc nghiệm cần ít nhất 2 đáp án`);
+          }
+          
+          const validCorrectAnswers = q.correctAnswers.filter(ans => validOptions.includes(ans));
+          if (validCorrectAnswers.length === 0) {
+            invalidQuestions.push(`Câu ${i + 1}: Chưa chọn đáp án đúng`);
+          }
+        }
+      }
+      
+      if (invalidQuestions.length > 0) {
+        alert(`Vui lòng sửa các lỗi sau:\n\n${invalidQuestions.join('\n')}`);
+        return;
+      }
+
       // Lưu quiz vào localStorage
       const savedQuizzes = localStorage.getItem('quizzes') || '[]';
       const quizzes = JSON.parse(savedQuizzes);
@@ -32,18 +64,21 @@ const EditQuizPage: React.FC = () => {
       // Xóa quiz cũ nếu đã tồn tại
       const filteredQuizzes = quizzes.filter((q: Quiz) => q.id !== state.fileId);
       
-      // Thêm quiz mới
+      // Thêm quiz mới với dữ liệu đã được cập nhật
       const newQuiz = {
         id: state.fileId,
         title: quizTitle || `Quiz từ file ${state.fileName}`,
         description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
-        questions: questions,
+        questions: questions, // Sử dụng questions state hiện tại (đã được cập nhật)
         fileName: state.fileName,
         createdAt: new Date(),
+        updatedAt: new Date(), // Thêm updatedAt
         published: true
       };
       filteredQuizzes.push(newQuiz);
       localStorage.setItem('quizzes', JSON.stringify(filteredQuizzes));
+      
+      console.log('Quiz saved with questions:', questions); // Debug log
       
       toast.success('Xuất bản thành công!');
       navigate('/classes');
@@ -80,20 +115,31 @@ const EditQuizPage: React.FC = () => {
   };
 
   const handleQuestionSave = (questionId: string, updatedQuestion: Partial<Question>) => {
+    console.log('Saving question:', questionId, updatedQuestion); // Debug log
+    
     setQuestions(prev => {
       const updated = prev.map(q => {
         if (q.id === questionId) {
           const result = { ...q, ...updatedQuestion };
           
-          // Nếu chuyển sang text nhưng chưa có options, tạo options mặc định
-          if (result.type === 'text' && !result.options) {
-            result.options = q.options || ["", "", "", ""];
+          // Đảm bảo câu hỏi text không có options
+          if (result.type === 'text') {
+            result.options = undefined; // Xóa options cho câu hỏi text
+            // KHÔNG reset correctAnswers - giữ nguyên dữ liệu đã được truyền vào từ updatedQuestion
+          } else {
+            // Đối với câu hỏi trắc nghiệm, đảm bảo có options
+            if (!result.options || result.options.length === 0) {
+              result.options = ["", "", "", ""];
+            }
           }
           
+          console.log('Question after save:', result); // Debug log
           return result;
         }
         return q;
       });
+      
+      console.log('Updated questions array:', updated); // Debug log
       setIsEditing(null);
       return updated;
     });
@@ -108,7 +154,7 @@ const EditQuizPage: React.FC = () => {
       id: `q-${Date.now()}-${Math.random()}`,
       question: '',
       type: 'single',
-      options: ['', '', '', ''],
+      options: ['', ''], // Bắt đầu với 2 đáp án trống
       correctAnswers: [],
       explanation: ''
     };
@@ -116,59 +162,65 @@ const EditQuizPage: React.FC = () => {
     setIsEditing(newQuestion.id);
   };
 
-  const handlePublishQuiz = async () => {
-    if (!quizTitle.trim()) {
-      alert('Vui lòng nhập tiêu đề cho bài quiz');
-      return;
-    }
-
-    if (questions.length === 0) {
-      alert('Vui lòng thêm ít nhất một câu hỏi');
-      return;
-    }
-
-    setIsPublishing(true);
-
-    // Giả lập API call để lưu quiz
-    setTimeout(() => {
-      const newQuiz: Quiz = {
-        id: `quiz-${Date.now()}`,
-        title: quizTitle,
-        description: quizDescription,
-        questions: questions,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      // Lưu vào localStorage hoặc gửi lên server
-      const existingQuizzes = JSON.parse(localStorage.getItem('quizzes') || '[]');
-      existingQuizzes.push(newQuiz);
-      localStorage.setItem('quizzes', JSON.stringify(existingQuizzes));
-
-      setIsPublishing(false);
-      alert('Bài quiz đã được xuất bản thành công!');
-      navigate('/classes'); // Chuyển về trang classes
-    }, 2000);
-  };
-
   const QuestionEditor: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
     const [editedQuestion, setEditedQuestion] = useState<Question>(question);
-    const savedOptionsRef = useRef<string[]>(question.options || ["", "", "", ""]);
+    const savedOptionsRef = useRef<string[]>(question.options || ["", ""]);
 
     useEffect(() => {
       setEditedQuestion(question);
-      // Luôn đảm bảo có options để backup
-      savedOptionsRef.current = question.options || ["", "", "", ""];
+      // Luôn đảm bảo có ít nhất 2 options để backup
+      const optionsBackup = question.options || ["", ""];
+      savedOptionsRef.current = optionsBackup.length >= 2 ? optionsBackup : ["", ""];
     }, [question.id]);
 
     const handleSave = () => {
-      const filteredOptions = (editedQuestion.options || []).filter(opt => opt.trim() !== '');
-      const filteredCorrectAnswers = editedQuestion.correctAnswers.filter(ans => filteredOptions.includes(ans));
-      handleQuestionSave(question.id, {
-        ...editedQuestion,
-        options: filteredOptions,
-        correctAnswers: filteredCorrectAnswers
-      });
+      // Kiểm tra dữ liệu trước khi lưu
+      if (!editedQuestion.question.trim()) {
+        alert('Vui lòng nhập nội dung câu hỏi');
+        return;
+      }
+
+      console.log('Edited question before save:', editedQuestion); // Debug log
+
+      if (editedQuestion.type === 'text') {
+        // Đối với câu hỏi text, đảm bảo có ít nhất một đáp án đúng
+        const validAnswers = editedQuestion.correctAnswers.filter(answer => answer?.trim());
+        if (validAnswers.length === 0) {
+          alert('Vui lòng nhập ít nhất một đáp án đúng cho câu hỏi tự luận');
+          return;
+        }
+        
+        const updatedData = {
+          ...editedQuestion,
+          options: undefined, // Xóa options cho câu hỏi text
+          correctAnswers: validAnswers // Chỉ lưu các đáp án có nội dung
+        };
+        
+        console.log('Saving text question with data:', updatedData); // Debug log
+        handleQuestionSave(question.id, updatedData);
+      } else {
+        // Đối với câu hỏi trắc nghiệm
+        const filteredOptions = (editedQuestion.options || []).filter(opt => opt.trim() !== '');
+        if (filteredOptions.length < 2) {
+          alert('Câu hỏi trắc nghiệm cần ít nhất 2 đáp án');
+          return;
+        }
+        
+        const filteredCorrectAnswers = editedQuestion.correctAnswers.filter(ans => filteredOptions.includes(ans));
+        if (filteredCorrectAnswers.length === 0) {
+          alert('Vui lòng chọn ít nhất một đáp án đúng');
+          return;
+        }
+        
+        const updatedData = {
+          ...editedQuestion,
+          options: filteredOptions,
+          correctAnswers: filteredCorrectAnswers
+        };
+        
+        console.log('Saving multiple choice question with data:', updatedData); // Debug log
+        handleQuestionSave(question.id, updatedData);
+      }
     };
 
     const handleCancel = () => {
@@ -192,21 +244,27 @@ const EditQuizPage: React.FC = () => {
         if (newType === 'text') {
           // Lưu options hiện tại vào ref trước khi ẩn
           savedOptionsRef.current = prev.options || savedOptionsRef.current;
+          
+          // Nếu có đáp án đúng từ trắc nghiệm, chuyển sang text
+          const existingCorrectAnswer = prev.correctAnswers.length > 0 ? prev.correctAnswers[0] : '';
+          
           return {
             ...prev,
             type: 'text',
-            correctAnswers: [],
-            // Giữ nguyên explanation khi chuyển sang text
+            correctAnswers: [existingCorrectAnswer], // Giữ đáp án đầu tiên hoặc để trống
+            options: undefined // Xóa options khi chuyển sang text
           };
         } else {
           // Khôi phục options từ ref hoặc từ chính question
-          const optionsToRestore = prev.options || savedOptionsRef.current;
+          const optionsToRestore = prev.options || savedOptionsRef.current || ['', ''];
+          // Đảm bảo có ít nhất 2 đáp án
+          const finalOptions = optionsToRestore.length >= 2 ? optionsToRestore : ['', ''];
+          
           return {
             ...prev,
             type: newType,
-            options: optionsToRestore,
-            correctAnswers: [],
-            explanation: '' // Reset explanation khi chuyển về single/multiple
+            options: finalOptions,
+            correctAnswers: [] // Reset correctAnswers khi chuyển về trắc nghiệm
           };
         }
       });
@@ -255,7 +313,7 @@ const EditQuizPage: React.FC = () => {
             <textarea
               value={editedQuestion.question}
               onChange={(e) => setEditedQuestion(prev => ({ ...prev, question: e.target.value }))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
               rows={3}
             />
           </div>
@@ -267,7 +325,7 @@ const EditQuizPage: React.FC = () => {
             <select
               value={editedQuestion.type}
               onChange={(e) => handleTypeChange(e.target.value as 'single' | 'multiple' | 'text')}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
             >
               <option value="single">Chọn 1 đáp án</option>
               <option value="multiple">Chọn nhiều đáp án</option>
@@ -277,9 +335,25 @@ const EditQuizPage: React.FC = () => {
 
           {editedQuestion.type !== 'text' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Các đáp án
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Các đáp án
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newOptions = [...(editedQuestion.options || []), ''];
+                    setEditedQuestion(prev => ({ ...prev, options: newOptions }));
+                    savedOptionsRef.current = newOptions;
+                  }}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Thêm đáp án
+                </button>
+              </div>
               <div className="space-y-2">
                 {(editedQuestion.options || []).map((option, index) => (
                   <div key={index} className="flex items-center space-x-3">
@@ -295,30 +369,101 @@ const EditQuizPage: React.FC = () => {
                       type="text"
                       value={option}
                       onChange={(e) => handleOptionChange(index, e.target.value)}
-                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder={`Đáp án ${String.fromCharCode(65 + index)}`}
                     />
+                    {(editedQuestion.options || []).length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newOptions = (editedQuestion.options || []).filter((_, i) => i !== index);
+                          // Cập nhật correctAnswers để loại bỏ đáp án đã xóa
+                          const newCorrectAnswers = editedQuestion.correctAnswers.filter(ans => newOptions.includes(ans));
+                          setEditedQuestion(prev => ({ 
+                            ...prev, 
+                            options: newOptions,
+                            correctAnswers: newCorrectAnswers
+                          }));
+                          savedOptionsRef.current = newOptions;
+                        }}
+                        className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Cần ít nhất 2 đáp án cho câu hỏi trắc nghiệm. Nhấn vào checkbox/radio để chọn đáp án đúng.
+              </p>
             </div>
           )}
 
           {editedQuestion.type === 'text' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Đáp án đúng
-              </label>
-              <input
-                type="text"
-                value={editedQuestion.correctAnswers[0] || ''}
-                onChange={(e) => setEditedQuestion(prev => ({ 
-                  ...prev, 
-                  correctAnswers: [e.target.value] 
-                }))}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Nhập đáp án đúng"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Đáp án đúng
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditedQuestion(prev => ({
+                      ...prev,
+                      correctAnswers: [...prev.correctAnswers, '']
+                    }));
+                  }}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Thêm đáp án
+                </button>
+              </div>
+              <div className="space-y-2">
+                {editedQuestion.correctAnswers.map((answer, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={answer}
+                      onChange={(e) => {
+                        const newAnswers = [...editedQuestion.correctAnswers];
+                        newAnswers[index] = e.target.value;
+                        setEditedQuestion(prev => ({ 
+                          ...prev, 
+                          correctAnswers: newAnswers
+                        }));
+                      }}
+                      className="flex-1 p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                      placeholder={`Đáp án đúng ${index + 1}`}
+                    />
+                    {editedQuestion.correctAnswers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newAnswers = editedQuestion.correctAnswers.filter((_, i) => i !== index);
+                          setEditedQuestion(prev => ({ 
+                            ...prev, 
+                            correctAnswers: newAnswers.length > 0 ? newAnswers : ['']
+                          }));
+                        }}
+                        className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Có thể thêm nhiều đáp án đúng. Học sinh chỉ cần nhập một trong các đáp án này.
+              </p>
             </div>
           )}
 
@@ -329,7 +474,7 @@ const EditQuizPage: React.FC = () => {
             <textarea
               value={editedQuestion.explanation || ''}
               onChange={(e) => setEditedQuestion(prev => ({ ...prev, explanation: e.target.value }))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
               rows={2}
               placeholder="Giải thích đáp án..."
             />
@@ -435,13 +580,44 @@ const EditQuizPage: React.FC = () => {
 
         {question.type === 'text' && (
           <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <span className="text-gray-600 dark:text-gray-300">Đáp án đúng: </span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
-              {question.correctAnswers[0] || 'Chưa có đáp án'}
-            </span>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Học sinh sẽ nhập đáp án vào ô text
+            <div className="mb-2">
+              <span className="text-gray-600 dark:text-gray-300">Đáp án đúng: </span>
+              {question.correctAnswers.filter(ans => ans?.trim()).length > 0 ? (
+                <div className="mt-1">
+                  {question.correctAnswers.filter(ans => ans?.trim()).map((answer, index) => (
+                    <span 
+                      key={index}
+                      className="inline-block bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 rounded text-sm mr-2 mb-1"
+                    >
+                      "{answer.trim()}"
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="font-medium text-red-600 dark:text-red-400">
+                  Chưa có đáp án - Vui lòng chỉnh sửa để thêm đáp án
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Học sinh chỉ cần nhập một trong các đáp án trên (không phân biệt hoa thường)
             </p>
+            {/* Debug info */}
+            <details className="mt-2">
+              <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                Debug Info (Click to expand)
+              </summary>
+              <pre className="text-xs text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                {JSON.stringify({
+                  id: question.id,
+                  type: question.type,
+                  correctAnswers: question.correctAnswers,
+                  validAnswersCount: question.correctAnswers.filter(ans => ans?.trim()).length,
+                  hasOptions: !!question.options,
+                  optionsLength: question.options?.length || 0
+                }, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
 
@@ -479,19 +655,21 @@ const EditQuizPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Chỉnh sửa bài quiz
+              Chỉnh sửa Quiz
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Kiểm tra và chỉnh sửa các câu hỏi từ file {state.fileName}
             </p>
           </div>
-          <button
-            onClick={handlePublishQuiz}
-            disabled={isPublishing}
-            className="btn-primary"
-          >
-            {isPublishing ? 'Đang xuất bản...' : 'Xuất bản bài quiz'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className="btn-primary"
+            >
+              {isPublishing ? 'Đang xuất bản...' : 'Xuất bản bài quiz'}
+            </button>
+          </div>
         </div>
 
         {/* Quiz Info */}
@@ -508,7 +686,7 @@ const EditQuizPage: React.FC = () => {
                 type="text"
                 value={quizTitle}
                 onChange={(e) => setQuizTitle(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                 placeholder="Nhập tiêu đề bài quiz"
               />
             </div>
@@ -520,7 +698,7 @@ const EditQuizPage: React.FC = () => {
                 type="text"
                 value={quizDescription}
                 onChange={(e) => setQuizDescription(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                 placeholder="Nhập mô tả bài quiz"
               />
             </div>

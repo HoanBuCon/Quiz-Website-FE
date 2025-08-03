@@ -335,8 +335,30 @@ const ResultsPage: React.FC = () => {
 
   const getAnswerStatus = (question: Question, userAnswer: string[]) => {
     const correctAnswers = question.correctAnswers;
-    const isCorrect = userAnswer.length === correctAnswers.length && 
-                     userAnswer.every(answer => correctAnswers.includes(answer));
+    
+    let isCorrect = false;
+    
+    if (question.type === 'text') {
+      // Đối với câu hỏi tự luận, so sánh text (không phân biệt hoa thường và khoảng trắng)
+      const userText = (userAnswer[0] || '').trim().toLowerCase();
+      
+      // Kiểm tra xem có đáp án đúng được thiết lập không
+      const validCorrectAnswers = correctAnswers.filter(ans => ans?.trim());
+      
+      if (validCorrectAnswers.length === 0) {
+        // Nếu không có đáp án đúng nào được thiết lập, coi như sai
+        isCorrect = false;
+      } else {
+        // So sánh với các đáp án đúng có sẵn
+        isCorrect = validCorrectAnswers.some(correct => 
+          correct.trim().toLowerCase() === userText
+        );
+      }
+    } else {
+      // Đối với câu hỏi trắc nghiệm
+      isCorrect = userAnswer.length === correctAnswers.length && 
+                 userAnswer.every(answer => correctAnswers.includes(answer));
+    }
     
     return {
       isCorrect,
@@ -516,44 +538,89 @@ const ResultsPage: React.FC = () => {
               </p>
 
               <div className="space-y-3">
-                {question.options?.map((option, optionIndex) => {
-                  const isUserChoice = userAnswer.includes(option);
-                  const isCorrectOption = correctAnswers.includes(option);
-                  
-                  let optionClass = 'p-3 rounded-lg border transition-colors ';
-                  
-                  if (isCorrectOption) {
-                    optionClass += 'bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300';
-                  } else if (isUserChoice && !isCorrectOption) {
-                    optionClass += 'bg-red-200 border-red-400 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300';
-                  } else {
-                    optionClass += 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300';
-                  }
-
-                  return (
-                    <div key={optionIndex} className={optionClass}>
+                {question.type === 'text' ? (
+                  // Hiển thị cho câu hỏi tự luận
+                  <div className="space-y-3">
+                    <div className={`p-3 rounded-lg border ${
+                      isCorrect 
+                        ? 'bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300'
+                        : 'bg-red-300 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300'
+                    }`}>
                       <div className="flex items-center justify-between">
-                        <span>{option}</span>
-                        <div className="flex items-center gap-2">
-                          {isUserChoice && (
-                            <span className={`text-sm font-semibold ${
-                              isCorrectOption 
-                                ? 'text-green-800 dark:text-green-400' 
-                                : 'text-red-800 dark:text-red-400'
-                            }`}>
-                              {isCorrectOption ? '✓ Bạn chọn (Đúng)' : '✗ Bạn chọn (Sai)'}
-                            </span>
-                          )}
-                          {isCorrectOption && !isUserChoice && (
-                            <span className="text-sm font-semibold text-green-800 dark:text-green-400">
-                              ✓ Đáp án đúng
-                            </span>
-                          )}
-                        </div>
+                        <span className="font-medium">
+                          Câu trả lời của bạn: {userAnswer[0] || '(Không trả lời)'}
+                        </span>
+                        <span className={`text-sm font-semibold ${
+                          isCorrect 
+                            ? 'text-green-800 dark:text-green-400' 
+                            : 'text-red-800 dark:text-red-400'
+                        }`}>
+                          {isCorrect ? '✓ Đúng' : '✗ Sai'}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
+                    
+                    {!isCorrect && (
+                      <div className="p-3 rounded-lg border bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">
+                            Đáp án đúng: {correctAnswers.filter(ans => ans?.trim()).length > 0 
+                              ? correctAnswers.filter(ans => ans?.trim()).join(', ')
+                              : 'Chưa có đáp án được thiết lập'}
+                          </span>
+                          <span className="text-sm font-semibold text-green-800 dark:text-green-400">
+                            ✓ Đáp án đúng
+                          </span>
+                        </div>
+                        {correctAnswers.filter(ans => ans?.trim()).length === 0 && (
+                          <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                            ⚠️ Câu hỏi này chưa được thiết lập đáp án đúng
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Hiển thị cho câu hỏi trắc nghiệm
+                  question.options?.map((option, optionIndex) => {
+                    const isUserChoice = userAnswer.includes(option);
+                    const isCorrectOption = correctAnswers.includes(option);
+                    
+                    let optionClass = 'p-3 rounded-lg border transition-colors ';
+                    
+                    if (isCorrectOption) {
+                      optionClass += 'bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300';
+                    } else if (isUserChoice && !isCorrectOption) {
+                      optionClass += 'bg-red-300 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300';
+                    } else {
+                      optionClass += 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300';
+                    }
+
+                    return (
+                      <div key={optionIndex} className={optionClass}>
+                        <div className="flex items-center justify-between">
+                          <span>{option}</span>
+                          <div className="flex items-center gap-2">
+                            {isUserChoice && (
+                              <span className={`text-sm font-semibold ${
+                                isCorrectOption 
+                                  ? 'text-green-800 dark:text-green-400' 
+                                  : 'text-red-800 dark:text-red-400'
+                              }`}>
+                                {isCorrectOption ? '✓ Bạn chọn (Đúng)' : '✗ Bạn chọn (Sai)'}
+                              </span>
+                            )}
+                            {isCorrectOption && !isUserChoice && (
+                              <span className="text-sm font-semibold text-green-800 dark:text-green-400">
+                                ✓ Đáp án đúng
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               {/* Giải thích */}

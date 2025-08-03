@@ -232,8 +232,31 @@ const QuizPage: React.FC = () => {
         const question = questions.find(q => q.id === userAnswer.questionId);
         if (!question) return total;
         
-        const isCorrect = question.correctAnswers.length === userAnswer.answers.length &&
-          question.correctAnswers.every(answer => userAnswer.answers.includes(answer));
+        let isCorrect = false;
+        
+        if (question.type === 'text') {
+          // Đối với câu hỏi text, so sánh linh hoạt với tất cả đáp án đúng có thể
+          const userAnswer_normalized = userAnswer.answers[0]?.trim().toLowerCase() || '';
+          
+          // Kiểm tra xem câu trả lời của user có khớp với bất kỳ đáp án đúng nào không
+          isCorrect = question.correctAnswers.some(correctAnswer => {
+            const correctAnswer_normalized = correctAnswer?.trim().toLowerCase() || '';
+            return userAnswer_normalized === correctAnswer_normalized;
+          });
+          
+          console.log('Text question check:', {
+            question: question.question.substring(0, 50) + '...',
+            userAnswer: userAnswer.answers[0],
+            correctAnswers: question.correctAnswers,
+            userAnswer_normalized,
+            isCorrect,
+            availableAnswers: question.correctAnswers.map(ans => ans?.trim().toLowerCase())
+          });
+        } else {
+          // Đối với câu hỏi trắc nghiệm, sử dụng logic cũ
+          isCorrect = question.correctAnswers.length === userAnswer.answers.length &&
+            question.correctAnswers.every(answer => userAnswer.answers.includes(answer));
+        }
         
         return total + (isCorrect ? 1 : 0);
       }, 0);
@@ -380,7 +403,7 @@ const QuizPage: React.FC = () => {
                     className={`w-full p-4 text-left rounded-lg transition-all border ${
                       getCurrentAnswer(currentQuestion.id).includes(option)
                         ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-sm'
-                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50'
                     }`}
                   >
                     {String.fromCharCode(65 + index)}. {option}

@@ -582,7 +582,7 @@ const CreateClassPage: React.FC = () => {
                 <p className="text-xs">• Sử dụng font đơn giản (Times New Roman, Arial)</p>
                 <p className="text-xs">• Không sử dụng bullet points, chỉ dùng A. B. C. D.</p>
                 <p className="text-xs">• Xem hướng dẫn để biết định dạng chuẩn</p>
-                <p className="text-xs">• Đảm bảo định dạng: ID: 1, Câu 1:, A. B. C. D.</p>
+                <p className="text-xs">• Đảm bảo File tài liệu được đặt theo đúng định dạng</p>
               </div>
             </div>
           </div>
