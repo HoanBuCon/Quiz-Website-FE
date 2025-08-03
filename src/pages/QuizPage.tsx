@@ -121,6 +121,72 @@ const QuizPage: React.FC = () => {
               ],
               createdAt: new Date('2025-08-2'),
               updatedAt: new Date('2025-08-2')
+            },
+            {
+              id: 'dsa-basic',
+              title: 'Cấu trúc dữ liệu và giải thuật',
+              description: 'Kiểm tra kiến thức cơ bản về cấu trúc dữ liệu và giải thuật',
+              questions: [
+                {
+                  id: 'q1',
+                  question: 'Array có đặc điểm gì?',
+                  type: 'single' as const,
+                  options: ['Lưu trữ tuần tự trong bộ nhớ', 'Lưu trữ ngẫu nhiên', 'Không có thứ tự', 'Chỉ lưu số'],
+                  correctAnswers: ['Lưu trữ tuần tự trong bộ nhớ'],
+                  explanation: 'Array lưu trữ các phần tử liên tiếp trong bộ nhớ'
+                },
+                {
+                  id: 'q2',
+                  question: 'Stack hoạt động theo nguyên tắc nào?',
+                  type: 'single' as const,
+                  options: ['LIFO (Last In First Out)', 'FIFO (First In First Out)', 'Random access', 'Priority based'],
+                  correctAnswers: ['LIFO (Last In First Out)'],
+                  explanation: 'Stack hoạt động theo nguyên tắc LIFO - phần tử cuối vào sẽ ra đầu tiên'
+                },
+                {
+                  id: 'q3',
+                  question: 'Queue hoạt động theo nguyên tắc nào?',
+                  type: 'single' as const,
+                  options: ['FIFO (First In First Out)', 'LIFO (Last In First Out)', 'Random access', 'Priority based'],
+                  correctAnswers: ['FIFO (First In First Out)'],
+                  explanation: 'Queue hoạt động theo nguyên tắc FIFO - phần tử đầu vào sẽ ra đầu tiên'
+                }
+              ],
+              createdAt: new Date('2025-08-2'),
+              updatedAt: new Date('2025-08-2')
+            },
+            {
+              id: 'blender-shading',
+              title: 'Kỹ thuật shading trong Blender',
+              description: 'Kiểm tra kiến thức về shading và material trong Blender',
+              questions: [
+                {
+                  id: 'q1',
+                  question: 'Shader Editor được dùng để làm gì?',
+                  type: 'single' as const,
+                  options: ['Tạo và chỉnh sửa material', 'Modeling 3D', 'Animation', 'Rendering'],
+                  correctAnswers: ['Tạo và chỉnh sửa material'],
+                  explanation: 'Shader Editor là nơi tạo và chỉnh sửa các material cho object'
+                },
+                {
+                  id: 'q2',
+                  question: 'Principled BSDF là gì?',
+                  type: 'single' as const,
+                  options: ['Shader node chính cho material', 'Tool modeling', 'Modifier', 'Camera setting'],
+                  correctAnswers: ['Shader node chính cho material'],
+                  explanation: 'Principled BSDF là shader node cơ bản và quan trọng nhất cho material'
+                },
+                {
+                  id: 'q3',
+                  question: 'Roughness parameter điều khiển gì?',
+                  type: 'single' as const,
+                  options: ['Độ nhám của bề mặt', 'Màu sắc', 'Độ trong suốt', 'Kích thước'],
+                  correctAnswers: ['Độ nhám của bề mặt'],
+                  explanation: 'Roughness điều khiển độ nhám/mịn của bề mặt material'
+                }
+              ],
+              createdAt: new Date('2025-08-2'),
+              updatedAt: new Date('2025-08-2')
             }
             // Có thể thêm các quiz khác từ mock data
           ];
@@ -354,7 +420,7 @@ const QuizPage: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Câu {currentQuestionIndex + 1}/{questions.length}
+                  Câu {currentQuestionIndex + 1}/{questions.length} (ID: {currentQuestion.id})
                 </span>
                 <button
                   onClick={() => {
@@ -400,10 +466,10 @@ const QuizPage: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                    className={`w-full p-4 text-left rounded-lg transition-all border ${
+                    className={`w-full p-4 text-left rounded-lg transition-all duration-200 border ${
                       getCurrentAnswer(currentQuestion.id).includes(option)
-                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-sm'
-                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50'
+                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
                     }`}
                   >
                     {String.fromCharCode(65 + index)}. {option}
@@ -418,17 +484,23 @@ const QuizPage: React.FC = () => {
             <button
               onClick={handlePrevQuestion}
               disabled={currentQuestionIndex === 0}
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
               Câu trước
             </button>
 
             <button
               onClick={handleNextQuestion}
               disabled={currentQuestionIndex === questions.length - 1}
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
             >
               Câu sau
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </div>
@@ -444,14 +516,14 @@ const QuizPage: React.FC = () => {
                 <button
                   key={question.id}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`p-2 text-center rounded-lg transition-colors
+                  className={`p-2 text-center rounded-lg transition-all duration-200 border-2
                     ${index === currentQuestionIndex
-                      ? 'bg-primary-500 text-white dark:text-gray-100'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25'
                       : markedQuestions.includes(question.id)
-                        ? 'bg-yellow-500 dark:bg-yellow-600 text-white dark:text-white font-medium'
+                        ? 'bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20'
                         : getCurrentAnswer(question.id).length > 0
-                          ? 'bg-green-500 dark:bg-green-600 text-white dark:text-white font-medium'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          ? 'bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20'
+                          : 'bg-gray-100 text-gray-800 border-gray-100 hover:bg-gray-200 hover:border-gray-200 hover:shadow-md hover:shadow-gray-400/15 dark:border-gray-600 dark:text-gray-400 dark:bg-gray-800 dark:hover:border-gray-500 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
                     }`}
                 >
                   {index + 1}

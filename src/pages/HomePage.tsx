@@ -316,6 +316,24 @@ const HomePage: React.FC = () => {
       ];
       setPublicClasses(mockClasses);
       
+      // Lưu các quiz từ trang chủ vào localStorage để có thể truy cập được
+      const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+      const existingQuizzes = JSON.parse(savedQuizzes);
+      
+      // Thêm các quiz từ mockClasses vào localStorage nếu chưa có
+      mockClasses.forEach(classRoom => {
+        if (classRoom.quizzes) {
+          classRoom.quizzes.forEach(quiz => {
+            const existingQuiz = existingQuizzes.find((q: any) => q.id === quiz.id);
+            if (!existingQuiz) {
+              existingQuizzes.push(quiz);
+            }
+          });
+        }
+      });
+      
+      localStorage.setItem('quizzes', JSON.stringify(existingQuizzes));
+      
       // Cập nhật thống kê chỉ từ lớp công khai (không bao gồm localStorage)
       const publicQuizCount = mockClasses.reduce((sum, classroom) => {
         return sum + (classroom.quizzes ? classroom.quizzes.length : 0);
