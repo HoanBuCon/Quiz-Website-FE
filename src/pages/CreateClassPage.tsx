@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
@@ -10,6 +10,18 @@ const CreateClassPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [processingFile, setProcessingFile] = useState<string | null>(null);
+  const [className, setClassName] = useState('');
+  const [classDescription, setClassDescription] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [isCreateNewClass, setIsCreateNewClass] = useState(true);
+  const [existingClasses, setExistingClasses] = useState<any[]>([]);
+
+  // Load danh sách lớp học có sẵn
+  useEffect(() => {
+    const savedClasses = localStorage.getItem('classrooms') || '[]';
+    const classes = JSON.parse(savedClasses);
+    setExistingClasses(classes);
+  }, []);
 
   // Xử lý khi file được chọn
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,43 +53,189 @@ const CreateClassPage: React.FC = () => {
     }
   };
 
+  // Tạo lớp học mới
+  const createNewClass = (quizId: string) => {
+    console.log('createNewClass called with quizId:', quizId);
+    console.log('isCreateNewClass:', isCreateNewClass);
+    
+    if (!isCreateNewClass) {
+      console.log('Using existing class');
+      return addQuizToExistingClass(quizId);
+    }
+    
+    console.log('Creating new class');
+    console.log('className:', className);
+    console.log('classDescription:', classDescription);
+    
+    if (!className.trim()) {
+      alert('Vui lòng nhập tên lớp học');
+      return null;
+    }
+    
+    if (!classDescription.trim()) {
+      alert('Vui lòng nhập mô tả lớp học');
+      return null;
+    }
+    
+    const classId = `class-${Date.now()}-${Math.random()}`;
+    const newClass = {
+      id: classId,
+      name: className.trim(),
+      description: classDescription.trim(),
+      quizIds: [quizId],
+      isPublic: true,
+      createdAt: new Date()
+    };
+
+    // Lưu lớp học mới vào localStorage
+    const savedClasses = localStorage.getItem('classrooms') || '[]';
+    const classes = JSON.parse(savedClasses);
+    classes.push(newClass);
+    localStorage.setItem('classrooms', JSON.stringify(classes));
+
+    return classId;
+  };
+
+  // Thêm quiz vào lớp học có sẵn
+  const addQuizToExistingClass = (quizId: string) => {
+    if (!selectedClassId) {
+      alert('Vui lòng chọn lớp học');
+      return null;
+    }
+
+    const savedClasses = localStorage.getItem('classrooms') || '[]';
+    const classes = JSON.parse(savedClasses);
+    
+    const classIndex = classes.findIndex((cls: any) => cls.id === selectedClassId);
+    if (classIndex === -1) {
+      alert('Không tìm thấy lớp học được chọn');
+      return null;
+    }
+
+    // Thêm quiz vào lớp học
+    classes[classIndex].quizIds = classes[classIndex].quizIds || [];
+    classes[classIndex].quizIds.push(quizId);
+    
+    localStorage.setItem('classrooms', JSON.stringify(classes));
+    return selectedClassId;
+  };
+
   // Xử lý chuyển đến trang tạo quiz thủ công
   const handleCreateManualQuiz = () => {
+    const quizId = `manual-${Date.now()}-${Math.random()}`;
+    const classId = createNewClass(quizId);
+    
+    if (!classId) return; // Dừng nếu không tạo được lớp
+    
     navigate('/edit-quiz', {
       state: {
         questions: [],
         fileName: 'Quiz thủ công',
-        fileId: `manual-${Date.now()}-${Math.random()}`
+        fileId: quizId,
+        classId: classId
       }
     });
   };
 
   // Xử lý upload files
   const handleFiles = async (files: File[]) => {
+    console.log('handleFiles called with files:', files);
+    
+    // Kiểm tra validation trước khi xử lý file
+    if (isCreateNewClass) {
+      if (!className.trim()) {
+        alert('Vui lòng nhập tên lớp học trước khi tải file');
+        return;
+      }
+      if (!classDescription.trim()) {
+        alert('Vui lòng nhập mô tả lớp học trước khi tải file');
+        return;
+      }
+    } else {
+      if (!selectedClassId) {
+        alert('Vui lòng chọn lớp học trước khi tải file');
+        return;
+      }
+    }
+    
     setIsUploading(true);
     
     for (const file of files) {
+      console.log('Processing file:', file.name);
       setProcessingFile(file.name);
       
       try {
         const fileType = getFileType(file.name);
+        console.log('File type:', fileType);
         
         if (fileType === 'docs' || fileType === 'txt') {
+          console.log('Processing as docs/txt file');
           // Sử dụng function mới để parse file
           const result = await parseFile(file);
+          console.log('Parse result:', result);
           
           if (!result.success) {
             const errorMessage = `File ${file.name} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
             alert(errorMessage);
             continue;
           }
+
+          const quizId = `file-${Date.now()}-${Math.random()}`;
           
-          // Chuyển đến trang chỉnh sửa
+          // Tạo quiz mới
+          const newQuiz = {
+            id: quizId,
+            title: file.name.replace(/\.[^/.]+$/, ""), // Loại bỏ phần mở rộng của file
+            description: `Quiz từ file ${file.name}`,
+            questions: result.questions,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+
+          // Lưu quiz vào localStorage
+          const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+          const quizzes = JSON.parse(savedQuizzes);
+          quizzes.push(newQuiz);
+          localStorage.setItem('quizzes', JSON.stringify(quizzes));
+
+          // Lưu file vào documents (nếu cần)
+          const savedDocs = localStorage.getItem('documents') || '[]';
+          const docs = JSON.parse(savedDocs);
+          docs.push({
+            id: quizId,
+            name: file.name,
+            type: fileType,
+            size: file.size,
+            uploadedAt: new Date(),
+            content: await readFileContent(file)
+          });
+          localStorage.setItem('documents', JSON.stringify(docs));
+          
+          // Kiểm tra xem có câu hỏi được parse không
+          if (!result.questions || result.questions.length === 0) {
+            alert(`Không tìm thấy câu hỏi nào trong file ${file.name}. Vui lòng kiểm tra lại định dạng file.`);
+            continue;
+          }
+
+          // Tạo lớp học mới và gắn quiz với lớp học đó
+          console.log('Creating class with quiz ID:', quizId);
+          const classId = createNewClass(quizId);
+          console.log('Created class ID:', classId);
+          
+          if (!classId) {
+            console.log('Failed to create class, stopping upload');
+            setIsUploading(false);
+            setProcessingFile(null);
+            return;
+          }
+
+          // Chuyển đến trang chỉnh sửa với câu hỏi đã parse
           navigate('/edit-quiz', {
             state: {
               questions: result.questions,
               fileName: file.name,
-              fileId: `file-${Date.now()}-${Math.random()}`
+              fileId: quizId,
+              classId: classId
             }
           });
           return; // Dừng xử lý các file khác
@@ -99,6 +257,9 @@ const CreateClassPage: React.FC = () => {
       } catch (error) {
         console.error('Lỗi khi xử lý file:', error);
         alert(`Lỗi khi xử lý file ${file.name}: ${error}`);
+        setIsUploading(false);
+        setProcessingFile(null);
+        return; // Dừng xử lý khi có lỗi
       }
     }
     
@@ -141,9 +302,102 @@ const CreateClassPage: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Tạo lớp học mới
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Tải lên tài liệu để tạo bài trắc nghiệm cho lớp học của bạn
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
+              Nhập thông tin lớp học và chọn cách tạo bài kiểm tra
             </p>
+            <div className="flex items-center gap-2 mb-4">
+              <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-primary-600 dark:text-primary-400">
+                Bạn có thể tạo bài kiểm tra thủ công hoặc tải lên file có sẵn
+              </p>
+            </div>
+            
+            <div className="card p-4 space-y-4">
+              {/* Toggle giữa tạo mới và chọn có sẵn */}
+              <div className="flex space-x-4 mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(true)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tạo lớp học mới
+                  </span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={!isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(false)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Chọn lớp học có sẵn
+                  </span>
+                </label>
+              </div>
+
+              {/* Form tạo lớp mới */}
+              {isCreateNewClass ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tên lớp học <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      placeholder="Nhập tên lớp học"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Mô tả lớp học <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={classDescription}
+                      onChange={(e) => setClassDescription(e.target.value)}
+                      placeholder="Nhập mô tả về lớp học"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white resize-none"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Dropdown chọn lớp có sẵn */
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Chọn lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="">-- Chọn lớp học --</option>
+                    {existingClasses.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                  {existingClasses.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Chưa có lớp học nào. Hãy tạo lớp học mới.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Manual Quiz Creation */}
@@ -194,6 +448,9 @@ const CreateClassPage: React.FC = () => {
 
           {/* Upload Area */}
           <div className="card p-8">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Tải lên file câu hỏi
+            </h3>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
                 dragActive
@@ -221,13 +478,12 @@ const CreateClassPage: React.FC = () => {
                     />
                   </svg>
                 </div>
-                
-                                 <div>
+                  <div>
                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                     Kéo thả file vào đây hoặc click để chọn file
+                     Kéo thả File vào đây hoặc click để chọn File
                    </h3>
-                                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Hỗ trợ file .txt, .json, .doc, .docx
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Hỗ trợ File .txt, .json, .doc, .docx
                   </p>
                   
                   <label className="btn-primary cursor-pointer">
@@ -365,9 +621,10 @@ const CreateClassPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-              <p>• Dấu * = đáp án đúng</p>
-              <p>• ID: số thứ tự câu hỏi</p>
-              <p>• A. B. C. D. = các đáp án</p>
+              <p>• Câu hỏi có dấu * là đáp án đúng.</p>
+              <p>• ID: Mã hỏi trong LMS. Hoặc tự đặt ID nếu bạn làm đề thủ công.</p>
+              <p>• A. B. C. D. = các đáp án.</p>
+              <p>• Nếu câu hỏi yêu cầu điền đáp án, hãy để trống phần đáp án.</p>
             </div>
           </div>
         </div>

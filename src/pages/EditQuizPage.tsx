@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
+import { toast } from 'react-toastify';
 
 interface LocationState {
   questions: ParsedQuestion[];
@@ -20,20 +21,58 @@ const EditQuizPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  useEffect(() => {
-    if (state?.questions) {
-      // Chuyển đổi ParsedQuestion thành Question
-      const convertedQuestions: Question[] = state.questions.map(q => ({
-        id: q.id,
-        question: q.question,
-        type: q.type,
-        options: q.options,
-        correctAnswers: q.correctAnswers,
-        explanation: q.explanation
-      }));
-      setQuestions(convertedQuestions);
-      setQuizTitle(`Quiz từ file ${state.fileName}`);
+  const handlePublish = async () => {
+    try {
+      setIsPublishing(true);
+
+      // Lưu quiz vào localStorage
+      const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+      const quizzes = JSON.parse(savedQuizzes);
+      
+      // Xóa quiz cũ nếu đã tồn tại
+      const filteredQuizzes = quizzes.filter((q: Quiz) => q.id !== state.fileId);
+      
+      // Thêm quiz mới
+      const newQuiz = {
+        id: state.fileId,
+        title: quizTitle || `Quiz từ file ${state.fileName}`,
+        description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+        questions: questions,
+        fileName: state.fileName,
+        createdAt: new Date(),
+        published: true
+      };
+      filteredQuizzes.push(newQuiz);
+      localStorage.setItem('quizzes', JSON.stringify(filteredQuizzes));
+      
+      toast.success('Xuất bản thành công!');
+      navigate('/classes');
+    } catch (error) {
+      console.error('Error publishing quiz:', error);
+      toast.error('Có lỗi xảy ra khi xuất bản');
+    } finally {
+      setIsPublishing(false);
     }
+  };
+
+  useEffect(() => {
+    if (!state?.questions || state.questions.length === 0) {
+      toast.error('Không có câu hỏi nào được tải lên');
+      navigate('/create');
+      return;
+    }
+
+    // Chuyển đổi ParsedQuestion thành Question
+    const convertedQuestions: Question[] = state.questions.map(q => ({
+      id: q.id,
+      question: q.question,
+      type: q.type,
+      options: q.options,
+      correctAnswers: q.correctAnswers,
+      explanation: q.explanation
+    }));
+    setQuestions(convertedQuestions);
+    setQuizTitle(`Quiz từ file ${state.fileName}`);
   }, [state]);
 
   const handleQuestionEdit = (questionId: string) => {

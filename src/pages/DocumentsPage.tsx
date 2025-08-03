@@ -1,53 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { UploadedFile } from '../types';
+import { parseFile } from '../utils/docsParser';
 
-// Component trang tài liệu
 const DocumentsPage: React.FC = () => {
   const [documents, setDocuments] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [processingFile, setProcessingFile] = useState<string | null>(null);
+  const [totalClasses, setTotalClasses] = useState(0);
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
 
-  // Mock data cho tài liệu
   useEffect(() => {
-    setTimeout(() => {
-      const mockDocuments: UploadedFile[] = [
-        {
-          id: '1',
-          name: 'Toán học cơ bản.docx',
-          type: 'docs',
-          size: 2048576, // 2MB
-          uploadedAt: new Date('2024-01-15'),
-          content: 'Nội dung tài liệu toán học...',
-        },
-        {
-          id: '2',
-          name: 'Vật lý đại cương.json',
-          type: 'json',
-          size: 512000, // 512KB
-          uploadedAt: new Date('2024-01-20'),
-          content: '{"questions": [...]}',
-        },
-        {
-          id: '3',
-          name: 'Hóa học phổ thông.txt',
-          type: 'txt',
-          size: 1024000, // 1MB
-          uploadedAt: new Date('2024-01-25'),
-          content: 'Nội dung tài liệu hóa học...',
-        },
-        {
-          id: '4',
-          name: 'Tiếng Anh cơ bản.docx',
-          type: 'docs',
-          size: 1536000, // 1.5MB
-          uploadedAt: new Date('2024-01-30'),
-          content: 'Nội dung tài liệu tiếng Anh...',
-        },
-      ];
-      setDocuments(mockDocuments);
-      setLoading(false);
-    }, 1000);
+    // Lấy documents từ localStorage
+    const savedDocs = localStorage.getItem('documents');
+    if (savedDocs) {
+      const docs = JSON.parse(savedDocs).map((doc: any) => ({
+        ...doc,
+        uploadedAt: new Date(doc.uploadedAt)
+      }));
+      setDocuments(docs);
+    }
+    
+    // Lấy số lượng lớp học từ localStorage
+    const savedClasses = localStorage.getItem('classrooms');
+    if (savedClasses) {
+      const classes = JSON.parse(savedClasses);
+      setTotalClasses(classes.length);
+      
+      // Tính tổng số quiz
+      const total = classes.reduce((sum: number, classroom: any) => {
+        return sum + (classroom.quizzes ? classroom.quizzes.length : 0);
+      }, 0);
+      setTotalQuizzes(total);
+    }
+    
+    setLoading(false);
   }, []);
+
+  // Xử lý khi file được chọn
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      handleFiles(Array.from(files));
+    }
+  };
+
+  // Xử lý khi file được kéo thả
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  // Xử lý khi file được thả
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  // Xử lý upload files
+  const handleFiles = async (files: File[]) => {
+    setIsUploading(true);
+    
+    for (const file of files) {
+      setProcessingFile(file.name);
+      
+      try {
+        const fileType = getFileType(file.name);
+        
+        // Đọc nội dung file
+        const content = await readFileContent(file);
+        
+        // Tạo document mới
+        const newDocument: UploadedFile = {
+          id: `file-${Date.now()}-${Math.random()}`,
+          name: file.name,
+          type: fileType,
+          size: file.size,
+          uploadedAt: new Date(),
+          content: content
+        };
+        
+        // Lưu vào localStorage
+        const savedDocs = localStorage.getItem('documents') || '[]';
+        const docs = JSON.parse(savedDocs);
+        docs.push(newDocument);
+        localStorage.setItem('documents', JSON.stringify(docs));
+        
+        // Cập nhật state
+        setDocuments(prev => [...prev, newDocument]);
+        
+      } catch (error) {
+        console.error('Lỗi khi xử lý file:', error);
+        alert(`Lỗi khi xử lý file ${file.name}: ${error}`);
+      }
+    }
+    
+    setIsUploading(false);
+    setProcessingFile(null);
+  };
+
+  // Đọc nội dung file
+  const readFileContent = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        resolve(content);
+      };
+      reader.onerror = () => reject(new Error('Không thể đọc file'));
+      reader.readAsText(file);
+    });
+  };
+
+  // Xác định loại file
+  const getFileType = (fileName: string): 'docs' | 'json' | 'txt' => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    if (extension === 'doc' || extension === 'docx') return 'docs';
+    if (extension === 'json') return 'json';
+    return 'txt'; // File .txt và các file khác
+  };
 
   // Xử lý download file
   const handleDownload = (file: UploadedFile) => {
@@ -65,8 +148,13 @@ const DocumentsPage: React.FC = () => {
   };
 
   // Xóa file
-  const handleDeleteFile = (fileId: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== fileId));
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa tài liệu "${fileName}"?`)) {
+      const newDocs = documents.filter(doc => doc.id !== fileId);
+      setDocuments(newDocs);
+      localStorage.setItem('documents', JSON.stringify(newDocs));
+      alert(`Đã xóa tài liệu "${fileName}" thành công!`);
+    }
   };
 
   // Format file size
@@ -122,6 +210,77 @@ const DocumentsPage: React.FC = () => {
             </p>
           </div>
 
+          {/* Upload Area */}
+          <div className="card p-8 mb-8">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Tải lên tài liệu mới
+            </h3>
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
+                dragActive
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <div className="space-y-4">
+                <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Kéo thả File vào đây hoặc click để chọn File
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Hỗ trợ File .txt, .json, .doc, .docx
+                  </p>
+                  
+                  <label className="btn-primary cursor-pointer">
+                    Chọn file
+                    <input
+                      type="file"
+                      multiple
+                      accept=".txt,.json,.doc,.docx"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {processingFile ? `Đang xử lý ${processingFile}...` : 'Đang tải lên...'}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">100%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-primary-600 h-2 rounded-full transition-all duration-300"></div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {loading ? (
             // Loading skeleton
             <div className="space-y-4">
@@ -167,7 +326,7 @@ const DocumentsPage: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="btn-secondary text-sm"
+                        className="btn-secondary text-sm flex items-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -176,7 +335,7 @@ const DocumentsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleCreateClass(doc)}
-                        className="btn-primary text-sm"
+                        className="btn-primary text-sm flex items-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -184,8 +343,9 @@ const DocumentsPage: React.FC = () => {
                         Tạo lớp
                       </button>
                       <button
-                        onClick={() => handleDeleteFile(doc.id)}
+                        onClick={() => handleDeleteFile(doc.id, doc.name)}
                         className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2"
+                        title="Xóa tài liệu"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -195,26 +355,6 @@ const DocumentsPage: React.FC = () => {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Empty state */}
-          {!loading && documents.length === 0 && (
-            <div className="card p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Chưa có tài liệu nào
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Tải lên tài liệu đầu tiên để bắt đầu tạo bài trắc nghiệm
-              </p>
-              <Link to="/create" className="btn-primary">
-                Tải lên tài liệu
-              </Link>
             </div>
           )}
         </div>
@@ -240,7 +380,11 @@ const DocumentsPage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Lớp đã tạo:</span>
-                <span className="font-semibold text-green-600">8</span>
+                <span className="font-semibold text-green-600">{totalClasses}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400">Quiz đã tạo:</span>
+                <span className="font-semibold text-blue-600">{totalQuizzes}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Tài liệu mới nhất:</span>

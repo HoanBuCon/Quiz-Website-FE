@@ -1,147 +1,296 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Question, UserAnswer } from '../types';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Question, UserAnswer, Quiz } from '../types';
 
 // Component trang làm bài trắc nghiệm
 const QuizPage: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
+  const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
+  const [markedQuestions, setMarkedQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600); // 60 phút
+  const [quizTitle, setQuizTitle] = useState('');
+  const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
 
-  // Mock data cho câu hỏi
+  // Load quiz data from localStorage
   useEffect(() => {
-    setTimeout(() => {
-      const mockQuestions: Question[] = [
-        {
-          id: '1',
-          question: 'Câu 1: Thủ đô của Việt Nam là gì?',
-          type: 'single',
-          options: ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Huế'],
-          correctAnswers: ['Hà Nội'],
-        },
-        {
-          id: '2',
-          question: 'Câu 2: Chọn các môn học thuộc khối A:',
-          type: 'multiple',
-          options: ['Toán', 'Văn', 'Lý', 'Hóa', 'Sinh'],
-          correctAnswers: ['Toán', 'Lý', 'Hóa'],
-        },
-        {
-          id: '3',
-          question: 'Câu 3: Điền từ còn thiếu: "Việt Nam là một nước thuộc khu vực ..."',
-          type: 'text',
-          correctAnswers: ['Đông Nam Á'],
-        },
-        {
-          id: '4',
-          question: 'Câu 4: 2 + 2 = ?',
-          type: 'single',
-          options: ['3', '4', '5', '6'],
-          correctAnswers: ['4'],
-        },
-        {
-          id: '5',
-          question: 'Câu 5: Chọn các số chẵn:',
-          type: 'multiple',
-          options: ['1', '2', '3', '4', '5'],
-          correctAnswers: ['2', '4'],
-        },
-      ];
-      setQuestions(mockQuestions);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    const loadQuiz = async () => {
+      if (!quizId) {
+        console.error('Quiz ID not provided');
+        navigate('/classes');
+        return;
+      }
 
-  // Timer countdown
+      try {
+        // Tìm trong localStorage trước
+        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+        const quizzes: Quiz[] = JSON.parse(savedQuizzes);
+        let quiz = quizzes.find(q => q.id === quizId);
+
+        // Nếu không tìm thấy trong localStorage, tìm trong mock data
+        if (!quiz) {
+          const mockQuizzes = [
+            {
+              id: 'quiz-oop-1',
+              title: 'Kiểm tra OOP cơ bản',
+              description: 'Bài kiểm tra về các khái niệm cơ bản của lập trình hướng đối tượng',
+              questions: [
+                {
+                  id: 'q1',
+                  question: 'OOP là viết tắt của gì?',
+                  type: 'single' as const,
+                  options: ['Object Oriented Programming', 'Object Order Programming', 'Only Object Programming', 'Open Object Programming'],
+                  correctAnswers: ['Object Oriented Programming'],
+                  explanation: 'OOP là Object Oriented Programming - Lập trình hướng đối tượng'
+                },
+                {
+                  id: 'q2',
+                  question: 'Encapsulation trong OOP có nghĩa là gì?',
+                  type: 'single' as const,
+                  options: ['Đóng gói dữ liệu và phương thức', 'Kế thừa từ lớp cha', 'Đa hình của đối tượng', 'Trừu tượng hóa dữ liệu'],
+                  correctAnswers: ['Đóng gói dữ liệu và phương thức'],
+                  explanation: 'Encapsulation là việc đóng gói dữ liệu và các phương thức thao tác trên dữ liệu đó trong một đơn vị'
+                },
+                {
+                  id: 'q3',
+                  question: 'Inheritance cho phép làm gì?',
+                  type: 'single' as const,
+                  options: ['Tạo lớp mới từ lớp đã có', 'Ẩn thông tin của đối tượng', 'Tạo nhiều đối tượng', 'Xóa đối tượng khỏi bộ nhớ'],
+                  correctAnswers: ['Tạo lớp mới từ lớp đã có'],
+                  explanation: 'Inheritance (kế thừa) cho phép tạo lớp mới dựa trên lớp đã có, kế thừa các thuộc tính và phương thức'
+                },
+                {
+                  id: 'q4',
+                  question: 'Polymorphism là gì?',
+                  type: 'single' as const,
+                  options: ['Khả năng đa hình của đối tượng', 'Ẩn dữ liệu private', 'Tạo constructor', 'Quản lý bộ nhớ'],
+                  correctAnswers: ['Khả năng đa hình của đối tượng'],
+                  explanation: 'Polymorphism cho phép cùng một interface có thể được sử dụng cho các kiểu dữ liệu khác nhau'
+                },
+                {
+                  id: 'q5',
+                  question: 'Constructor trong OOP có chức năng gì?',
+                  type: 'single' as const,
+                  options: ['Khởi tạo đối tượng', 'Hủy đối tượng', 'So sánh đối tượng', 'Copy đối tượng'],
+                  correctAnswers: ['Khởi tạo đối tượng'],
+                  explanation: 'Constructor là phương thức đặc biệt được gọi khi tạo đối tượng mới'
+                },
+                {
+                  id: 'q6',
+                  question: 'Access modifier nào cho phép truy cập từ bên ngoài class?',
+                  type: 'single' as const,
+                  options: ['public', 'private', 'protected', 'internal'],
+                  correctAnswers: ['public'],
+                  explanation: 'public cho phép truy cập từ bất kỳ đâu, kể cả bên ngoài class'
+                },
+                {
+                  id: 'q7',
+                  question: 'Method overriding là gì?',
+                  type: 'single' as const,
+                  options: ['Ghi đè phương thức của lớp cha', 'Tạo phương thức mới', 'Xóa phương thức', 'Copy phương thức'],
+                  correctAnswers: ['Ghi đè phương thức của lớp cha'],
+                  explanation: 'Method overriding cho phép lớp con định nghĩa lại phương thức đã có trong lớp cha'
+                },
+                {
+                  id: 'q8',
+                  question: 'Abstract class khác gì với interface?',
+                  type: 'single' as const,
+                  options: ['Abstract class có thể có implementation', 'Interface có thể có constructor', 'Abstract class không có method', 'Không có sự khác biệt'],
+                  correctAnswers: ['Abstract class có thể có implementation'],
+                  explanation: 'Abstract class có thể chứa cả phương thức đã implement và chưa implement, interface chỉ định nghĩa signature'
+                },
+                {
+                  id: 'q9',
+                  question: 'Static method có đặc điểm gì?',
+                  type: 'single' as const,
+                  options: ['Thuộc về class, không thuộc về instance', 'Thuộc về instance cụ thể', 'Không thể gọi được', 'Chỉ dùng trong constructor'],
+                  correctAnswers: ['Thuộc về class, không thuộc về instance'],
+                  explanation: 'Static method thuộc về class và có thể gọi mà không cần tạo instance'
+                },
+                {
+                  id: 'q10',
+                  question: 'Garbage Collection trong OOP có tác dụng gì?',
+                  type: 'single' as const,
+                  options: ['Tự động giải phóng bộ nhớ', 'Tạo đối tượng mới', 'Sắp xếp đối tượng', 'Bảo mật đối tượng'],
+                  correctAnswers: ['Tự động giải phóng bộ nhớ'],
+                  explanation: 'Garbage Collection tự động thu hồi bộ nhớ của các đối tượng không còn được sử dụng'
+                }
+              ],
+              createdAt: new Date('2025-08-2'),
+              updatedAt: new Date('2025-08-2')
+            }
+            // Có thể thêm các quiz khác từ mock data
+          ];
+          
+          quiz = mockQuizzes.find(q => q.id === quizId);
+        }
+
+        if (quiz && quiz.questions) {
+          setQuizTitle(quiz.title);
+          setQuestions(quiz.questions);
+        } else {
+          console.error('Quiz not found:', quizId);
+          setQuestions([{
+            id: 'error',
+            question: 'Không tìm thấy bài kiểm tra này',
+            type: 'single',
+            options: ['Quay lại'],
+            correctAnswers: ['Quay lại']
+          }]);
+        }
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+        setQuestions([{
+          id: 'error',
+          question: 'Có lỗi khi tải bài kiểm tra',
+          type: 'single',
+          options: ['Quay lại'],
+          correctAnswers: ['Quay lại']
+        }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadQuiz();
+  }, [quizId, navigate]);
+
+  // Countdown timer
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setInterval(() => {
+    const timer = setInterval(() => {
+      if (timeLeft > 0) {
         setTimeLeft(prev => prev - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Format time
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   // Xử lý khi người dùng chọn đáp án
-  const handleAnswerChange = (questionId: string, answer: string, isMultiple: boolean = false) => {
+  const handleAnswerSelect = (questionId: string, answer: string) => {
+    const currentQuestion = questions[currentQuestionIndex];
+    
     setUserAnswers(prev => {
       const existingAnswer = prev.find(a => a.questionId === questionId);
       
-      if (existingAnswer) {
-        if (isMultiple) {
-          // Cho câu hỏi chọn nhiều
-          const newAnswers = existingAnswer.answers.includes(answer)
-            ? existingAnswer.answers.filter(a => a !== answer)
-            : [...existingAnswer.answers, answer];
-          return prev.map(a => a.questionId === questionId ? { ...a, answers: newAnswers } : a);
-        } else {
-          // Cho câu hỏi chọn một
-          return prev.map(a => a.questionId === questionId ? { ...a, answers: [answer] } : a);
-        }
-      } else {
-        // Tạo câu trả lời mới
+      if (!existingAnswer) {
         return [...prev, { questionId, answers: [answer] }];
+      }
+
+      if (currentQuestion.type === 'multiple') {
+        // Toggle answer for multiple choice questions
+        const updatedAnswers = existingAnswer.answers.includes(answer)
+          ? existingAnswer.answers.filter(a => a !== answer)
+          : [...existingAnswer.answers, answer];
+        
+        return prev.map(a => 
+          a.questionId === questionId 
+            ? { ...a, answers: updatedAnswers }
+            : a
+        );
+      } else {
+        // Replace answer for single choice questions
+        return prev.map(a => 
+          a.questionId === questionId 
+            ? { ...a, answers: [answer] }
+            : a
+        );
       }
     });
   };
 
-  // Xử lý khi người dùng nhập đáp án text
-  const handleTextAnswer = (questionId: string, answer: string) => {
-    setUserAnswers(prev => {
-      const existingAnswer = prev.find(a => a.questionId === questionId);
-      if (existingAnswer) {
-        return prev.map(a => a.questionId === questionId ? { ...a, answers: [answer] } : a);
-      } else {
-        return [...prev, { questionId, answers: [answer] }];
-      }
-    });
+  const getCurrentAnswer = (questionId: string) => {
+    return userAnswers.find(a => a.questionId === questionId)?.answers || [];
   };
 
-  // Chuyển đến câu hỏi
-  const goToQuestion = (index: number) => {
-    setCurrentQuestionIndex(index);
+  // Navigate to next/previous question
+  const handlePrevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
   };
 
-  // Nộp bài
-  const submitQuiz = () => {
-    // Xử lý nộp bài
-    console.log('Nộp bài:', userAnswers);
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
   };
 
+  // Submit answers
+  const handleSubmit = () => {
+    if (window.confirm('Bạn có chắc chắn muốn nộp bài?')) {
+      const score = userAnswers.reduce((total, userAnswer) => {
+        const question = questions.find(q => q.id === userAnswer.questionId);
+        if (!question) return total;
+        
+        const isCorrect = question.correctAnswers.length === userAnswer.answers.length &&
+          question.correctAnswers.every(answer => userAnswer.answers.includes(answer));
+        
+        return total + (isCorrect ? 1 : 0);
+      }, 0);
+
+      // Tính thời gian làm bài (giây)
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+
+      // Tạo object kết quả
+      const result = {
+        quizId: quizId!,
+        quizTitle: quizTitle,
+        userAnswers: userAnswers.reduce((acc, answer) => {
+          acc[answer.questionId] = answer.answers;
+          return acc;
+        }, {} as Record<string, string[]>),
+        score: score,
+        totalQuestions: questions.length,
+        timeSpent: timeSpent,
+        completedAt: new Date()
+      };
+
+      // Lưu kết quả vào sessionStorage
+      sessionStorage.setItem(`quiz-result-${quizId}`, JSON.stringify(result));
+
+      // Chuyển hướng đến trang kết quả
+      navigate(`/results/${quizId}`);
+    }
+  };
+
+  // Render error state
+  if (questions[0]?.id === 'error') {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="card p-6 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            {questions[0].question}
+          </h2>
+          <button
+            onClick={() => navigate('/classes')}
+            className="btn-primary"
+          >
+            Quay lại danh sách lớp học
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render loading state
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          <div className="flex-1">
-            <div className="card p-8 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-              <div className="space-y-3">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-              </div>
-            </div>
-          </div>
-          <div className="w-1/3">
-            <div className="card p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-              <div className="grid grid-cols-5 gap-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                ))}
-              </div>
-            </div>
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="card p-6 animate-pulse">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
           </div>
         </div>
       </div>
@@ -149,179 +298,166 @@ const QuizPage: React.FC = () => {
   }
 
   const currentQuestion = questions[currentQuestionIndex];
-  const currentUserAnswer = userAnswers.find(a => a.questionId === currentQuestion.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header với timer */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Bài kiểm tra - Câu {currentQuestionIndex + 1}/{questions.length}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <div className="text-lg font-semibold text-red-600">
+      {/* Header with title and submit button */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {quizTitle}
+        </h1>
+        <button
+          onClick={handleSubmit}
+          className="btn-primary"
+        >
+          Nộp bài
+        </button>
+      </div>
+
+      <div className="flex gap-8">
+        {/* Left Section - 70% */}
+        <div className="flex-1">
+          {/* Timer */}
+          <div className="card p-4 mb-6 flex justify-between items-center">
+            <span className="text-gray-600 dark:text-gray-400">Thời gian còn lại:</span>
+            <span className="font-semibold text-xl text-gray-900 dark:text-gray-100">
               {formatTime(timeLeft)}
+            </span>
+          </div>
+
+          {/* Question */}
+          <div className="card p-6">
+            {/* Question number */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Câu {currentQuestionIndex + 1}/{questions.length}
+                </span>
+                <button
+                  onClick={() => {
+                    setMarkedQuestions(prev => 
+                      prev.includes(currentQuestion.id)
+                        ? prev.filter(id => id !== currentQuestion.id)
+                        : [...prev, currentQuestion.id]
+                    );
+                  }}
+                  className={`text-sm px-3 py-1 rounded-full transition-colors ${
+                    markedQuestions.includes(currentQuestion.id)
+                      ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {markedQuestions.includes(currentQuestion.id) ? 'Đã đánh dấu' : 'Xem lại câu này'}
+                </button>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {currentQuestion.type === 'single' ? 'Chọn một đáp án' : 
+                 currentQuestion.type === 'multiple' ? 'Chọn nhiều đáp án' : 
+                 'Điền đáp án'}
+              </span>
             </div>
+
+            {/* Question text */}
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+              {currentQuestion.question}
+            </h2>
+
+            {/* Answer options */}
+            <div className="space-y-3">
+              {currentQuestion.type === 'text' ? (
+                <input
+                  type="text"
+                  className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
+                  placeholder="Nhập câu trả lời của bạn"
+                  value={getCurrentAnswer(currentQuestion.id)[0] || ''}
+                  onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
+                />
+              ) : (
+                currentQuestion.options?.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswerSelect(currentQuestion.id, option)}
+                    className={`w-full p-4 text-left rounded-lg transition-all border ${
+                      getCurrentAnswer(currentQuestion.id).includes(option)
+                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    }`}
+                  >
+                    {String.fromCharCode(65 + index)}. {option}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex justify-between mt-6">
             <button
-              onClick={submitQuiz}
-              className="btn-primary"
+              onClick={handlePrevQuestion}
+              disabled={currentQuestionIndex === 0}
+              className="btn-secondary"
             >
-              Nộp bài
+              Câu trước
             </button>
+
+            <button
+              onClick={handleNextQuestion}
+              disabled={currentQuestionIndex === questions.length - 1}
+              className="btn-secondary"
+            >
+              Câu sau
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section - 30% */}
+        <div className="w-1/3">
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Danh sách câu hỏi
+            </h3>
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((question, index) => (
+                <button
+                  key={question.id}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`p-2 text-center rounded-lg transition-colors
+                    ${index === currentQuestionIndex
+                      ? 'bg-primary-500 text-white dark:text-gray-100'
+                      : markedQuestions.includes(question.id)
+                        ? 'bg-yellow-500 dark:bg-yellow-600 text-white dark:text-white font-medium'
+                        : getCurrentAnswer(question.id).length > 0
+                          ? 'bg-green-500 dark:bg-green-600 text-white dark:text-white font-medium'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-8">
-        {/* Left Section - 70% - Câu hỏi */}
-        <div className="flex-1">
-          <div className="card p-8">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
-                {currentQuestion.question}
-              </h2>
-            </div>
-
-            {/* Hiển thị câu hỏi theo loại */}
-            {currentQuestion.type === 'single' && (
-              <div className="space-y-3">
-                {currentQuestion.options?.map((option, index) => (
-                  <label key={index} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      value={option}
-                      checked={currentUserAnswer?.answers.includes(option) || false}
-                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                      className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span className="text-gray-900 dark:text-gray-100">
-                      {String.fromCharCode(65 + index)}. {option}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-
-            {currentQuestion.type === 'multiple' && (
-              <div className="space-y-3">
-                {currentQuestion.options?.map((option, index) => (
-                  <label key={index} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value={option}
-                      checked={currentUserAnswer?.answers.includes(option) || false}
-                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value, true)}
-                      className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span className="text-gray-900 dark:text-gray-100">
-                      {String.fromCharCode(65 + index)}. {option}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-
-            {currentQuestion.type === 'text' && (
-              <div>
-                <input
-                  type="text"
-                  value={currentUserAnswer?.answers[0] || ''}
-                  onChange={(e) => handleTextAnswer(currentQuestion.id, e.target.value)}
-                  placeholder="Nhập đáp án của bạn..."
-                  className="input-field"
-                />
-              </div>
-            )}
-
-            {/* Navigation buttons */}
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                disabled={currentQuestionIndex === 0}
-                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Câu trước
-              </button>
-              <button
-                onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                disabled={currentQuestionIndex === questions.length - 1}
-                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Câu tiếp
-              </button>
-            </div>
-          </div>
+      {/* Progress bar */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Tiến độ làm bài: {userAnswers.length}/{questions.length} câu
+          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {Math.round((userAnswers.length / questions.length) * 100)}%
+          </span>
         </div>
-
-        {/* Right Section - 30% - Minimap */}
-        <div className="w-1/3">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Bản đồ câu hỏi
-            </h3>
-            
-            {/* Minimap grid */}
-            <div className="grid grid-cols-5 gap-2 mb-6">
-              {questions.map((question, index) => {
-                const hasAnswer = userAnswers.find(a => a.questionId === question.id);
-                const isCurrent = index === currentQuestionIndex;
-                
-                return (
-                  <button
-                    key={question.id}
-                    onClick={() => goToQuestion(index)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                      isCurrent
-                        ? 'bg-primary-600 text-white'
-                        : hasAnswer
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-primary-600 rounded"></div>
-                <span className="text-gray-600 dark:text-gray-300">Câu hiện tại</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className="text-gray-600 dark:text-gray-300">Đã trả lời</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <span className="text-gray-600 dark:text-gray-300">Chưa trả lời</span>
-              </div>
-            </div>
-
-            {/* Progress */}
-            <div className="mt-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600 dark:text-gray-300">Tiến độ</span>
-                <span className="text-gray-900 dark:text-gray-100">
-                  {userAnswers.length}/{questions.length}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(userAnswers.length / questions.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+          <div
+            className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+            style={{ width: `${(userAnswers.length / questions.length) * 100}%` }}
+          ></div>
         </div>
       </div>
     </div>
   );
 };
 
-export default QuizPage; 
+export default QuizPage;

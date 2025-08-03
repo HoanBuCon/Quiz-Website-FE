@@ -8,6 +8,7 @@ import CreateClassPage from './pages/CreateClassPage';
 import EditQuizPage from './pages/EditQuizPage';
 import DocumentsPage from './pages/DocumentsPage';
 import QuizPage from './pages/QuizPage';
+import ResultsPage from './pages/ResultsPage';
 
 // Component App chính của website
 function App() {
@@ -33,6 +34,9 @@ function App() {
             
             {/* Route trang làm bài trắc nghiệm */}
             <Route path="/quiz/:quizId" element={<QuizPage />} />
+            
+            {/* Route trang kết quả quiz */}
+            <Route path="/results/:quizId" element={<ResultsPage />} />
           </Routes>
         </Layout>
       </Router>

@@ -34,7 +34,7 @@ const Header: React.FC = () => {
                 <span className="text-white font-bold text-lg">Q</span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                Quiz Website
+                LiemDai
               </span>
             </Link>
           </div>

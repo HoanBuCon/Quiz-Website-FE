@@ -8,24 +8,33 @@ const Footer: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-center md:text-left mb-4 md:mb-0">
             <p className="text-gray-600 dark:text-gray-400">
-              © 2024 Quiz Website. Tất cả quyền được bảo lưu.
+              © {new Date().getFullYear()} LiemDai. Bản quyền thuộc về @hoanbucon
             </p>
           </div>
           <div className="flex space-x-6">
             <a
-              href="#"
+              href="http://hoanbucon.id.vn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {}}
               className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
             >
               Về chúng tôi
             </a>
             <a
-              href="#"
+              href="http://hoanbucon.id.vn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {}}
               className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
             >
               Hỗ trợ
             </a>
             <a
-              href="#"
+              href="http://hoanbucon.id.vn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {}}
               className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
             >
               Liên hệ

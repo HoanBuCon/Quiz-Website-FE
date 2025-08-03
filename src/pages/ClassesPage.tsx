@@ -1,79 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ClassRoom, Quiz } from '../types';
 
-// Component trang lớp học
 const ClassesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Mock data cho các lớp học
+  // Hàm xóa lớp học
+  const handleDeleteClass = (classId: string, className: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Tất cả bài kiểm tra trong lớp học này cũng sẽ bị xóa.`)) {
+      try {
+        // Lấy danh sách lớp học hiện tại
+        const savedClasses = localStorage.getItem('classrooms') || '[]';
+        const classRooms = JSON.parse(savedClasses);
+        
+        // Tìm lớp học cần xóa để lấy danh sách quiz IDs
+        const classToDelete = classRooms.find((cls: ClassRoom) => cls.id === classId);
+        
+        // Xóa lớp học khỏi localStorage
+        const updatedClasses = classRooms.filter((cls: ClassRoom) => cls.id !== classId);
+        localStorage.setItem('classrooms', JSON.stringify(updatedClasses));
+        
+        // Xóa các quiz liên quan
+        if (classToDelete && classToDelete.quizIds) {
+          const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+          const quizzes = JSON.parse(savedQuizzes);
+          const updatedQuizzes = quizzes.filter((quiz: Quiz) => !classToDelete.quizIds.includes(quiz.id));
+          localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
+          
+          // Xóa documents liên quan (nếu có)
+          const savedDocs = localStorage.getItem('documents') || '[]';
+          const docs = JSON.parse(savedDocs);
+          const updatedDocs = docs.filter((doc: any) => !classToDelete.quizIds.includes(doc.id));
+          localStorage.setItem('documents', JSON.stringify(updatedDocs));
+        }
+        
+        // Cập nhật state
+        setClasses(prev => prev.filter(cls => cls.id !== classId));
+        
+        alert(`Đã xóa lớp học "${className}" thành công!`);
+      } catch (error) {
+        console.error('Error deleting class:', error);
+        alert('Có lỗi xảy ra khi xóa lớp học. Vui lòng thử lại.');
+      }
+    }
+  };
+
+  // Hàm xóa quiz khỏi lớp học
+  const handleDeleteQuiz = (classId: string, quizId: string, quizTitle: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa bài kiểm tra "${quizTitle}"?`)) {
+      try {
+        // Cập nhật lớp học - xóa quiz ID khỏi danh sách
+        const savedClasses = localStorage.getItem('classrooms') || '[]';
+        const classRooms = JSON.parse(savedClasses);
+        const updatedClasses = classRooms.map((cls: ClassRoom) => {
+          if (cls.id === classId) {
+            return {
+              ...cls,
+              quizIds: cls.quizIds.filter(id => id !== quizId)
+            };
+          }
+          return cls;
+        });
+        localStorage.setItem('classrooms', JSON.stringify(updatedClasses));
+        
+        // Xóa quiz khỏi danh sách quiz
+        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+        const quizzes = JSON.parse(savedQuizzes);
+        const updatedQuizzes = quizzes.filter((quiz: Quiz) => quiz.id !== quizId);
+        localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
+        
+        // Xóa document liên quan (nếu có)
+        const savedDocs = localStorage.getItem('documents') || '[]';
+        const docs = JSON.parse(savedDocs);
+        const updatedDocs = docs.filter((doc: any) => doc.id !== quizId);
+        localStorage.setItem('documents', JSON.stringify(updatedDocs));
+        
+        // Cập nhật state
+        setClasses(prev => prev.map(cls => {
+          if (cls.id === classId) {
+            return {
+              ...cls,
+              quizzes: cls.quizzes?.filter(quiz => quiz.id !== quizId) || []
+            };
+          }
+          return cls;
+        }));
+        
+        alert(`Đã xóa bài kiểm tra "${quizTitle}" thành công!`);
+      } catch (error) {
+        console.error('Error deleting quiz:', error);
+        alert('Có lỗi xảy ra khi xóa bài kiểm tra. Vui lòng thử lại.');
+      }
+    }
+  };
+
+  // Lấy dữ liệu từ localStorage
   useEffect(() => {
-    setTimeout(() => {
-      const mockClasses: ClassRoom[] = [
-        {
-          id: '1',
-          name: 'Toán học cơ bản',
-          description: 'Bài tập trắc nghiệm môn Toán lớp 10',
-          quizzes: [
-            {
-              id: 'quiz-1',
-              title: 'Bài kiểm tra 1',
-              description: 'Kiểm tra kiến thức cơ bản',
-              questions: [],
-              createdAt: new Date('2024-01-15'),
-              updatedAt: new Date('2024-01-15'),
-            },
-            {
-              id: 'quiz-2',
-              title: 'Bài kiểm tra 2',
-              description: 'Kiểm tra nâng cao',
-              questions: [],
-              createdAt: new Date('2024-01-20'),
-              updatedAt: new Date('2024-01-20'),
-            },
-          ],
-          isPublic: true,
-          createdAt: new Date('2024-01-15'),
-        },
-        {
-          id: '2',
-          name: 'Vật lý đại cương',
-          description: 'Trắc nghiệm Vật lý cơ bản',
-          quizzes: [
-            {
-              id: 'quiz-3',
-              title: 'Cơ học',
-              description: 'Bài tập về cơ học',
-              questions: [],
-              createdAt: new Date('2024-01-20'),
-              updatedAt: new Date('2024-01-20'),
-            },
-          ],
-          isPublic: true,
-          createdAt: new Date('2024-01-20'),
-        },
-        {
-          id: '3',
-          name: 'Hóa học phổ thông',
-          description: 'Bài tập Hóa học trung học phổ thông',
-          quizzes: [
-            {
-              id: 'quiz-4',
-              title: 'Hóa vô cơ',
-              description: 'Kiểm tra kiến thức hóa vô cơ',
-              questions: [],
-              createdAt: new Date('2024-01-25'),
-              updatedAt: new Date('2024-01-25'),
-            },
-          ],
-          isPublic: true,
-          createdAt: new Date('2024-01-25'),
-        },
-      ];
-      setClasses(mockClasses);
+    try {
+      const savedClasses = localStorage.getItem('classrooms') || '[]';
+      const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+      
+      const classRooms = JSON.parse(savedClasses);
+      const quizzes = JSON.parse(savedQuizzes);
+
+      if (classRooms.length > 0) {
+        // Map quiz IDs to actual quiz objects for each classroom
+        const mappedClasses = classRooms.map((classRoom: ClassRoom) => {
+          const classQuizzes = classRoom.quizIds.map(quizId => {
+            const quiz = quizzes.find((q: Quiz) => q.id === quizId);
+            if (quiz) {
+              return {
+                ...quiz,
+                createdAt: new Date(quiz.createdAt),
+                updatedAt: new Date(quiz.updatedAt || quiz.createdAt)
+              };
+            }
+            return null;
+          }).filter((q): q is Quiz => q !== null);
+
+          return {
+            ...classRoom,
+            quizzes: classQuizzes,
+            createdAt: new Date(classRoom.createdAt)
+          };
+        });
+        setClasses(mappedClasses);
+      }
+    } catch (error) {
+      console.error('Error loading classes:', error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  }, []);
+
+  // Handle click outside để đóng dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdown(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   return (
@@ -104,10 +180,10 @@ const ClassesPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : classes.length > 0 ? (
             // Danh sách lớp học
             <div className="space-y-6">
-              {classes.map((classRoom) => (
+              {classes.map((classRoom: ClassRoom) => (
                 <div key={classRoom.id} className="card p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
@@ -120,25 +196,87 @@ const ClassesPage: React.FC = () => {
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
                         <span className="mx-2">•</span>
-                        <span>{classRoom.quizzes.length} bài kiểm tra</span>
+                        <span>{(classRoom.quizzes?.length ?? 0)} bài kiểm tra</span>
                       </div>
                     </div>
-                    <Link
-                      to={`/classes/${classRoom.id}`}
-                      className="btn-primary"
-                    >
-                      Vào lớp
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <div className="relative dropdown-container">
+                        <button 
+                          className="btn-primary flex items-center"
+                          disabled={!classRoom.quizzes?.length}
+                          onClick={() => {
+                            if (classRoom.quizzes && classRoom.quizzes.length === 1) {
+                              // Nếu chỉ có 1 quiz, vào luôn
+                              navigate(`/quiz/${classRoom.quizzes[0].id}`);
+                            } else if (classRoom.quizzes && classRoom.quizzes.length > 1) {
+                              // Nếu có nhiều quiz, mở dropdown
+                              setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
+                            }
+                          }}
+                        >
+                          {classRoom.quizzes?.length ? 'Vào lớp' : 'Chưa có bài tập'}
+                          {classRoom.quizzes && classRoom.quizzes.length > 1 && (
+                            <svg 
+                              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                                openDropdown === classRoom.id ? 'rotate-180' : ''
+                              }`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
+                          <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                            <div className="p-2">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                Chọn bài kiểm tra:
+                              </div>
+                              {classRoom.quizzes.map((quiz) => (
+                                <button
+                                  key={quiz.id}
+                                  onClick={() => {
+                                    navigate(`/quiz/${quiz.id}`);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white">
+                                    {quiz.title}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {quiz.questions.length} câu hỏi
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteClass(classRoom.id, classRoom.name)}
+                        className="btn-secondary !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/40"
+                        title="Xóa lớp học"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Danh sách bài kiểm tra */}
-                  {classRoom.quizzes.length > 0 && (
+                  {(classRoom.quizzes?.length ?? 0) > 0 && (
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                       <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                         Bài kiểm tra trong lớp:
                       </h4>
                       <div className="space-y-2">
-                        {classRoom.quizzes.map((quiz) => (
+                        {classRoom.quizzes?.map((quiz: Quiz) => (
                           <div
                             key={quiz.id}
                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
@@ -151,12 +289,23 @@ const ClassesPage: React.FC = () => {
                                 {quiz.description}
                               </p>
                             </div>
-                            <Link
-                              to={`/quiz/${quiz.id}`}
-                              className="btn-secondary text-sm"
-                            >
-                              Làm bài
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              <Link
+                                to={`/quiz/${quiz.id}`}
+                                className="btn-secondary text-sm"
+                              >
+                                Làm bài
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
+                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
+                                title="Xóa bài kiểm tra"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -164,6 +313,24 @@ const ClassesPage: React.FC = () => {
                   )}
                 </div>
               ))}
+            </div>
+          ) : (
+            // Empty state
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Chưa có lớp học nào
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Tạo lớp học đầu tiên để bắt đầu
+              </p>
+              <Link to="/create" className="btn-primary">
+                Tạo lớp học mới
+              </Link>
             </div>
           )}
         </div>
@@ -184,16 +351,16 @@ const ClassesPage: React.FC = () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Tổng bài kiểm tra:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  {classes.reduce((total, cls) => total + cls.quizzes.length, 0)}
+                  {classes.reduce((total, cls) => total + (cls.quizzes?.length ?? 0), 0)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Đã hoàn thành:</span>
-                <span className="font-semibold text-green-600">12</span>
+                <span className="font-semibold text-green-600">0</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Điểm trung bình:</span>
-                <span className="font-semibold text-blue-600">8.5</span>
+                <span className="font-semibold text-blue-600">0</span>
               </div>
             </div>
           </div>
@@ -214,4 +381,4 @@ const ClassesPage: React.FC = () => {
   );
 };
 
-export default ClassesPage; 
+export default ClassesPage;

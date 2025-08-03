@@ -22,7 +22,8 @@ export interface ClassRoom {
   id: string;
   name: string;
   description?: string;
-  quizzes: Quiz[];
+  quizIds: string[]; // IDs của các quiz thuộc lớp học này
+  quizzes?: Quiz[]; // Danh sách quiz đã được nạp (runtime only)
   isPublic: boolean;
   createdAt: Date;
 }
