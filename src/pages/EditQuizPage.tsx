@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
@@ -41,12 +41,25 @@ const EditQuizPage: React.FC = () => {
   };
 
   const handleQuestionSave = (questionId: string, updatedQuestion: Partial<Question>) => {
-    setQuestions(prev => prev.map(q => 
-      q.id === questionId ? { ...q, ...updatedQuestion } : q
-    ));
-    setIsEditing(null);
+    setQuestions(prev => {
+      const updated = prev.map(q => {
+        if (q.id === questionId) {
+          const result = { ...q, ...updatedQuestion };
+          
+          // Nếu chuyển sang text nhưng chưa có options, tạo options mặc định
+          if (result.type === 'text' && !result.options) {
+            result.options = q.options || ["", "", "", ""];
+          }
+          
+          return result;
+        }
+        return q;
+      });
+      setIsEditing(null);
+      return updated;
+    });
   };
-
+  
   const handleQuestionDelete = (questionId: string) => {
     setQuestions(prev => prev.filter(q => q.id !== questionId));
   };
@@ -101,9 +114,22 @@ const EditQuizPage: React.FC = () => {
 
   const QuestionEditor: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
     const [editedQuestion, setEditedQuestion] = useState<Question>(question);
+    const savedOptionsRef = useRef<string[]>(question.options || ["", "", "", ""]);
+
+    useEffect(() => {
+      setEditedQuestion(question);
+      // Luôn đảm bảo có options để backup
+      savedOptionsRef.current = question.options || ["", "", "", ""];
+    }, [question.id]);
 
     const handleSave = () => {
-      handleQuestionSave(question.id, editedQuestion);
+      const filteredOptions = (editedQuestion.options || []).filter(opt => opt.trim() !== '');
+      const filteredCorrectAnswers = editedQuestion.correctAnswers.filter(ans => filteredOptions.includes(ans));
+      handleQuestionSave(question.id, {
+        ...editedQuestion,
+        options: filteredOptions,
+        correctAnswers: filteredCorrectAnswers
+      });
     };
 
     const handleCancel = () => {
@@ -115,16 +141,61 @@ const EditQuizPage: React.FC = () => {
       const newOptions = [...(editedQuestion.options || [])];
       newOptions[index] = value;
       setEditedQuestion(prev => ({ ...prev, options: newOptions }));
+    
+      // Cập nhật luôn vào ref để giữ lại khi chuyển kiểu
+      savedOptionsRef.current = newOptions;
     };
+    
+    
+
+    const handleTypeChange = (newType: 'single' | 'multiple' | 'text') => {
+      setEditedQuestion(prev => {
+        if (newType === 'text') {
+          // Lưu options hiện tại vào ref trước khi ẩn
+          savedOptionsRef.current = prev.options || savedOptionsRef.current;
+          return {
+            ...prev,
+            type: 'text',
+            correctAnswers: [],
+            // Giữ nguyên explanation khi chuyển sang text
+          };
+        } else {
+          // Khôi phục options từ ref hoặc từ chính question
+          const optionsToRestore = prev.options || savedOptionsRef.current;
+          return {
+            ...prev,
+            type: newType,
+            options: optionsToRestore,
+            correctAnswers: [],
+            explanation: '' // Reset explanation khi chuyển về single/multiple
+          };
+        }
+      });
+    };
+      
 
     const handleCorrectAnswerToggle = (option: string) => {
-      const newCorrectAnswers = editedQuestion.correctAnswers.includes(option)
-        ? editedQuestion.correctAnswers.filter(ans => ans !== option)
-        : [...editedQuestion.correctAnswers, option];
-      
-      setEditedQuestion(prev => ({ ...prev, correctAnswers: newCorrectAnswers }));
+      setEditedQuestion(prev => {
+        if (prev.type === 'single') {
+          // Với câu hỏi chọn 1 → chỉ chọn 1 đáp án
+          return {
+            ...prev,
+            correctAnswers: [option]
+          };
+        } else {
+          // Với chọn nhiều → toggle như cũ
+          const isSelected = prev.correctAnswers.includes(option);
+          const newCorrectAnswers = isSelected
+            ? prev.correctAnswers.filter(ans => ans !== option)
+            : [...prev.correctAnswers, option];
+          return {
+            ...prev,
+            correctAnswers: newCorrectAnswers
+          };
+        }
+      });
     };
-
+    
          return (
        <div className="card p-6 mb-4">
          <div className="mb-4">
@@ -156,11 +227,7 @@ const EditQuizPage: React.FC = () => {
             </label>
             <select
               value={editedQuestion.type}
-              onChange={(e) => setEditedQuestion(prev => ({ 
-                ...prev, 
-                type: e.target.value as 'single' | 'multiple' | 'text',
-                options: e.target.value === 'text' ? undefined : prev.options
-              }))}
+              onChange={(e) => handleTypeChange(e.target.value as 'single' | 'multiple' | 'text')}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             >
               <option value="single">Chọn 1 đáp án</option>
@@ -178,9 +245,11 @@ const EditQuizPage: React.FC = () => {
                 {(editedQuestion.options || []).map((option, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <input
-                      type="checkbox"
+                      type={editedQuestion.type === 'single' ? 'radio' : 'checkbox'}
+                      name={`correct-${editedQuestion.id}`} // group cho radio
                       checked={editedQuestion.correctAnswers.includes(option)}
                       onChange={() => handleCorrectAnswerToggle(option)}
+                      disabled={!option.trim()}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
                     <input
@@ -370,7 +439,7 @@ const EditQuizPage: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Chỉnh sửa bài quiz
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
