@@ -30,8 +30,13 @@ const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">Q</span>
+              {/* Logo với Trollface không có nền */}
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img 
+                  src="/Trollface.png" 
+                  alt="Trollface Logo" 
+                  className="w-10 h-10 object-contain"
+                />
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-white">
                 LiemDai
