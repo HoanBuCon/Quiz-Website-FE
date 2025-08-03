@@ -1,4 +1,4 @@
-# Quiz Website
+# Quiz Website - Front-End
 
 <div align="center">
   <a href="https://hoanbucon.id.vn" target="_blank">
