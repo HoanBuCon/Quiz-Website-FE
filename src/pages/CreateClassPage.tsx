@@ -337,16 +337,45 @@ const CreateClassPage: React.FC = () => {
     setProcessingFile(null);
   };
 
-  // Đọc nội dung file
+  // Đọc nội dung file (chuẩn hóa cho Word: đọc dạng ArrayBuffer và chuyển base64)
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
       reader.onload = (e) => {
-        const content = e.target?.result as string;
-        resolve(content);
+        try {
+          if (fileExtension === 'doc' || fileExtension === 'docx') {
+            // Đọc file Word dạng ArrayBuffer và chuyển base64
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            if (!arrayBuffer) {
+              reject(new Error('Không thể đọc file Word'));
+              return;
+            }
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binaryString = '';
+            const chunkSize = 8192;
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.slice(i, i + chunkSize);
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+            }
+            const base64String = btoa(binaryString);
+            resolve(base64String);
+          } else {
+            // File text/json đọc bình thường
+            const content = e.target?.result as string;
+            resolve(content || '');
+          }
+        } catch (error) {
+          console.error('Lỗi khi xử lý nội dung file:', error);
+          reject(new Error('Lỗi khi xử lý nội dung file'));
+        }
       };
       reader.onerror = () => reject(new Error('Không thể đọc file'));
-      reader.readAsText(file);
+      if (fileExtension === 'doc' || fileExtension === 'docx') {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
     });
   };
 
