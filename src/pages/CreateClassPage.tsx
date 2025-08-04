@@ -363,10 +363,11 @@ const CreateClassPage: React.FC = () => {
     setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Dropdown Menu - Mobile First */}
-      <div className="mb-6">
+      {/* Dropdown Menu - Mobile Only */}
+      <div className="mb-6 lg:hidden">
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex flex-col sm:flex-row">
             <button
