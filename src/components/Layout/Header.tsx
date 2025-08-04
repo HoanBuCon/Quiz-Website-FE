@@ -89,10 +89,10 @@ const Header: React.FC = () => {
                 aria-label="Toggle Music Player"
                 title={showMusicPlayer ? 'Ẩn Music Player' : 'Hiện Music Player'}
               >
-                {React.createElement(FaMusic as any, { 
-                  className: `w-5 h-5 transition-transform duration-200 ${
-                    isPlaying ? 'music-spinning' : ''
-                  } ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}` 
+                {React.createElement(FaMusic as React.ComponentType<any>, { 
+                  className: `w-5 h-5 ${
+                    isPlaying ? 'animate-spin' : ''
+                  } ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}`, style: isPlaying ? { animationDuration: '2s' } : undefined
                 })}
               </button>
 
@@ -140,8 +140,9 @@ const Header: React.FC = () => {
                 }`}
                 aria-label="Toggle Music Player"
               >
-                {React.createElement(FaMusic as any, { 
-                  className: `w-4 h-4 ${isPlaying ? 'music-spinning' : ''}` 
+                {React.createElement(FaMusic as React.ComponentType<any>, {
+                  className: `w-4 h-4 ${isPlaying ? 'animate-spin' : ''}`,
+                  style: isPlaying ? { animationDuration: '2s' } : undefined
                 })}
               </button>
 
@@ -169,8 +170,8 @@ const Header: React.FC = () => {
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? 
-                  React.createElement(FaTimes as any, { className: "w-4 h-4" }) : 
-                  React.createElement(FaBars as any, { className: "w-4 h-4" })
+                  React.createElement(FaTimes as React.ComponentType<any>, { className: "w-4 h-4" }) : 
+                  React.createElement(FaBars as React.ComponentType<any>, { className: "w-4 h-4" })
                 }
               </button>
             </div>
@@ -213,4 +214,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header; 
+export default Header;
