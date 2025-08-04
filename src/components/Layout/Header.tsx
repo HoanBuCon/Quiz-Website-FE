@@ -24,22 +24,22 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-b border-stone-300 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 shadow-xl border-b border-slate-200/80 dark:border-slate-700/80 header-texture premium-gradient">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2 group hover:scale-105 transition-transform duration-200 ease-out">
               {/* Logo với Trollface không có nền */}
               <div className="w-10 h-10 flex items-center justify-center">
                 <img 
                   src="/Trollface.png" 
                   alt="Trollface Logo" 
-                  className="w-10 h-10 object-contain"
+                  className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-200 ease-out"
                 />
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                LiemDai
+              <span className="text-xl logo-text">
+                liemdai
               </span>
             </Link>
           </div>
@@ -50,13 +50,19 @@ const Header: React.FC = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium relative group ${
                   isActive(item.path)
-                    ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
+                    ? 'bg-gradient-to-r from-primary-300/90 to-primary-200/90 dark:from-primary-900/50 dark:to-primary-800/50 text-primary-700 dark:text-primary-300 shadow-sm border border-primary-300/40 shadow-primary-300/30 dark:border-primary-700/30 dark:shadow-primary-700/20'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                 }`}
               >
                 {item.label}
+                {/* Thanh loading hover effect cho tất cả items */}
+                <div className={`absolute bottom-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-300 ease-out ${
+                  isActive(item.path) 
+                    ? 'bg-gradient-to-r from-primary-600 to-primary-500' 
+                    : 'bg-gradient-to-r from-primary-500 to-primary-400'
+                }`}></div>
               </Link>
             ))}
           </nav>
@@ -65,7 +71,7 @@ const Header: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+              className="p-2 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md"
               aria-label="Toggle theme"
             >
               {isDarkMode ? (

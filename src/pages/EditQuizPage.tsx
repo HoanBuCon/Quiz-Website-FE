@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
 import { toast } from 'react-toastify';
+import QuizPreview from '../components/QuizPreview';
 import {
   DndContext,
   closestCenter,
@@ -46,6 +47,76 @@ const EditQuizPage: React.FC = () => {
   const [quizDescription, setQuizDescription] = useState('');
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [previewContent, setPreviewContent] = useState('');
+
+  // Hàm xử lý khi nội dung preview được chỉnh sửa
+  const handlePreviewEdit = (content: string) => {
+    setPreviewContent(content);
+    // Parse nội dung và cập nhật questions
+    const parsedQuestions = parseEditedContent(content);
+    setQuestions(parsedQuestions);
+  };
+
+  // Hàm parse nội dung text thành questions
+  const parseEditedContent = (content: string): Question[] => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const parsedQuestions: Question[] = [];
+    
+    let currentQuestion: Partial<Question> = {};
+    let currentOptions: string[] = [];
+    let currentCorrectAnswers: string[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line.startsWith('ID:')) {
+        // Lưu câu hỏi trước đó nếu có
+        if (currentQuestion.question) {
+          parsedQuestions.push({
+            id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
+            question: currentQuestion.question,
+            type: currentOptions.length > 0 ? (currentCorrectAnswers.length > 1 ? 'multiple' : 'single') : 'text',
+            options: currentOptions.length > 0 ? currentOptions : undefined,
+            correctAnswers: currentCorrectAnswers,
+            explanation: currentQuestion.explanation || ''
+          } as Question);
+        }
+        
+        // Reset cho câu hỏi mới
+        currentQuestion = { id: line.replace('ID:', '').trim() };
+        currentOptions = [];
+        currentCorrectAnswers = [];
+      } else if (line.match(/^Câu \d+:/)) {
+        currentQuestion.question = line.replace(/^Câu \d+:\s*/, '');
+      } else if (line.match(/^\*?[A-Z]\./)) {
+        // Đây là đáp án
+        const isCorrect = line.startsWith('*');
+        const optionText = line.replace(/^\*?[A-Z]\.\s*/, '');
+        currentOptions.push(optionText);
+        
+        if (isCorrect) {
+          currentCorrectAnswers.push(optionText);
+        }
+      } else if (line.includes('Câu hỏi không có đáp án')) {
+        // Đây là câu hỏi text - không cần xử lý thêm gì
+        currentQuestion.type = 'text';
+      }
+    }
+    
+    // Thêm câu hỏi cuối cùng
+    if (currentQuestion.question) {
+      parsedQuestions.push({
+        id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
+        question: currentQuestion.question,
+        type: currentOptions.length > 0 ? (currentCorrectAnswers.length > 1 ? 'multiple' : 'single') : 'text',
+        options: currentOptions.length > 0 ? currentOptions : undefined,
+        correctAnswers: currentCorrectAnswers,
+        explanation: currentQuestion.explanation || ''
+      } as Question);
+    }
+    
+    return parsedQuestions;
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -63,6 +134,13 @@ const EditQuizPage: React.FC = () => {
         const newIndex = items.findIndex(item => item.id === over?.id);
 
         const reorderedQuestions = arrayMove(items, oldIndex, newIndex);
+        
+        // Cập nhật preview content sau khi sắp xếp lại
+        setTimeout(() => {
+          const newPreviewContent = generatePreviewContent(reorderedQuestions);
+          setPreviewContent(newPreviewContent);
+        }, 0);
+        
         toast.success('Đã thay đổi thứ tự câu hỏi!');
         return reorderedQuestions;
       });
@@ -139,6 +217,24 @@ const EditQuizPage: React.FC = () => {
       }
       
       localStorage.setItem('quizzes', JSON.stringify(quizzes));
+      
+      // Cập nhật lại file trong Documents với nội dung đã chỉnh sửa
+      const savedFiles = localStorage.getItem('uploadedFiles') || '[]';
+      const files = JSON.parse(savedFiles);
+      const fileIndex = files.findIndex((f: any) => f.id === state.fileId);
+      
+      if (fileIndex >= 0) {
+        // Cập nhật nội dung file với định dạng mới
+        const updatedFileContent = previewContent || generatePreviewContent(questions);
+        files[fileIndex] = {
+          ...files[fileIndex],
+          content: updatedFileContent,
+          updatedAt: new Date(),
+          lastModified: new Date().getTime()
+        };
+        localStorage.setItem('uploadedFiles', JSON.stringify(files));
+        console.log('Updated file content in Documents:', files[fileIndex]);
+      }
       
       // Xử lý lớp học - cả hai luồng từ CreateClassPage và DocumentsPage
       const savedClasses = localStorage.getItem('classrooms') || '[]';
@@ -269,6 +365,7 @@ const EditQuizPage: React.FC = () => {
       setQuestions([]);
       setQuizTitle('Quiz thủ công');
       setQuizDescription('Bài trắc nghiệm tạo thủ công');
+      setPreviewContent('');
       return;
     }
 
@@ -291,6 +388,10 @@ const EditQuizPage: React.FC = () => {
     }));
     setQuestions(convertedQuestions);
     
+    // Khởi tạo preview content
+    const initialPreviewContent = generatePreviewContent(convertedQuestions);
+    setPreviewContent(initialPreviewContent);
+    
     // Thiết lập title và description dựa trên nguồn dữ liệu
     if (state.classInfo && state.classInfo.isNew && state.classInfo.name) {
       // Từ CreateClassPage với thông tin lớp mới - SỬ DỤNG THÔNG TIN TỪ CREATECLASSPAGE
@@ -305,7 +406,7 @@ const EditQuizPage: React.FC = () => {
       setQuizTitle(`Quiz từ file ${state.fileName}`);
       setQuizDescription(`Bài trắc nghiệm từ tài liệu ${state.fileName}`);
     }
-  }, [state]);
+  }, [state, navigate]);
 
   const handleQuestionEdit = (questionId: string) => {
     setIsEditing(questionId);
@@ -342,12 +443,54 @@ const EditQuizPage: React.FC = () => {
       
       console.log('Updated questions array:', updated); // Debug log
       setIsEditing(null);
+      
+      // Cập nhật preview content sau khi lưu câu hỏi
+      setTimeout(() => {
+        const newPreviewContent = generatePreviewContent(updated);
+        setPreviewContent(newPreviewContent);
+      }, 0);
+      
       return updated;
     });
   };
+
+  // Hàm tạo nội dung preview từ questions
+  const generatePreviewContent = (questionsArray: Question[]) => {
+    let content = '';
+    
+    questionsArray.forEach((q, index) => {
+      content += `ID: ${q.id}\n`;
+      content += `Câu ${index + 1}: ${q.question}\n`;
+      
+      if (q.type === 'text') {
+        content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
+      } else {
+        q.options?.forEach((option, optIndex) => {
+          const isCorrect = q.correctAnswers.includes(option);
+          const prefix = isCorrect ? '*' : '';
+          const letter = String.fromCharCode(65 + optIndex);
+          content += `${prefix}${letter}. ${option}\n`;
+        });
+      }
+      
+      if (index < questionsArray.length - 1) {
+        content += '\n';
+      }
+    });
+    
+    return content;
+  };
   
   const handleQuestionDelete = (questionId: string) => {
-    setQuestions(prev => prev.filter(q => q.id !== questionId));
+    setQuestions(prev => {
+      const updated = prev.filter(q => q.id !== questionId);
+      // Cập nhật preview content
+      setTimeout(() => {
+        const newPreviewContent = generatePreviewContent(updated);
+        setPreviewContent(newPreviewContent);
+      }, 0);
+      return updated;
+    });
   };
 
   const handleAddQuestion = () => {
@@ -359,7 +502,15 @@ const EditQuizPage: React.FC = () => {
       correctAnswers: [],
       explanation: ''
     };
-    setQuestions(prev => [...prev, newQuestion]);
+    setQuestions(prev => {
+      const updated = [...prev, newQuestion];
+      // Cập nhật preview content
+      setTimeout(() => {
+        const newPreviewContent = generatePreviewContent(updated);
+        setPreviewContent(newPreviewContent);
+      }, 0);
+      return updated;
+    });
     setIsEditing(newQuestion.id);
   };
 
@@ -973,67 +1124,86 @@ const EditQuizPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Questions */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white text-center">
-              Số lượng câu hỏi: {questions.length}
-            </h2>
-            <div className="flex items-center gap-3">
-              {questions.length > 1 && (
-                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                  Kéo thả để sắp xếp
+        {/* Layout 2 cột: 2/3 - 1/3 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Cột trái - 2/3 - Editor */}
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Chỉnh sửa câu hỏi ({questions.length})
+                </h2>
+                <div className="flex items-center gap-3">
+                  {questions.length > 1 && (
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                      Kéo thả để sắp xếp
+                    </div>
+                  )}
+                  <button
+                    onClick={handleAddQuestion}
+                    className="btn-secondary flex items-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Thêm câu hỏi
+                  </button>
+                </div>
+              </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={questions.map(q => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-6">
+                    {questions.map((question, index) => (
+                      <SortableQuestionItem
+                        key={question.id}
+                        question={question}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {questions.length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Chưa có câu hỏi nào
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
+                  </p>
                 </div>
               )}
-              <button
-                onClick={handleAddQuestion}
-                className="btn-secondary flex items-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Thêm câu hỏi
-              </button>
             </div>
           </div>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={questions.map(q => q.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-6">
-                {questions.map((question, index) => (
-                  <SortableQuestionItem
-                    key={question.id}
-                    question={question}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>          {questions.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Chưa có câu hỏi nào
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
-              </p>
+          {/* Cột phải - 1/3 - Preview */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-8">
+              <QuizPreview 
+                questions={questions}
+                quizTitle={quizTitle}
+                onEdit={handlePreviewEdit}
+                isEditable={true}
+              />
             </div>
-          )}
+          </div>
         </div>
         
         {/* Nút xuất bản ở cuối trang */}
