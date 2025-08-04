@@ -41,9 +41,18 @@ const DocumentsPage: React.FC = () => {
       setTotalClasses(classes.length);
       setExistingClasses(classes);
       
-      // Tính tổng số quiz
+      // Tính tổng số quiz với support cho cả hai format
       const total = classes.reduce((sum: number, classroom: any) => {
-        return sum + (classroom.quizzes ? classroom.quizzes.length : 0);
+        let quizCount = 0;
+        
+        // Handle both old format (quizIds) and new format (quizzes)
+        if (classroom.quizIds && Array.isArray(classroom.quizIds)) {
+          quizCount = classroom.quizIds.length;
+        } else if (classroom.quizzes && Array.isArray(classroom.quizzes)) {
+          quizCount = classroom.quizzes.length;
+        }
+        
+        return sum + quizCount;
       }, 0);
       setTotalQuizzes(total);
     }

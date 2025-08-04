@@ -323,7 +323,7 @@ const HomePage: React.FC = () => {
       // Thêm các quiz từ mockClasses vào localStorage nếu chưa có
       mockClasses.forEach(classRoom => {
         if (classRoom.quizzes) {
-          classRoom.quizzes.forEach(quiz => {
+          (classRoom.quizzes as Quiz[]).forEach(quiz => {
             const existingQuiz = existingQuizzes.find((q: any) => q.id === quiz.id);
             if (!existingQuiz) {
               existingQuizzes.push(quiz);
@@ -417,7 +417,8 @@ const HomePage: React.FC = () => {
                           onClick={() => {
                             if (classRoom.quizzes && classRoom.quizzes.length === 1) {
                               // Nếu chỉ có 1 quiz, vào luôn
-                              navigate(`/quiz/${classRoom.quizzes[0].id}`);
+                              const firstQuiz = (classRoom.quizzes as Quiz[])[0];
+                              navigate(`/quiz/${firstQuiz.id}`);
                             } else {
                               // Nếu có nhiều quiz, mở dropdown
                               setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
@@ -446,7 +447,7 @@ const HomePage: React.FC = () => {
                               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                 Chọn bài kiểm tra:
                               </div>
-                              {classRoom.quizzes.map((quiz) => (
+                              {(classRoom.quizzes as Quiz[]).map((quiz) => (
                                 <button
                                   key={quiz.id}
                                   onClick={() => {
@@ -476,7 +477,7 @@ const HomePage: React.FC = () => {
                           Bài kiểm tra trong lớp:
                         </h4>
                         <div className="space-y-2">
-                          {classRoom.quizzes.map((quiz) => (
+                          {(classRoom.quizzes as Quiz[]).map((quiz) => (
                             <div key={quiz.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                               <div>
                                 <p className="font-medium text-gray-900 dark:text-white">

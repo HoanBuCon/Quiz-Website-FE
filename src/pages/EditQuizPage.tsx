@@ -27,6 +27,7 @@ interface LocationState {
   questions: ParsedQuestion[];
   fileName: string;
   fileId: string;
+  classId?: string; // For CreateClassPage
   classInfo?: {
     isNew: boolean;
     name?: string;
@@ -139,18 +140,21 @@ const EditQuizPage: React.FC = () => {
       
       localStorage.setItem('quizzes', JSON.stringify(quizzes));
       
-      // Xử lý lớp học
+      // Xử lý lớp học - cả hai luồng từ CreateClassPage và DocumentsPage
       const savedClasses = localStorage.getItem('classrooms') || '[]';
       const classes = JSON.parse(savedClasses);
       
       if (state.classInfo) {
-        // Đến từ DocumentsPage - có thông tin lớp học
+        // Luồng từ DocumentsPage
+        console.log('ClassInfo received from DocumentsPage:', state.classInfo);
+        
         if (state.classInfo.isNew) {
-          // Tạo lớp học mới
+          // Tạo lớp học mới từ DocumentsPage
           const newClass = {
             id: `class-${Date.now()}-${Math.random()}`,
             name: state.classInfo.name || quizTitle || `Lớp học ${state.fileName}`,
             description: state.classInfo.description || quizDescription || 'Lớp học được tạo từ quiz',
+            quizIds: [state.fileId],
             quizzes: [state.fileId],
             students: [],
             isActive: true,
@@ -160,25 +164,70 @@ const EditQuizPage: React.FC = () => {
           classes.push(newClass);
           console.log('Created new class from DocumentsPage:', newClass);
         } else {
-          // Thêm quiz vào lớp học có sẵn
+          // Thêm quiz vào lớp học có sẵn từ DocumentsPage
           const existingClassIndex = classes.findIndex((c: any) => c.id === state.classInfo?.classId);
           if (existingClassIndex >= 0) {
-            if (!classes[existingClassIndex].quizzes) {
-              classes[existingClassIndex].quizzes = [];
-            }
+            if (!classes[existingClassIndex].quizIds) classes[existingClassIndex].quizIds = [];
+            if (!classes[existingClassIndex].quizzes) classes[existingClassIndex].quizzes = [];
+            classes[existingClassIndex].quizIds.push(state.fileId);
             classes[existingClassIndex].quizzes.push(state.fileId);
             classes[existingClassIndex].updatedAt = new Date();
-            console.log('Added quiz to existing class:', classes[existingClassIndex]);
+            console.log('Added quiz to existing class from DocumentsPage:', classes[existingClassIndex]);
           } else {
             console.error('Existing class not found:', state.classInfo.classId);
+            // Fallback: tạo lớp mới
+            const newClass = {
+              id: `class-${Date.now()}-${Math.random()}`,
+              name: quizTitle || `Lớp học ${state.fileName}`,
+              description: quizDescription || 'Lớp học được tạo từ quiz (fallback)',
+              quizIds: [state.fileId],
+              quizzes: [state.fileId],
+              students: [],
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            classes.push(newClass);
+            console.log('Created fallback class from DocumentsPage:', newClass);
           }
         }
+      } else if (state.classId) {
+        // Luồng từ CreateClassPage - có classId sẵn
+        console.log('ClassId received from CreateClassPage:', state.classId);
+        
+        const existingClassIndex = classes.findIndex((c: any) => c.id === state.classId);
+        if (existingClassIndex >= 0) {
+          if (!classes[existingClassIndex].quizIds) classes[existingClassIndex].quizIds = [];
+          if (!classes[existingClassIndex].quizzes) classes[existingClassIndex].quizzes = [];
+          classes[existingClassIndex].quizIds.push(state.fileId);
+          classes[existingClassIndex].quizzes.push(state.fileId);
+          classes[existingClassIndex].updatedAt = new Date();
+          console.log('Added quiz to existing class from CreateClassPage:', classes[existingClassIndex]);
+        } else {
+          console.error('Class from CreateClassPage not found:', state.classId);
+          // Fallback: tạo lớp mới
+          const newClass = {
+            id: `class-${Date.now()}-${Math.random()}`,
+            name: quizTitle || `Lớp học ${state.fileName}`,
+            description: quizDescription || 'Lớp học được tạo từ quiz (CreateClassPage fallback)',
+            quizIds: [state.fileId],
+            quizzes: [state.fileId],
+            students: [],
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          classes.push(newClass);
+          console.log('Created CreateClassPage fallback class:', newClass);
+        }
       } else {
-        // Đến từ CreateClassPage - tạo lớp học mới như trước
+        // Luồng từ CreateClassPage với thông tin lớp học mới 
+        console.log('CreateClassPage new class creation flow');
         const newClass = {
           id: `class-${Date.now()}-${Math.random()}`,
           name: quizTitle || `Lớp học ${state.fileName}`,
           description: quizDescription || 'Lớp học được tạo từ quiz',
+          quizIds: [state.fileId],
           quizzes: [state.fileId],
           students: [],
           isActive: true,
@@ -186,7 +235,7 @@ const EditQuizPage: React.FC = () => {
           updatedAt: new Date()
         };
         classes.push(newClass);
-        console.log('Created new class from CreateClassPage:', newClass);
+        console.log('Created new class from CreateClassPage (default):', newClass);
       }
       
       localStorage.setItem('classrooms', JSON.stringify(classes));
@@ -242,12 +291,19 @@ const EditQuizPage: React.FC = () => {
     }));
     setQuestions(convertedQuestions);
     
-    // Thiết lập title và description dựa trên classInfo
-    if (state.classInfo && state.classInfo.isNew) {
-      setQuizTitle(state.classInfo.name || `Quiz từ file ${state.fileName}`);
+    // Thiết lập title và description dựa trên nguồn dữ liệu
+    if (state.classInfo && state.classInfo.isNew && state.classInfo.name) {
+      // Từ CreateClassPage với thông tin lớp mới - SỬ DỤNG THÔNG TIN TỪ CREATECLASSPAGE
+      setQuizTitle(state.classInfo.name);
+      setQuizDescription(state.classInfo.description || `Bài trắc nghiệm từ tài liệu ${state.fileName}`);
+    } else if (state.classInfo && state.classInfo.name) {
+      // Từ DocumentsPage với classInfo.name - SỬ DỤNG THÔNG TIN TỪ DOCUMENTSPAGE
+      setQuizTitle(state.classInfo.name);
       setQuizDescription(state.classInfo.description || `Bài trắc nghiệm từ tài liệu ${state.fileName}`);
     } else {
+      // Mặc định - sử dụng tên file
       setQuizTitle(`Quiz từ file ${state.fileName}`);
+      setQuizDescription(`Bài trắc nghiệm từ tài liệu ${state.fileName}`);
     }
   }, [state]);
 

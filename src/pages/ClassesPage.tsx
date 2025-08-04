@@ -59,7 +59,7 @@ const ClassesPage: React.FC = () => {
           if (cls.id === classId) {
             return {
               ...cls,
-              quizIds: cls.quizIds.filter(id => id !== quizId)
+              quizIds: cls.quizIds?.filter(id => id !== quizId) || []
             };
           }
           return cls;
@@ -83,7 +83,7 @@ const ClassesPage: React.FC = () => {
           if (cls.id === classId) {
             return {
               ...cls,
-              quizzes: cls.quizzes?.filter(quiz => quiz.id !== quizId) || []
+              quizzes: (cls.quizzes as Quiz[])?.filter(quiz => quiz.id !== quizId) || []
             };
           }
           return cls;
@@ -106,10 +106,35 @@ const ClassesPage: React.FC = () => {
       const classRooms = JSON.parse(savedClasses);
       const quizzes = JSON.parse(savedQuizzes);
 
+      console.log('Raw classRooms data:', classRooms);
+      console.log('Available quizzes:', quizzes);
+
       if (classRooms.length > 0) {
         // Map quiz IDs to actual quiz objects for each classroom
         const mappedClasses = classRooms.map((classRoom: ClassRoom) => {
-          const classQuizzes = classRoom.quizIds.map(quizId => {
+          console.log('Processing classroom:', classRoom);
+          
+          // Handle both old format (quizIds) and new format (quizzes)
+          let quizIdList: string[] = [];
+          
+          if (classRoom.quizIds) {
+            // Old format - using quizIds
+            quizIdList = classRoom.quizIds;
+            console.log('Using quizIds:', quizIdList);
+          } else if (classRoom.quizzes && Array.isArray(classRoom.quizzes)) {
+            // New format - check if quizzes contains IDs or objects
+            if (classRoom.quizzes.length > 0 && typeof classRoom.quizzes[0] === 'string') {
+              // Array of IDs
+              quizIdList = classRoom.quizzes as unknown as string[];
+              console.log('Using quizzes as IDs:', quizIdList);
+            } else {
+              // Array of quiz objects - extract IDs
+              quizIdList = (classRoom.quizzes as Quiz[]).map(q => q.id);
+              console.log('Extracted IDs from quiz objects:', quizIdList);
+            }
+          }
+
+          const classQuizzes = quizIdList.map(quizId => {
             const quiz = quizzes.find((q: Quiz) => q.id === quizId);
             if (quiz) {
               return {
@@ -118,8 +143,11 @@ const ClassesPage: React.FC = () => {
                 updatedAt: new Date(quiz.updatedAt || quiz.createdAt)
               };
             }
+            console.warn('Quiz not found for ID:', quizId);
             return null;
           }).filter((q): q is Quiz => q !== null);
+
+          console.log('Mapped quizzes for classroom:', classQuizzes);
 
           return {
             ...classRoom,
@@ -127,6 +155,8 @@ const ClassesPage: React.FC = () => {
             createdAt: new Date(classRoom.createdAt)
           };
         });
+        
+        console.log('Final mapped classes:', mappedClasses);
         setClasses(mappedClasses);
       }
     } catch (error) {
@@ -207,7 +237,8 @@ const ClassesPage: React.FC = () => {
                           onClick={() => {
                             if (classRoom.quizzes && classRoom.quizzes.length === 1) {
                               // Nếu chỉ có 1 quiz, vào luôn
-                              navigate(`/quiz/${classRoom.quizzes[0].id}`);
+                              const firstQuiz = classRoom.quizzes[0] as Quiz;
+                              navigate(`/quiz/${firstQuiz.id}`);
                             } else if (classRoom.quizzes && classRoom.quizzes.length > 1) {
                               // Nếu có nhiều quiz, mở dropdown
                               setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
@@ -236,7 +267,7 @@ const ClassesPage: React.FC = () => {
                               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                 Chọn bài kiểm tra:
                               </div>
-                              {classRoom.quizzes.map((quiz) => (
+                              {(classRoom.quizzes as Quiz[]).map((quiz) => (
                                 <button
                                   key={quiz.id}
                                   onClick={() => {
@@ -276,7 +307,7 @@ const ClassesPage: React.FC = () => {
                         Bài kiểm tra trong lớp:
                       </h4>
                       <div className="space-y-2">
-                        {classRoom.quizzes?.map((quiz: Quiz) => (
+                        {(classRoom.quizzes as Quiz[])?.map((quiz) => (
                           <div
                             key={quiz.id}
                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"

@@ -83,71 +83,22 @@ const CreateClassPage: React.FC = () => {
     }
   };
 
-  // Tạo lớp học mới
+  // Tạo lớp học mới (để backward compatibility với các hàm khác)
   const createNewClass = (quizId: string) => {
     console.log('createNewClass called with quizId:', quizId);
-    console.log('isCreateNewClass:', isCreateNewClass);
+    console.log('This function is deprecated - class creation now happens in EditQuizPage');
     
-    if (!isCreateNewClass) {
-      console.log('Using existing class');
-      return addQuizToExistingClass(quizId);
-    }
-    
-    console.log('Creating new class');
-    console.log('className:', className);
-    console.log('classDescription:', classDescription);
-    
-    if (!className.trim()) {
-      alert('Vui lòng nhập tên lớp học');
-      return null;
-    }
-    
-    if (!classDescription.trim()) {
-      alert('Vui lòng nhập mô tả lớp học');
-      return null;
-    }
-    
-    const classId = `class-${Date.now()}-${Math.random()}`;
-    const newClass = {
-      id: classId,
-      name: className.trim(),
-      description: classDescription.trim(),
-      quizIds: [quizId],
-      isPublic: true,
-      createdAt: new Date()
-    };
-
-    // Lưu lớp học mới vào localStorage
-    const savedClasses = localStorage.getItem('classrooms') || '[]';
-    const classes = JSON.parse(savedClasses);
-    classes.push(newClass);
-    localStorage.setItem('classrooms', JSON.stringify(classes));
-
-    return classId;
+    // Trả về null để các hàm khác biết rằng không tạo lớp ở đây
+    return null;
   };
 
-  // Thêm quiz vào lớp học có sẵn
+  // Thêm quiz vào lớp học có sẵn (để backward compatibility với các hàm khác)  
   const addQuizToExistingClass = (quizId: string) => {
-    if (!selectedClassId) {
-      alert('Vui lòng chọn lớp học');
-      return null;
-    }
-
-    const savedClasses = localStorage.getItem('classrooms') || '[]';
-    const classes = JSON.parse(savedClasses);
+    console.log('addQuizToExistingClass called with quizId:', quizId);
+    console.log('This function is deprecated - class creation now happens in EditQuizPage');
     
-    const classIndex = classes.findIndex((cls: any) => cls.id === selectedClassId);
-    if (classIndex === -1) {
-      alert('Không tìm thấy lớp học được chọn');
-      return null;
-    }
-
-    // Thêm quiz vào lớp học
-    classes[classIndex].quizIds = classes[classIndex].quizIds || [];
-    classes[classIndex].quizIds.push(quizId);
-    
-    localStorage.setItem('classrooms', JSON.stringify(classes));
-    return selectedClassId;
+    // Trả về null để các hàm khác biết rằng không tạo lớp ở đây
+    return null;
   };
 
   // Xử lý chuyển đến trang tạo quiz thủ công
@@ -167,22 +118,20 @@ const CreateClassPage: React.FC = () => {
     const quizId = `manual-${Date.now()}-${Math.random()}`;
     console.log('Generated quizId:', quizId);
     
-    // KHÔNG lưu quiz vào localStorage ngay - chỉ lưu khi xuất bản
-    
-    // Tạo lớp học
-    const classId = createNewClass(quizId);
-    console.log('Created classId:', classId);
-    
-    if (!classId) {
-      console.log('Failed to create class, returning');
-      return; // Dừng nếu không tạo được lớp
-    }
+    // KHÔNG tự động tạo lớp học - chỉ chuẩn bị thông tin để tạo sau khi xuất bản
     
     console.log('About to navigate to /edit-quiz with state:', {
       questions: [],
       fileName: 'Quiz thủ công',
       fileId: quizId,
-      classId: classId
+      classInfo: isCreateNewClass ? {
+        isNew: true,
+        name: className.trim(),
+        description: classDescription.trim()
+      } : {
+        isNew: false,
+        classId: selectedClassId
+      }
     });
     
     navigate('/edit-quiz', {
@@ -190,7 +139,14 @@ const CreateClassPage: React.FC = () => {
         questions: [],
         fileName: 'Quiz thủ công',
         fileId: quizId,
-        classId: classId
+        classInfo: isCreateNewClass ? {
+          isNew: true,
+          name: className.trim(),
+          description: classDescription.trim()
+        } : {
+          isNew: false,
+          classId: selectedClassId
+        }
       }
     });
     
@@ -264,16 +220,22 @@ const CreateClassPage: React.FC = () => {
             continue;
           }
 
-          // KHÔNG tự động tạo lớp học - chỉ chuyển đến EditQuizPage
-          // Lớp học sẽ được tạo khi user bấm "Xuất bản"
+          // KHÔNG tự động tạo lớp học - chỉ chuẩn bị thông tin để tạo sau khi xuất bản
 
           // Chuyển đến trang chỉnh sửa với câu hỏi đã parse
-          // KHÔNG truyền classId vì chưa tạo lớp
           navigate('/edit-quiz', {
             state: {
               questions: result.questions,
               fileName: file.name,
-              fileId: quizId
+              fileId: quizId,
+              classInfo: isCreateNewClass ? {
+                isNew: true,
+                name: className.trim(),
+                description: classDescription.trim()
+              } : {
+                isNew: false,
+                classId: selectedClassId
+              }
             }
           });
           return; // Dừng xử lý các file khác
