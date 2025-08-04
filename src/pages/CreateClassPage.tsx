@@ -201,11 +201,12 @@ const CreateClassPage: React.FC = () => {
           // KHÔNG tự động lưu quiz - chỉ chuẩn bị dữ liệu
           // Quiz sẽ được tạo khi user bấm "Xuất bản" trong EditQuizPage
           
-          // Lưu file vào documents (để backup)
+          // Lưu file vào documents (để backup) với ID riêng biệt
+          const documentId = `doc-${Date.now()}-${Math.random()}`; // ID riêng cho document
           const savedDocs = localStorage.getItem('documents') || '[]';
           const docs = JSON.parse(savedDocs);
           docs.push({
-            id: quizId,
+            id: documentId, // Sử dụng documentId thay vì quizId
             name: file.name,
             type: fileType,
             size: file.size,

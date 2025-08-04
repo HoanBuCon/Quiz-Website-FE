@@ -30,11 +30,8 @@ const ClassesPage: React.FC = () => {
           const updatedQuizzes = quizzes.filter((quiz: Quiz) => !classToDelete.quizIds.includes(quiz.id));
           localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
           
-          // Xóa documents liên quan (nếu có)
-          const savedDocs = localStorage.getItem('documents') || '[]';
-          const docs = JSON.parse(savedDocs);
-          const updatedDocs = docs.filter((doc: any) => !classToDelete.quizIds.includes(doc.id));
-          localStorage.setItem('documents', JSON.stringify(updatedDocs));
+          // NOTE: Documents are kept independent and not deleted when classes are removed
+          // Users can manually delete documents from the Documents page if needed
         }
         
         // Cập nhật state
@@ -72,11 +69,8 @@ const ClassesPage: React.FC = () => {
         const updatedQuizzes = quizzes.filter((quiz: Quiz) => quiz.id !== quizId);
         localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
         
-        // Xóa document liên quan (nếu có)
-        const savedDocs = localStorage.getItem('documents') || '[]';
-        const docs = JSON.parse(savedDocs);
-        const updatedDocs = docs.filter((doc: any) => doc.id !== quizId);
-        localStorage.setItem('documents', JSON.stringify(updatedDocs));
+        // NOTE: Documents are kept independent and not deleted when individual quizzes are removed
+        // Users can manually delete documents from the Documents page if needed
         
         // Cập nhật state
         setClasses(prev => prev.map(cls => {
