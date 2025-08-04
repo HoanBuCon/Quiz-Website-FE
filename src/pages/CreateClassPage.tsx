@@ -492,7 +492,7 @@ const CreateClassPage: React.FC = () => {
                 
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Làm Quiz thủ công
+                    Tạo Quiz thủ công
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Tạo Quiz thủ công bằng cách nhập câu hỏi và đáp án trực tiếp

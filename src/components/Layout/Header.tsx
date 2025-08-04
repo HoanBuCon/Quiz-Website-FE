@@ -1,10 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { useMusic } from '../../context/MusicContext';
+import { FaMusic } from 'react-icons/fa';
 
 // Component Header chính của website
 const Header: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { showMusicPlayer, toggleMusicPlayer, isPlaying } = useMusic();
   const location = useLocation();
 
   // Danh sách các trang navigation
@@ -67,8 +70,27 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button and Music Player Button */}
           <div className="flex items-center space-x-4">
+            {/* Music Player Toggle Button */}
+            <button
+              onClick={toggleMusicPlayer}
+              className={`p-2 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md ${
+                showMusicPlayer
+                  ? 'bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300'
+                  : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600'
+              }`}
+              aria-label="Toggle Music Player"
+              title={showMusicPlayer ? 'Ẩn Music Player' : 'Hiện Music Player'}
+            >
+              {React.createElement(FaMusic as any, { 
+                className: `w-5 h-5 transition-transform duration-200 ${
+                  isPlaying ? 'music-spinning' : ''
+                } ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}` 
+              })}
+            </button>
+
+            {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md"

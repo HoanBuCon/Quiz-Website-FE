@@ -278,3 +278,129 @@
     51%, 100% { opacity: 0; }
   }
 }
+
+/* Custom Toast Animations */
+@layer components {
+  /* Toast container styles */
+  .toast-container {
+    position: fixed !important;
+    bottom: 20px !important; /* Sát dưới viewport hơn */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 9999 !important;
+  }
+
+  /* Custom toast enter animation - slide up from bottom */
+  [data-sonner-toaster] [data-sonner-toast] {
+    animation: slideUpFadeInSmall 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Custom toast exit animation - slide down and fade out */
+  [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+    animation: slideDownFadeOutSmall 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  /* React Hot Toast custom animations */
+  .react-hot-toast {
+    animation: slideUpBounceSmall 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards !important;
+  }
+
+  .react-hot-toast[data-visible="false"] {
+    animation: slideDownFadeSmall 0.3s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  }
+
+  @keyframes slideUpFadeInSmall {
+    from {
+      opacity: 0;
+      transform: translateY(60px) scale(0.5); /* Nhỏ hơn và di chuyển ít hơn */
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85); /* Scale 85% */
+    }
+  }
+
+  @keyframes slideDownFadeOutSmall {
+    from {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(40px) scale(0.5);
+    }
+  }
+
+  @keyframes slideUpBounceSmall {
+    0% {
+      opacity: 0;
+      transform: translateY(60px) scale(0.5);
+    }
+    50% {
+      opacity: 0.8;
+      transform: translateY(-5px) scale(0.9); /* Bounce nhỏ hơn */
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+  }
+
+  @keyframes slideDownFadeSmall {
+    from {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(30px) scale(0.75);
+    }
+  }
+
+  /* Toast hover effects */
+  [data-sonner-toast]:hover,
+  .react-hot-toast:hover {
+    transform: scale(0.87) !important; /* Tăng nhẹ từ 0.85 lên 0.87 */
+    transition: transform 0.2s ease !important;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .toast-container {
+      bottom: 15px !important; /* Sát dưới hơn trên mobile */
+      left: 16px !important;
+      right: 16px !important;
+      transform: none !important;
+    }
+    
+    /* Mobile animations với scale nhỏ hơn */
+    @keyframes slideUpFadeInSmall {
+      from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.4);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0px) scale(0.8);
+      }
+    }
+    
+    .react-hot-toast:hover {
+      transform: scale(0.82) !important;
+    }
+  }
+}
+
+/* Music button spin animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.music-spinning {
+  animation: spin 2s linear infinite;
+}
