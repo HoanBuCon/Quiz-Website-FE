@@ -1,0 +1,285 @@
+/* Responsive Design for Quiz Website */
+
+/* Global responsive improvements */
+@media (max-width: 640px) {
+  /* Small screens - phones */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  
+  .text-xl {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Medium screens - tablets */
+  .flex-gap-8 {
+    gap: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-4 > * + * {
+    margin-top: 0.75rem;
+  }
+  
+  /* Quiz page specific */
+  .quiz-container {
+    padding: 1rem 0;
+  }
+  
+  .quiz-timer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .quiz-question {
+    padding: 1rem;
+  }
+  
+  .quiz-answer-button {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .quiz-navigation {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .quiz-sidebar {
+    order: -1;
+    margin-bottom: 1rem;
+  }
+  
+  .question-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+  
+  .question-grid button {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Large screens - small laptops */
+  .main-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    order: -1;
+  }
+  
+  .content {
+    width: 100%;
+  }
+}
+
+/* Music player responsive - DISABLED to keep desktop size */
+/* @media (max-width: 640px) {
+  .media-player-box {
+    width: calc(100vw - 2rem);
+    right: 1rem;
+    left: 1rem;
+    bottom: 4rem;
+  }
+  
+  .track-name {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .controls button,
+  .options button {
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0.5rem;
+  }
+  
+  .timeline-slider {
+    height: 3px;
+  }
+} */
+
+/* Header responsive fixes */
+@media (max-width: 768px) {
+  .header-logo {
+    font-size: 1.125rem;
+  }
+  
+  .mobile-nav {
+    top: 4rem;
+  }
+  
+  .mobile-nav-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Form and input responsive */
+@media (max-width: 640px) {
+  .input-field {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .form-container {
+    padding: 1rem;
+  }
+}
+
+/* Toast notifications responsive */
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    transform: none !important;
+  }
+  
+  .toast-message {
+    font-size: 0.875rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Dropdown menus responsive */
+@media (max-width: 640px) {
+  .dropdown-menu {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+}
+
+/* Grid layouts responsive */
+@media (max-width: 640px) {
+  .grid-cols-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-6 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  
+  .grid-cols-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Animation performance on mobile */
+@media (max-width: 768px) {
+  .transition-transform {
+    transition: transform 0.2s ease;
+  }
+  
+  .transition-all {
+    transition: all 0.2s ease;
+  }
+  
+  .duration-300 {
+    transition-duration: 0.2s;
+  }
+  
+  .duration-200 {
+    transition-duration: 0.15s;
+  }
+}
+
+/* Touch targets */
+@media (max-width: 768px) {
+  button, 
+  .btn, 
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .small-button {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+/* Scrollable areas */
+@media (max-width: 768px) {
+  .scrollable-content {
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+  }
+  
+  .quiz-content {
+    max-height: calc(100vh - 12rem);
+    overflow-y: auto;
+  }
+}
+
+/* Hide elements on mobile if needed */
+@media (max-width: 640px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .visible-mobile {
+    display: block !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .hidden-desktop {
+    display: none !important;
+  }
+  
+  .visible-desktop {
+    display: block !important;
+  }
+}

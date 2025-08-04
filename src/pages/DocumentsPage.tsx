@@ -457,21 +457,56 @@ const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Mobile: Statistics Box First */}
+      <div className="lg:hidden mb-6">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Thống kê tài liệu
+          </h3>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng tài liệu:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{documents.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Tổng dung lượng:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {formatFileSize(documents.reduce((total, doc) => total + doc.size, 0))}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng lớp đã tạo:</span>
+              <span className="font-semibold text-green-600">{totalClasses}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng bài kiểm tra:</span>
+              <span className="font-semibold text-blue-600">{totalQuizzes}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Tài liệu mới nhất:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {documents.length > 0 ? documents[0].uploadedAt.toLocaleDateString('vi-VN') : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-1">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 lg:mb-4">
               Tài liệu của tôi
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
               Quản lý và sử dụng các tài liệu đã tải lên
             </p>
           </div>
 
           {/* Upload Area */}
-          <div className="card p-8 mb-8">
+          <div className="card p-4 sm:p-6 lg:p-8 mb-6 lg:mb-8">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Tải lên tài liệu mới
             </h3>
@@ -564,17 +599,17 @@ const DocumentsPage: React.FC = () => {
             // Danh sách tài liệu
             <div className="space-y-4">
               {documents.map((doc) => (
-                <div key={doc.id} className="card p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                <div key={doc.id} className="card p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type)}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
                           {doc.name}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                           <span>{formatFileSize(doc.size)}</span>
                           <span>•</span>
                           <span>Tải lên: {doc.uploadedAt.toLocaleDateString('vi-VN')}</span>
@@ -583,10 +618,10 @@ const DocumentsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 sm:flex-shrink-0">
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="btn-secondary text-sm flex items-center"
+                        className="btn-secondary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -595,7 +630,7 @@ const DocumentsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleCreateClass(doc)}
-                        className="btn-primary text-sm flex items-center"
+                        className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -619,8 +654,8 @@ const DocumentsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
+        {/* Right Section - Desktop Only (Statistics only, no usage guide) */}
+        <div className="hidden lg:block lg:w-1/3 order-2">
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Thống kê tài liệu
@@ -652,18 +687,6 @@ const DocumentsPage: React.FC = () => {
                   {documents.length > 0 ? documents[0].uploadedAt.toLocaleDateString('vi-VN') : 'N/A'}
                 </span>
               </div>
-            </div>
-          </div>
-
-          <div className="card p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Hướng dẫn sử dụng
-            </h3>
-            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-              <p>• Tải lên file .doc, .docx, .json, .txt</p>
-              <p>• Click "Tải về" để download tài liệu</p>
-              <p>• Click "Tạo lớp" để tạo bài trắc nghiệm</p>
-              <p>• Xóa tài liệu không cần thiết</p>
             </div>
           </div>
         </div>

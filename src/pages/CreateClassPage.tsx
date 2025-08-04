@@ -364,10 +364,40 @@ const CreateClassPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Dropdown Menu - Mobile First */}
+      <div className="mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex flex-col sm:flex-row">
+            <button
+              className="flex-1 px-4 py-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              onClick={() => {
+                const guideSection = document.getElementById('guidance-section');
+                if (guideSection) {
+                  guideSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">📖 Hướng dẫn</span>
+            </button>
+            <button
+              className="flex-1 px-4 py-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              onClick={() => {
+                const previewSection = document.getElementById('preview-section');
+                if (previewSection) {
+                  previewSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">👁️ Preview định dạng chuẩn</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-2 lg:order-1">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Tạo lớp học mới
@@ -666,27 +696,27 @@ const CreateClassPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
-          {/* Hướng dẫn */}
-          <div className="card p-6 mb-6">
+        {/* Right Section - Desktop Only, Mobile Sections Below */}
+        <div className="hidden lg:block lg:w-1/3 order-1 lg:order-2">
+          {/* Hướng dẫn - Desktop */}
+          <div className="card p-6 mb-6" id="guidance-section-desktop">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Hướng dẫn
             </h3>
             <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
-                             <div>
-                 <h4 className="font-medium text-gray-900 dark:text-white mb-2">Định dạng file hỗ trợ:</h4>
-                 <ul className="space-y-1">
-                   <li>• Text files (.txt) - Khuyến nghị</li>
-                   <li>• JSON files (.json)</li>
-                   <li>• Word files (.doc, .docx)</li>
-                 </ul>
-               </div>
+              <div>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Định dạng file hỗ trợ:</h4>
+                <ul className="space-y-1">
+                  <li>• Text files (.txt) - Khuyến nghị</li>
+                  <li>• JSON files (.json)</li>
+                  <li>• Word files (.doc, .docx)</li>
+                </ul>
+              </div>
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2">Kích thước tối đa:</h4>
                 <p>10 MB mỗi file</p>
               </div>
-                                           <div>
+              <div>
                 <h4 className="font-medium text-gray-900 dark:text-white mb-2">Lưu ý:</h4>
                 <p>File sẽ được xử lý tự động để tạo câu hỏi trắc nghiệm</p>
                 <p className="text-xs mt-2">• File Word (.docx) hiện đã được hỗ trợ trực tiếp</p>
@@ -698,8 +728,8 @@ const CreateClassPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Preview Format */}
-          <div className="card p-6">
+          {/* Preview Format - Desktop */}
+          <div className="card p-6" id="preview-section-desktop">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Preview định dạng chuẩn
             </h3>
@@ -737,6 +767,81 @@ const CreateClassPage: React.FC = () => {
               <p>• A. B. C. D. = các đáp án.</p>
               <p>• Nếu câu hỏi yêu cầu điền đáp án, hãy để trống phần đáp án.</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Guidance Section */}
+      <div className="lg:hidden mt-8" id="guidance-section">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Hướng dẫn
+          </h3>
+          <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Định dạng file hỗ trợ:</h4>
+              <ul className="space-y-1">
+                <li>• Text files (.txt) - Khuyến nghị</li>
+                <li>• JSON files (.json)</li>
+                <li>• Word files (.doc, .docx)</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Kích thước tối đa:</h4>
+              <p>10 MB mỗi file</p>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Lưu ý:</h4>
+              <p>File sẽ được xử lý tự động để tạo câu hỏi trắc nghiệm</p>
+              <p className="text-xs mt-2">• File Word (.docx) hiện đã được hỗ trợ trực tiếp</p>
+              <p className="text-xs">• Sử dụng font đơn giản (Times New Roman, Arial)</p>
+              <p className="text-xs">• Không sử dụng bullet points, chỉ dùng A. B. C. D.</p>
+              <p className="text-xs">• Xem hướng dẫn để biết định dạng chuẩn</p>
+              <p className="text-xs">• Đảm bảo File tài liệu được đặt theo đúng định dạng</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Preview Section */}
+      <div className="lg:hidden mt-6" id="preview-section">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Preview định dạng chuẩn
+          </h3>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-1">
+              <div className="text-gray-500 dark:text-gray-400">ID: 101</div>
+              <div>Câu 1: Thủ đô của Việt Nam là ?</div>
+              <div className="ml-4">*A. Hà Nội</div>
+              <div className="ml-4">B. TP. Hồ Chí Minh</div>
+              <div className="ml-4">C. Đà Nẵng</div>
+              <div className="ml-4">D. Huế</div>
+              <br />
+              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 261</div>
+              <div>Câu 2: Ngôn ngữ lập trình nào phổ biến nhất ?</div>
+              <div className="ml-4">A. Python</div>
+              <div className="ml-4">*B. JavaScript</div>
+              <div className="ml-4">C. Java</div>
+              <div className="ml-4">D. C++</div>
+              <br />
+              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 168</div>
+              <div>Câu 3: Ngôn ngữ nào phù hợp cho lập trình thi đấu ?</div>
+              <div className="ml-4">A. Python</div>
+              <div className="ml-4">*B. C</div>
+              <div className="ml-4">*C. C++</div>
+              <div className="ml-4">D. Java</div>
+              <br />
+              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 421</div>
+              <div>Câu 4: Generative AI - GenAI là gì ?</div>
+              <div className="ml-4">(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            <p>• Câu hỏi có dấu * là đáp án đúng.</p>
+            <p>• ID: Mã hỏi trong LMS. Hoặc tự đặt ID nếu bạn làm đề thủ công.</p>
+            <p>• A. B. C. D. = các đáp án.</p>
+            <p>• Nếu câu hỏi yêu cầu điền đáp án, hãy để trống phần đáp án.</p>
           </div>
         </div>
       </div>

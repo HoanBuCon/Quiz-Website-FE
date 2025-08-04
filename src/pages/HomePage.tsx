@@ -363,22 +363,22 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Chào mừng đến với LiemDai website
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-2 lg:order-1">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 lg:mb-4">
+              LiemDai (Đại Liêm) Website🐧
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
               Khám phá các lớp học trắc nghiệm công khai và bắt đầu học tập ngay hôm nay!
             </p>
           </div>
 
           {/* Danh sách lớp học public */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
+          <div className="space-y-4 lg:space-y-6">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4 lg:mb-6 text-center">
               Lớp học công khai
             </h2>
 
@@ -394,26 +394,26 @@ const HomePage: React.FC = () => {
               </div>
             ) : (
               // Danh sách lớp học
-              <div className="space-y-4">
+              <div className="space-y-3 lg:space-y-4">
                 {publicClasses.map((classRoom) => (
-                  <div key={classRoom.id} className="card p-6 hover:shadow-lg transition-shadow duration-200">
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={classRoom.id} className="card p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-0">
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           {classRoom.name}
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
                           {classRoom.description}
                         </p>
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 gap-1 sm:gap-0">
                           <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
-                          <span className="mx-2">•</span>
+                          <span className="hidden sm:inline mx-2">•</span>
                           <span>{classRoom.quizzes?.length || 0} bài kiểm tra</span>
                         </div>
                       </div>
                       <div className="relative dropdown-container">
                         <button 
-                          className="btn-primary flex items-center"
+                          className="btn-primary flex items-center px-3 py-2 sm:px-4 sm:py-2 text-sm w-full sm:w-auto justify-center"
                           onClick={() => {
                             if (classRoom.quizzes && classRoom.quizzes.length === 1) {
                               // Nếu chỉ có 1 quiz, vào luôn
@@ -442,7 +442,7 @@ const HomePage: React.FC = () => {
                         
                         {/* Dropdown Menu */}
                         {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                          <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                          <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-1 w-full sm:w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
                             <div className="p-2">
                               <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                 Chọn bài kiểm tra:
@@ -505,26 +505,26 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
-          <div className="card p-6">
+        {/* Right Section - Sidebar */}
+        <div className="w-full lg:w-1/3 order-1 lg:order-2">
+          <div className="card p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Thống kê
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Số lượng lớp học:</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng lớp học:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {totalClasses}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Số lượng bài kiểm tra:</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng bài kiểm tra:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">{totalQuizzes}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Người dùng online:</span>
-                <span className="font-semibold text-green-600">24</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Người dùng online:</span>
+                <span className="font-semibold text-green-600">69</span>
               </div>
             </div>
           </div>

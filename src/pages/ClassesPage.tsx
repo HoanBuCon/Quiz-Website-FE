@@ -177,15 +177,40 @@ const ClassesPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Mobile: Statistics Box First */}
+      <div className="lg:hidden mb-6">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Thống kê học tập
+          </h3>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng lớp học:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{classes.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Tổng số bài kiểm tra:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {classes.reduce((total, cls) => total + (cls.quizzes?.length || 0), 0)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Lần làm bài gần nhất:</span>
+              <span className="font-semibold text-blue-600">Hôm qua</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-1">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 lg:mb-4">
               Lớp học của tôi
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
               Chọn lớp học để bắt đầu làm bài trắc nghiệm
             </p>
           </div>
@@ -360,8 +385,8 @@ const ClassesPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
+        {/* Right Section - Desktop Only (Statistics + Guidance) */}
+        <div className="hidden lg:block lg:w-1/3 order-2">
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Thống kê học tập
@@ -390,6 +415,7 @@ const ClassesPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Guidance Box - Desktop Only */}
           <div className="card p-6 mt-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Hướng dẫn
