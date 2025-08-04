@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
+import { checkDuplicateFileName, showDuplicateModal, generateUniqueFileName } from '../utils/fileUtils';
 
 // Component trang tạo lớp
 const CreateClassPage: React.FC = () => {
@@ -181,7 +182,35 @@ const CreateClassPage: React.FC = () => {
       setProcessingFile(file.name);
       
       try {
-        const fileType = getFileType(file.name);
+        // Lấy danh sách tài liệu đã có từ localStorage và uploadedFiles
+        const savedDocs = localStorage.getItem('documents') || '[]';
+        const existingDocuments = JSON.parse(savedDocs).map((doc: any) => ({
+          ...doc,
+          uploadedAt: new Date(doc.uploadedAt)
+        }));
+        
+        // Kết hợp với files đã upload trong session hiện tại
+        const allExistingFiles = [...existingDocuments, ...uploadedFiles];
+        
+        // Kiểm tra duplicate file name
+        const duplicateCheck = checkDuplicateFileName(file.name, allExistingFiles);
+        let finalFileName = file.name;
+        let shouldOverwrite = false;
+        
+        if (duplicateCheck.isDuplicate) {
+          const action = await showDuplicateModal(file.name, duplicateCheck.suggestedName!);
+          
+          if (action.action === 'cancel') {
+            continue; // Bỏ qua file này
+          } else if (action.action === 'overwrite') {
+            shouldOverwrite = true;
+            finalFileName = file.name;
+          } else if (action.action === 'rename') {
+            finalFileName = action.newFileName!;
+          }
+        }
+        
+        const fileType = getFileType(finalFileName);
         console.log('File type:', fileType);
         
         if (fileType === 'docs' || fileType === 'txt') {
@@ -191,7 +220,7 @@ const CreateClassPage: React.FC = () => {
           console.log('Parse result:', result);
           
           if (!result.success) {
-            const errorMessage = `File ${file.name} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
+            const errorMessage = `File ${finalFileName} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
             alert(errorMessage);
             continue;
           }
@@ -203,21 +232,41 @@ const CreateClassPage: React.FC = () => {
           
           // Lưu file vào documents (để backup) với ID riêng biệt
           const documentId = `doc-${Date.now()}-${Math.random()}`; // ID riêng cho document
-          const savedDocs = localStorage.getItem('documents') || '[]';
-          const docs = JSON.parse(savedDocs);
-          docs.push({
+          let docs = JSON.parse(savedDocs);
+          
+          // Tạo document mới
+          const newDocument = {
             id: documentId, // Sử dụng documentId thay vì quizId
-            name: file.name,
+            name: finalFileName,
             type: fileType,
             size: file.size,
             uploadedAt: new Date(),
             content: await readFileContent(file)
-          });
+          };
+          
+          if (shouldOverwrite) {
+            // Xóa document cũ và thêm document mới
+            docs = docs.filter((doc: any) => doc.name !== file.name);
+            docs.push(newDocument);
+            
+            // Cập nhật state - xóa file cũ và thêm file mới
+            setUploadedFiles(prev => {
+              const filtered = prev.filter(f => f.name !== file.name);
+              return [...filtered, newDocument];
+            });
+          } else {
+            // Thêm document mới
+            docs.push(newDocument);
+            
+            // Cập nhật state
+            setUploadedFiles(prev => [...prev, newDocument]);
+          }
+          
           localStorage.setItem('documents', JSON.stringify(docs));
           
           // Kiểm tra xem có câu hỏi được parse không
           if (!result.questions || result.questions.length === 0) {
-            alert(`Không tìm thấy câu hỏi nào trong file ${file.name}. Vui lòng kiểm tra lại định dạng file.`);
+            alert(`Không tìm thấy câu hỏi nào trong file ${finalFileName}. Vui lòng kiểm tra lại định dạng file.`);
             continue;
           }
 
@@ -227,7 +276,7 @@ const CreateClassPage: React.FC = () => {
           navigate('/edit-quiz', {
             state: {
               questions: result.questions,
-              fileName: file.name,
+              fileName: finalFileName,
               fileId: quizId,
               classInfo: isCreateNewClass ? {
                 isNew: true,
@@ -243,17 +292,37 @@ const CreateClassPage: React.FC = () => {
         }
         
         // Xử lý các loại file khác (JSON và các file khác)
+        // Lưu file vào documents và uploadedFiles
+        let docs = JSON.parse(savedDocs);
         const content = await readFileContent(file);
         const newFile: UploadedFile = {
           id: `file-${Date.now()}-${Math.random()}`,
-          name: file.name,
+          name: finalFileName,
           type: fileType,
           size: file.size,
           uploadedAt: new Date(),
           content: content
         };
         
-        setUploadedFiles(prev => [...prev, newFile]);
+        if (shouldOverwrite) {
+          // Xóa file cũ và thêm file mới
+          docs = docs.filter((doc: any) => doc.name !== file.name);
+          docs.push(newFile);
+          
+          // Cập nhật state - xóa file cũ và thêm file mới
+          setUploadedFiles(prev => {
+            const filtered = prev.filter(f => f.name !== file.name);
+            return [...filtered, newFile];
+          });
+        } else {
+          // Thêm file mới
+          docs.push(newFile);
+          
+          // Cập nhật state
+          setUploadedFiles(prev => [...prev, newFile]);
+        }
+        
+        localStorage.setItem('documents', JSON.stringify(docs));
         
       } catch (error) {
         console.error('Lỗi khi xử lý file:', error);
