@@ -22,10 +22,13 @@ export interface ClassRoom {
   id: string;
   name: string;
   description?: string;
-  quizIds: string[]; // IDs của các quiz thuộc lớp học này
-  quizzes?: Quiz[]; // Danh sách quiz đã được nạp (runtime only)
-  isPublic: boolean;
+  quizIds?: string[]; // IDs của các quiz thuộc lớp học này (old format)
+  quizzes?: Quiz[] | string[]; // Danh sách quiz hoặc IDs (new format, runtime only)
+  isPublic?: boolean;
+  students?: any[];
+  isActive?: boolean;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface UserAnswer {

@@ -1,0 +1,321 @@
+/* Hiệu ứng slide cho media player */
+@keyframes slideInFromRight {
+  from {
+    transform: translateY(-50%) translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-50%) translateX(100%);
+    opacity: 0;
+  }
+}
+
+.media-player-box {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%) translateX(100%);
+  width: 280px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.95));
+  border: 1px solid rgba(203, 213, 224, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), 0 8px 15px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  padding: 24px 16px 16px 16px;
+  z-index: 1001;
+  font-family: 'Segoe UI', sans-serif;
+  transition: all 0.3s ease;
+  color: #1a202c;
+  /* FIX: Đảm bảo toàn bộ media player có thể nhận events */
+  pointer-events: auto;
+  /* FIX: Ngăn event bubbling */
+  isolation: isolate;
+  /* Hiệu ứng slide - mặc định ẩn ở bên phải */
+  opacity: 0;
+}
+
+.media-player-box.show {
+  animation: slideInFromRight 0.5s ease-out forwards;
+}
+
+.media-player-box.slide-out {
+  animation: slideOutToRight 0.5s ease-out forwards;
+}
+
+:root.dark .media-player-box {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(17, 24, 39, 0.95));
+  color: #f8fafc;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.track-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  /* FIX: Cho phép xuống dòng thay vì cắt text */
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  /* Giữ text alignment ở center */
+  text-align: center;
+  /* Giới hạn chiều cao tối đa là 3 dòng */
+  line-height: 1.4;
+  max-height: 4.2em; /* 3 lines × 1.4 line-height */
+  overflow: hidden;
+  /* Hiệu ứng fade-out nếu text vẫn quá dài */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3; /* FIX: Standard property for compatibility */
+  -webkit-box-orient: vertical;
+  /* FIX: Text có thể nhận click để không tạo "dead zone" */
+  pointer-events: auto;
+  /* FIX: Ngăn text selection */
+  user-select: none;
+}
+
+.timeline-container {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.timeline-slider {
+  width: 100%;
+  margin-bottom: 8px;
+  accent-color: #2563eb;
+  height: 4px;
+  border-radius: 4px;
+  background: #ddd;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #4a5568;
+  margin-bottom: 6px;
+}
+
+.current-time, .total-time {
+  font-family: 'Segoe UI', monospace;
+  font-weight: 500;
+}
+
+:root.dark .time-display {
+  color: #cbd5e1;
+}
+
+.timeline-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+:root.dark .timeline-container .timeline-slider {
+  background: #334155;
+  accent-color: #84cc16;
+}
+
+.controls, .options {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  /* FIX: Container cũng cần nhận events */
+  pointer-events: auto;
+}
+
+.controls button,
+.options button {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.25s ease, transform 0.15s ease;
+  color: #2d3748;
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+  /* FIX: Đảm bảo button có border để tránh click vào khoảng trống */
+  border: 2px solid transparent;
+}
+
+/* FIX: Tăng hit area cho buttons */
+.controls button::before,
+.options button::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background: transparent;
+  z-index: -1;
+}
+
+.controls button:disabled,
+.options button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
+}
+
+.controls button:disabled:hover,
+.options button:disabled:hover {
+  background: transparent;
+  transform: none;
+}
+
+:root.dark .controls button,
+:root.dark .options button {
+  color: #f1f5f9; /* Màu sáng hơn cho icons */
+}
+
+.controls button:hover:not(:disabled),
+.options button:hover:not(:disabled) {
+  background: rgba(45, 55, 72, 0.1);
+  transform: scale(1.1);
+}
+
+:root.dark .controls button:hover:not(:disabled),
+:root.dark .options button:hover:not(:disabled) {
+  background: rgba(241, 245, 249, 0.12);
+}
+
+.options .active {
+  color: #2563eb;
+}
+
+:root.dark .options .active {
+  color: #84cc16; /* Xanh lá gần vàng cho dark mode */
+}
+
+:root.dark .options button:not(.active) {
+  color: #f1f5f9; /* Màu sáng hơn cho button không active */
+}
+
+.loop-container {
+  position: relative;
+  pointer-events: auto;
+}
+
+.loop-options {
+  position: absolute;
+  top: -100%;
+  right: -75%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.95));
+  border: 1px solid rgba(203, 213, 224, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.18), 0 6px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 6px;
+  z-index: 1003;
+  transition: opacity 0.3s ease;
+  pointer-events: auto;
+  /* FIX: Đảm bảo dropdown không bị click outside */
+  isolation: isolate;
+}
+
+:root.dark .loop-options {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(17, 24, 39, 0.95));
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+.loop-options button {
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  text-align: left;
+  color: #2d3748;
+  cursor: pointer;
+  transition: background 0.25s ease;
+  pointer-events: auto;
+  min-width: auto;
+  min-height: auto;
+}
+
+:root.dark .loop-options button {
+  color: #f1f5f9;
+}
+
+.loop-options button:hover,
+.loop-options button.active {
+  background-color: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* FIX: Responsive design cho mobile */
+@media (max-width: 768px) {
+  .media-player-box {
+    width: 250px;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) translateX(100%);
+    padding: 22px 12px 12px 12px;
+  }
+  
+  .track-name {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+  
+  .controls button,
+  .options button {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+  }
+}
+
+/* Ẩn nút mẹ khi dropdown đang mở */
+.loop-container button[hidden] {
+  visibility: hidden !important;
+}
+
+.loop-btn.hidden {
+  visibility: hidden !important;
+}
+
+/* Nút mẹ: đổi màu khi chọn Loop Track */
+.loop-btn.active {
+  color: #2563eb;
+}
+:root.dark .loop-btn.active {
+  color: #84cc16; /* Xanh lá gần vàng */
+}
+
+/* Nút con: luôn đổi màu khi active */
+.loop-options .active {
+  color: #2563eb;
+}
+:root.dark .loop-options .active {
+  color: #84cc16; /* Xanh lá gần vàng */
+}

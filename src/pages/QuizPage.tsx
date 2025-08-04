@@ -389,37 +389,37 @@ const QuizPage: React.FC = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header with title and submit button */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4 sm:gap-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
           {quizTitle}
         </h1>
         <button
           onClick={handleSubmit}
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto text-sm sm:text-base"
         >
           Nộp bài
         </button>
       </div>
 
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-2 lg:order-1">
           {/* Timer */}
-          <div className="card p-4 mb-6 flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Thời gian còn lại:</span>
-            <span className="font-semibold text-xl text-gray-900 dark:text-gray-100">
+          <div className="card p-3 sm:p-4 mb-4 lg:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+            <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Thời gian còn lại:</span>
+            <span className="font-semibold text-lg sm:text-xl text-gray-900 dark:text-gray-100">
               {formatTime(timeLeft)}
             </span>
           </div>
 
           {/* Question */}
-          <div className="card p-6">
+          <div className="card p-4 sm:p-6">
             {/* Question number */}
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Câu {currentQuestionIndex + 1}/{questions.length} (ID: {currentQuestion.id})
                 </span>
                 <button
@@ -430,7 +430,7 @@ const QuizPage: React.FC = () => {
                         : [...prev, currentQuestion.id]
                     );
                   }}
-                  className={`text-sm px-3 py-1 rounded-full transition-colors ${
+                  className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit ${
                     markedQuestions.includes(currentQuestion.id)
                       ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -439,7 +439,7 @@ const QuizPage: React.FC = () => {
                   {markedQuestions.includes(currentQuestion.id) ? 'Đã đánh dấu' : 'Xem lại câu này'}
                 </button>
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {currentQuestion.type === 'single' ? 'Chọn một đáp án' : 
                  currentQuestion.type === 'multiple' ? 'Chọn nhiều đáp án' : 
                  'Điền đáp án'}
@@ -447,16 +447,16 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Question text */}
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6">
               {currentQuestion.question}
             </h2>
 
             {/* Answer options */}
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {currentQuestion.type === 'text' ? (
                 <input
                   type="text"
-                  className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
+                  className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 text-sm sm:text-base"
                   placeholder="Nhập câu trả lời của bạn"
                   value={getCurrentAnswer(currentQuestion.id)[0] || ''}
                   onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
@@ -466,7 +466,7 @@ const QuizPage: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                    className={`w-full p-4 text-left rounded-lg transition-all duration-200 border ${
+                    className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
                       getCurrentAnswer(currentQuestion.id).includes(option)
                         ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
                         : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
@@ -480,11 +480,11 @@ const QuizPage: React.FC = () => {
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex justify-between mt-6">
+          <div className="flex flex-col sm:flex-row justify-between mt-4 sm:mt-6 gap-3 sm:gap-0">
             <button
               onClick={handlePrevQuestion}
               disabled={currentQuestionIndex === 0}
-              className="btn-secondary flex items-center gap-2"
+              className="btn-secondary flex items-center justify-center gap-2 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -495,7 +495,7 @@ const QuizPage: React.FC = () => {
             <button
               onClick={handleNextQuestion}
               disabled={currentQuestionIndex === questions.length - 1}
-              className="btn-secondary flex items-center gap-2"
+              className="btn-secondary flex items-center justify-center gap-2 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2"
             >
               Câu sau
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -505,18 +505,18 @@ const QuizPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        {/* Right Section - Sidebar */}
+        <div className="w-full lg:w-1/3 order-1 lg:order-2">
+          <div className="card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
               Danh sách câu hỏi
             </h3>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
               {questions.map((question, index) => (
                 <button
                   key={question.id}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`p-2 text-center rounded-lg transition-all duration-200 border-2
+                  className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm
                     ${index === currentQuestionIndex
                       ? 'bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25'
                       : markedQuestions.includes(question.id)
@@ -535,9 +535,9 @@ const QuizPage: React.FC = () => {
       </div>
 
       {/* Progress bar */}
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Tiến độ làm bài: {userAnswers.length}/{questions.length} câu
           </span>
           <span className="text-sm text-gray-600 dark:text-gray-400">

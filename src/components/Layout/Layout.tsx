@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import BackgroundMusic from '../BackgroundMusic';
 
 // Interface cho Layout component
 interface LayoutProps {
@@ -21,6 +22,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Footer */}
       <Footer />
+      
+      {/* Background Music Player */}
+      <BackgroundMusic />
     </div>
   );
 };

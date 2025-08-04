@@ -1,0 +1,280 @@
+/* Responsive Mobile Design for Quiz Website */
+
+/* Global mobile optimizations */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Container and layout adjustments */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Flex layout responsive fixes */
+  .flex-responsive {
+    flex-direction: column;
+  }
+  
+  .gap-responsive {
+    gap: 1rem;
+  }
+  
+  /* Grid responsive adjustments */
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-responsive-single {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Text size adjustments */
+  .text-responsive-lg {
+    font-size: 1.125rem; /* text-lg */
+  }
+  
+  .text-responsive-xl {
+    font-size: 1.25rem; /* text-xl */
+  }
+  
+  .text-responsive-2xl {
+    font-size: 1.5rem; /* text-2xl */
+  }
+  
+  /* Padding and margin adjustments */
+  .p-responsive {
+    padding: 1rem;
+  }
+  
+  .p-responsive-sm {
+    padding: 0.75rem;
+  }
+  
+  .px-responsive {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .py-responsive {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .m-responsive {
+    margin: 0.75rem;
+  }
+  
+  .mb-responsive {
+    margin-bottom: 1rem;
+  }
+  
+  /* Button responsive adjustments */
+  .btn-responsive {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    justify-content: center;
+  }
+  
+  .btn-responsive-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Form responsive adjustments */
+  .input-responsive {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Card responsive adjustments */
+  .card-responsive {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Navigation responsive */
+  .nav-responsive {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Typography responsive */
+  .heading-responsive {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .subheading-responsive {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Spacing responsive */
+  .space-responsive > * + * {
+    margin-top: 0.75rem;
+  }
+  
+  /* Modal and overlay responsive */
+  .modal-responsive {
+    width: calc(100vw - 2rem);
+    max-width: none;
+    margin: 1rem;
+  }
+  
+  /* Table responsive */
+  .table-responsive {
+    overflow-x: auto;
+    font-size: 0.875rem;
+  }
+  
+  .table-responsive table {
+    min-width: 600px;
+  }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .text-responsive-xl {
+    font-size: 1.125rem; /* text-lg */
+  }
+  
+  .text-responsive-2xl {
+    font-size: 1.25rem; /* text-xl */
+  }
+  
+  .p-responsive-sm {
+    padding: 0.5rem;
+  }
+  
+  .btn-responsive-sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .gap-responsive {
+    gap: 0.75rem;
+  }
+  
+  .grid-responsive {
+    grid-template-columns: 1fr;
+  }
+  
+  .heading-responsive {
+    font-size: 1.25rem;
+  }
+  
+  .subheading-responsive {
+    font-size: 1rem;
+  }
+  
+  .modal-responsive {
+    width: calc(100vw - 1rem);
+    margin: 0.5rem;
+  }
+}
+
+/* Utilities for specific components */
+@media (max-width: 768px) {
+  /* Quiz page specific */
+  .quiz-question-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .quiz-answers {
+    gap: 0.75rem;
+  }
+  
+  .quiz-navigation {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  /* Homepage specific */
+  .homepage-layout {
+    flex-direction: column;
+  }
+  
+  .homepage-sidebar {
+    order: -1;
+    width: 100%;
+  }
+  
+  /* Class page specific */
+  .class-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* Header specific */
+  .header-mobile {
+    height: 4rem;
+  }
+  
+  .header-mobile .logo {
+    height: 2rem;
+    width: 2rem;
+  }
+  
+  .header-mobile .logo-text {
+    font-size: 1rem;
+  }
+  
+  /* Music player specific - DISABLED to keep desktop size */
+  /* .music-player-mobile {
+    width: calc(100vw - 2rem);
+    max-width: 300px;
+    right: 1rem;
+    bottom: 5rem;
+  } */
+}
+
+/* High DPI displays optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .icon-responsive {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .landscape-adjust {
+    height: auto;
+    min-height: auto;
+  }
+  
+  .landscape-navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .touch-button {
+    padding: 0.75rem 1rem;
+  }
+  
+  .touch-link {
+    padding: 0.5rem;
+    margin: 0.25rem;
+  }
+}

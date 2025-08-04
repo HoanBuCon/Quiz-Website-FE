@@ -646,7 +646,7 @@ const ResultsPage: React.FC = () => {
             onClick={() => navigate(`/quiz/${quizId}`)}
             className="btn-primary"
           >
-            Làm lại bài quiz
+            Làm lại Quiz
           </button>
           <Link to="/classes" className="btn-secondary">
             Xem lớp học khác

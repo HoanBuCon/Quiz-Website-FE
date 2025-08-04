@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
+import { checkDuplicateFileName, showDuplicateModal } from '../utils/fileUtils';
 
 const DocumentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -11,6 +13,16 @@ const DocumentsPage: React.FC = () => {
   const [processingFile, setProcessingFile] = useState<string | null>(null);
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalQuizzes, setTotalQuizzes] = useState(0);
+  
+  // Modal states
+  const [showClassModal, setShowClassModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [isCreateNewClass, setIsCreateNewClass] = useState(true);
+  const [className, setClassName] = useState('');
+  const [classDescription, setClassDescription] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [existingClasses, setExistingClasses] = useState<any[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Lấy documents từ localStorage
@@ -28,10 +40,20 @@ const DocumentsPage: React.FC = () => {
     if (savedClasses) {
       const classes = JSON.parse(savedClasses);
       setTotalClasses(classes.length);
+      setExistingClasses(classes);
       
-      // Tính tổng số quiz
+      // Tính tổng số quiz với support cho cả hai format
       const total = classes.reduce((sum: number, classroom: any) => {
-        return sum + (classroom.quizzes ? classroom.quizzes.length : 0);
+        let quizCount = 0;
+        
+        // Handle both old format (quizIds) and new format (quizzes)
+        if (classroom.quizIds && Array.isArray(classroom.quizIds)) {
+          quizCount = classroom.quizIds.length;
+        } else if (classroom.quizzes && Array.isArray(classroom.quizzes)) {
+          quizCount = classroom.quizzes.length;
+        }
+        
+        return sum + quizCount;
       }, 0);
       setTotalQuizzes(total);
     }
@@ -77,7 +99,25 @@ const DocumentsPage: React.FC = () => {
       setProcessingFile(file.name);
       
       try {
-        const fileType = getFileType(file.name);
+        // Kiểm tra duplicate file name
+        const duplicateCheck = checkDuplicateFileName(file.name, documents);
+        let finalFileName = file.name;
+        let shouldOverwrite = false;
+        
+        if (duplicateCheck.isDuplicate) {
+          const action = await showDuplicateModal(file.name, duplicateCheck.suggestedName!);
+          
+          if (action.action === 'cancel') {
+            continue; // Bỏ qua file này
+          } else if (action.action === 'overwrite') {
+            shouldOverwrite = true;
+            finalFileName = file.name;
+          } else if (action.action === 'rename') {
+            finalFileName = action.newFileName!;
+          }
+        }
+        
+        const fileType = getFileType(finalFileName);
         
         // Đọc nội dung file
         const content = await readFileContent(file);
@@ -85,7 +125,7 @@ const DocumentsPage: React.FC = () => {
         // Tạo document mới
         const newDocument: UploadedFile = {
           id: `file-${Date.now()}-${Math.random()}`,
-          name: file.name,
+          name: finalFileName,
           type: fileType,
           size: file.size,
           uploadedAt: new Date(),
@@ -94,12 +134,27 @@ const DocumentsPage: React.FC = () => {
         
         // Lưu vào localStorage
         const savedDocs = localStorage.getItem('documents') || '[]';
-        const docs = JSON.parse(savedDocs);
-        docs.push(newDocument);
-        localStorage.setItem('documents', JSON.stringify(docs));
+        let docs = JSON.parse(savedDocs);
         
-        // Cập nhật state
-        setDocuments(prev => [...prev, newDocument]);
+        if (shouldOverwrite) {
+          // Xóa file cũ và thêm file mới
+          docs = docs.filter((doc: UploadedFile) => doc.name !== file.name);
+          docs.push(newDocument);
+          
+          // Cập nhật state - xóa file cũ và thêm file mới
+          setDocuments(prev => {
+            const filtered = prev.filter(doc => doc.name !== file.name);
+            return [...filtered, newDocument];
+          });
+        } else {
+          // Thêm file mới
+          docs.push(newDocument);
+          
+          // Cập nhật state
+          setDocuments(prev => [...prev, newDocument]);
+        }
+        
+        localStorage.setItem('documents', JSON.stringify(docs));
         
       } catch (error) {
         console.error('Lỗi khi xử lý file:', error);
@@ -115,12 +170,49 @@ const DocumentsPage: React.FC = () => {
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      
       reader.onload = (e) => {
-        const content = e.target?.result as string;
-        resolve(content);
+        try {
+          if (fileExtension === 'doc' || fileExtension === 'docx') {
+            // Đối với file Word, đọc dưới dạng ArrayBuffer và chuyển thành base64
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            if (!arrayBuffer) {
+              reject(new Error('Không thể đọc file Word'));
+              return;
+            }
+            
+            // Chuyển ArrayBuffer thành base64 string một cách an toàn
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binaryString = '';
+            const chunkSize = 8192; // Xử lý theo chunks để tránh stack overflow
+            
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.slice(i, i + chunkSize);
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+            }
+            
+            const base64String = btoa(binaryString);
+            resolve(base64String);
+          } else {
+            // Đối với file text, đọc bình thường
+            const content = e.target?.result as string;
+            resolve(content || '');
+          }
+        } catch (error) {
+          console.error('Lỗi khi xử lý nội dung file:', error);
+          reject(new Error('Lỗi khi xử lý nội dung file'));
+        }
       };
+      
       reader.onerror = () => reject(new Error('Không thể đọc file'));
-      reader.readAsText(file);
+      
+      // Chọn phương thức đọc phù hợp
+      if (fileExtension === 'doc' || fileExtension === 'docx') {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -134,17 +226,185 @@ const DocumentsPage: React.FC = () => {
 
   // Xử lý download file
   const handleDownload = (file: UploadedFile) => {
-    // Giả lập download
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([file.content || ''], { type: 'text/plain' }));
+    
+    if (file.type === 'docs') {
+      try {
+        // Đối với file Word, chuyển base64 về binary một cách an toàn
+        const base64Content = file.content || '';
+        
+        // Kiểm tra xem content có phải là base64 hợp lệ không
+        if (!base64Content) {
+          alert('File không có nội dung để tải về');
+          return;
+        }
+        
+        // Sử dụng fetch để tạo binary data từ base64
+        const byteCharacters = atob(base64Content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        
+        const blob = new Blob([byteArray], { 
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+        });
+        link.href = URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Lỗi khi xử lý file Word:', error);
+        alert('Có lỗi xảy ra khi tải file Word. File có thể bị hỏng.');
+        return;
+      }
+    } else {
+      // Đối với file text
+      const blob = new Blob([file.content || ''], { type: 'text/plain' });
+      link.href = URL.createObjectURL(blob);
+    }
+    
     link.download = file.name;
     link.click();
+    
+    // Cleanup URL sau khi download
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+    }, 1000);
   };
 
   // Xử lý tạo lớp từ file
   const handleCreateClass = (file: UploadedFile) => {
-    // Chuyển đến trang tạo lớp với file đã chọn
-    console.log('Tạo lớp từ file:', file.name);
+    setSelectedFile(file);
+    setClassName('');
+    setClassDescription('');
+    setSelectedClassId('');
+    setShowClassModal(true);
+  };
+
+  // Đóng modal
+  const handleCloseModal = () => {
+    setShowClassModal(false);
+    setSelectedFile(null);
+    setClassName('');
+    setClassDescription('');
+    setSelectedClassId('');
+    setIsCreateNewClass(true);
+  };
+
+  // Xử lý submit modal
+  const handleModalSubmit = async () => {
+    if (!selectedFile) return;
+
+    // Validation
+    if (isCreateNewClass) {
+      if (!className.trim()) {
+        alert('Vui lòng nhập tên lớp học');
+        return;
+      }
+      if (!classDescription.trim()) {
+        alert('Vui lòng nhập mô tả lớp học');
+        return;
+      }
+    } else {
+      if (!selectedClassId) {
+        alert('Vui lòng chọn lớp học');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Parse file để lấy câu hỏi
+      const fileType = getFileType(selectedFile.name);
+      let questions = [];
+
+      if (fileType === 'docs' || fileType === 'txt') {
+        if (fileType === 'docs') {
+          try {
+            // Đối với file Word, chuyển base64 về ArrayBuffer một cách an toàn
+            const base64Content = selectedFile.content || '';
+            if (!base64Content) {
+              alert('File Word không có nội dung');
+              return;
+            }
+            
+            const binaryString = atob(base64Content);
+            const uint8Array = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              uint8Array[i] = binaryString.charCodeAt(i);
+            }
+            
+            const fileBlob = new Blob([uint8Array], { 
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            const file = new File([fileBlob], selectedFile.name, { 
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            
+            const result = await parseFile(file);
+            if (result.success && result.questions) {
+              questions = result.questions;
+            } else {
+              alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+              return;
+            }
+          } catch (error) {
+            console.error('Lỗi khi xử lý file Word:', error);
+            alert('Có lỗi xảy ra khi xử lý file Word. File có thể bị hỏng.');
+            return;
+          }
+        } else {
+          // Đối với file text
+          const fileBlob = new Blob([selectedFile.content || ''], { type: 'text/plain' });
+          const file = new File([fileBlob], selectedFile.name, { type: 'text/plain' });
+          
+          const result = await parseFile(file);
+          if (result.success && result.questions) {
+            questions = result.questions;
+          } else {
+            alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+            return;
+          }
+        }
+      } else {
+        alert('Hiện tại chỉ hỗ trợ file .doc, .docx, .txt');
+        return;
+      }
+
+      if (questions.length === 0) {
+        alert('Không tìm thấy câu hỏi nào trong file');
+        return;
+      }
+
+      // Tạo quiz ID
+      const quizId = `file-${Date.now()}-${Math.random()}`;
+
+      // Chuyển đến EditQuizPage với dữ liệu
+      navigate('/edit-quiz', {
+        state: {
+          questions: questions,
+          fileName: selectedFile.name,
+          fileId: quizId,
+          // Thông tin lớp học
+          classInfo: isCreateNewClass ? {
+            isNew: true,
+            name: className,
+            description: classDescription
+          } : {
+            isNew: false,
+            classId: selectedClassId
+          }
+        }
+      });
+
+      handleCloseModal();
+
+    } catch (error) {
+      console.error('Lỗi khi xử lý file:', error);
+      alert('Có lỗi xảy ra khi xử lý file');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Xóa file
@@ -197,21 +457,56 @@ const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
-        {/* Left Section - 70% */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Mobile: Statistics Box First */}
+      <div className="lg:hidden mb-6">
+        <div className="card p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+            Thống kê tài liệu
+          </h3>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng tài liệu:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{documents.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Tổng dung lượng:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {formatFileSize(documents.reduce((total, doc) => total + doc.size, 0))}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng lớp đã tạo:</span>
+              <span className="font-semibold text-green-600">{totalClasses}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng bài kiểm tra:</span>
+              <span className="font-semibold text-blue-600">{totalQuizzes}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Tài liệu mới nhất:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {documents.length > 0 ? documents[0].uploadedAt.toLocaleDateString('vi-VN') : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Left Section - Main Content */}
+        <div className="flex-1 order-1">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 lg:mb-4">
               Tài liệu của tôi
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
               Quản lý và sử dụng các tài liệu đã tải lên
             </p>
           </div>
 
           {/* Upload Area */}
-          <div className="card p-8 mb-8">
+          <div className="card p-4 sm:p-6 lg:p-8 mb-6 lg:mb-8">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
               Tải lên tài liệu mới
             </h3>
@@ -304,17 +599,17 @@ const DocumentsPage: React.FC = () => {
             // Danh sách tài liệu
             <div className="space-y-4">
               {documents.map((doc) => (
-                <div key={doc.id} className="card p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                <div key={doc.id} className="card p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type)}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
                           {doc.name}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                           <span>{formatFileSize(doc.size)}</span>
                           <span>•</span>
                           <span>Tải lên: {doc.uploadedAt.toLocaleDateString('vi-VN')}</span>
@@ -323,10 +618,10 @@ const DocumentsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 sm:flex-shrink-0">
                       <button
                         onClick={() => handleDownload(doc)}
-                        className="btn-secondary text-sm flex items-center"
+                        className="btn-secondary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -335,7 +630,7 @@ const DocumentsPage: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleCreateClass(doc)}
-                        className="btn-primary text-sm flex items-center"
+                        className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -359,15 +654,15 @@ const DocumentsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right Section - 30% */}
-        <div className="w-1/3">
+        {/* Right Section - Desktop Only (Statistics only, no usage guide) */}
+        <div className="hidden lg:block lg:w-1/3 order-2">
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
               Thống kê tài liệu
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Tổng tài liệu:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng tài liệu:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {documents.length}
                 </span>
@@ -379,11 +674,11 @@ const DocumentsPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Lớp đã tạo:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng lớp đã tạo:</span>
                 <span className="font-semibold text-green-600">{totalClasses}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Quiz đã tạo:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng bài kiểm tra:</span>
                 <span className="font-semibold text-blue-600">{totalQuizzes}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -394,20 +689,127 @@ const DocumentsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="card p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Hướng dẫn sử dụng
+      {/* Modal tạo lớp */}
+      {showClassModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Tạo lớp từ tài liệu: {selectedFile?.name}
             </h3>
-            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-              <p>• Tải lên file .doc, .docx, .json, .txt</p>
-              <p>• Click "Tải về" để download tài liệu</p>
-              <p>• Click "Tạo lớp" để tạo bài trắc nghiệm</p>
-              <p>• Xóa tài liệu không cần thiết</p>
+
+            {/* Radio buttons */}
+            <div className="mb-6">
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(true)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-300">
+                    Tạo lớp học mới
+                  </span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={!isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(false)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-300">
+                    Chọn lớp học có sẵn
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Form fields */}
+            {isCreateNewClass ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tên lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                    placeholder="Nhập tên lớp học"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mô tả lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={classDescription}
+                    onChange={(e) => setClassDescription(e.target.value)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                    rows={3}
+                    placeholder="Nhập mô tả lớp học"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Chọn lớp học <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">-- Chọn lớp học --</option>
+                  {existingClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={handleModalSubmit}
+                disabled={isProcessing}
+                className="flex-1 btn-primary flex items-center justify-center"
+              >
+                {isProcessing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Tiếp tục'
+                )}
+              </button>
+              <button
+                onClick={handleCloseModal}
+                disabled={isProcessing}
+                className="flex-1 btn-secondary"
+              >
+                Hủy
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

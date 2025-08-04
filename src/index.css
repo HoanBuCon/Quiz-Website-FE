@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import responsive styles */
+@import './styles/responsive.css';
+
+/* Import code fonts for logo */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700;900&display=swap');
+
 /* Custom styles cho dark mode và soft light mode */
 @layer base {
   body {
@@ -17,16 +23,95 @@
     background-color: #0f172a; /* slate-900 */
     color: #f1f5f9; /* slate-100 */
   }
+  
+  /* Global scrollbar styles */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #e2e8f0; /* thumb-color track-color for Firefox */
+  }
+  
+  html::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  
+  html::-webkit-scrollbar-track {
+    background: #e2e8f0; /* slate-200 - darker track for more contrast */
+    border-radius: 6px;
+  }
+  
+  html::-webkit-scrollbar-thumb {
+    background: #94a3b8; /* slate-400 - more prominent thumb */
+    border-radius: 6px;
+    border: 2px solid #e2e8f0;
+  }
+  
+  html::-webkit-scrollbar-thumb:hover {
+    background: #64748b; /* slate-500 - darker on hover */
+  }
+  
+  html::-webkit-scrollbar-corner {
+    background: #e2e8f0;
+  }
+  
+  /* Dark mode global scrollbar */
+  html.dark {
+    scrollbar-color: #64748b #0f172a !important; /* thumb-color track-color for Firefox */
+  }
+  
+  html.dark::-webkit-scrollbar-track {
+    background: #0f172a !important; /* dark track matching body background */
+  }
+  
+  html.dark::-webkit-scrollbar-thumb {
+    background: #64748b !important; /* gray thumb */
+    border: 2px solid #0f172a !important;
+  }
+  
+  html.dark::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important; /* lighter gray on hover */
+  }
+  
+  html.dark::-webkit-scrollbar-corner {
+    background: #0f172a !important;
+  }
+  
+  /* Alternative selector for body-based dark mode */
+  body.dark,
+  .dark body {
+    scrollbar-color: #64748b #0f172a !important;
+  }
+  
+  body.dark::-webkit-scrollbar-track,
+  .dark body::-webkit-scrollbar-track {
+    background: #0f172a !important;
+  }
+  
+  body.dark::-webkit-scrollbar-thumb,
+  .dark body::-webkit-scrollbar-thumb {
+    background: #64748b !important;
+    border: 2px solid #0f172a !important;
+  }
+  
+  body.dark::-webkit-scrollbar-thumb:hover,
+  .dark body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+  }
+  
+  body.dark::-webkit-scrollbar-corner,
+  .dark body::-webkit-scrollbar-corner {
+    background: #0f172a !important;
+  }
 }
 
-/* Custom components */
+  /* Custom components */
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base;
   }
   
   .btn-secondary {
-    @apply bg-stone-200 hover:bg-stone-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply bg-stone-200 hover:bg-stone-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm sm:text-base;
   }
   
   .card {
@@ -41,7 +126,329 @@
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-stone-400 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100;
+    @apply w-full px-3 py-2 border border-stone-400 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
+  
+  /* Custom scrollbar styles */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 #e2e8f0; /* thumb-color track-color for Firefox */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #e2e8f0; /* slate-200 - darker track for more contrast */
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8; /* slate-400 - more prominent thumb */
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748b; /* slate-500 - darker on hover */
+  }
+  
+  /* Dark mode scrollbar */
+  .dark .custom-scrollbar {
+    scrollbar-color: #64748b #374151; /* thumb-color track-color for Firefox */
+  }
+  
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: #374151; /* dark track matching component backgrounds */
+  }
+  
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #64748b; /* gray thumb */
+    border: 1px solid #374151;
+  }
+  
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* lighter gray on hover */
+  }
+  
+  /* Header and Footer optimized texture effects */
+  .header-texture {
+    position: relative;
+    background: 
+      linear-gradient(135deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.04) 100%),
+      radial-gradient(ellipse at top left, rgba(0, 0, 0, 0.12) 0%, transparent 60%);
+  }
+  
+  .dark .header-texture {
+    background: 
+      linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%),
+      radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  }
+  
+  .footer-texture {
+    position: relative;
+    background: 
+      linear-gradient(45deg, rgba(0, 0, 0, 0.07) 0%, rgba(0, 0, 0, 0.03) 100%),
+      radial-gradient(ellipse at bottom right, rgba(0, 0, 0, 0.1) 0%, transparent 60%);
+  }
+  
+  .dark .footer-texture {
+    background: 
+      linear-gradient(45deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%),
+      radial-gradient(ellipse at bottom right, rgba(255, 255, 255, 0.07) 0%, transparent 60%);
+  }
+  
+  /* Enhanced border glow */
+  .premium-gradient {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 
+      inset 0 1px 0 rgba(0, 0, 0, 0.04),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  }
+  
+  .dark .premium-gradient {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+  }
+  
+  /* Developer-style logo typography */
+  .logo-text {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .dark .logo-text {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 50%, #c2410c 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .logo-text:hover {
+    letter-spacing: 0.02em;
+    transform: translateY(-1px);
+  }
+  
+  .logo-text::before {
+    content: '~/';
+    position: absolute;
+    left: -20px;
+    color: #10b981;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  
+  .logo-text:hover::before {
+    opacity: 1;
+    left: -25px;
+  }
+  
+  .logo-text::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    right: 0;
+    width: 0;
+    height: 2px;
+    background: #10b981;
+    animation: cursor-blink 1s infinite;
+    transition: width 0.3s ease;
+  }
+  
+  .logo-text:hover::after {
+    width: 8px;
+    animation: none;
+    background: linear-gradient(90deg, #10b981, #06b6d4);
+  }
+  
+  @keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+}
+
+/* Custom Toast Animations */
+@layer components {
+  /* Toast container styles */
+  .toast-container {
+    position: fixed !important;
+    bottom: 20px !important; /* Sát dưới viewport hơn */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 9999 !important;
+  }
+
+  /* Custom toast enter animation - slide up from bottom */
+  [data-sonner-toaster] [data-sonner-toast] {
+    animation: slideUpFadeInSmall 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Custom toast exit animation - slide down and fade out */
+  [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
+    animation: slideDownFadeOutSmall 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  /* React Hot Toast custom animations */
+  .react-hot-toast {
+    animation: slideUpBounceSmall 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards !important;
+  }
+
+  .react-hot-toast[data-visible="false"] {
+    animation: slideDownFadeSmall 0.3s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  }
+
+  @keyframes slideUpFadeInSmall {
+    from {
+      opacity: 0;
+      transform: translateY(60px) scale(0.5); /* Nhỏ hơn và di chuyển ít hơn */
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85); /* Scale 85% */
+    }
+  }
+
+  @keyframes slideDownFadeOutSmall {
+    from {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(40px) scale(0.5);
+    }
+  }
+
+  @keyframes slideUpBounceSmall {
+    0% {
+      opacity: 0;
+      transform: translateY(60px) scale(0.5);
+    }
+    50% {
+      opacity: 0.8;
+      transform: translateY(-5px) scale(0.9); /* Bounce nhỏ hơn */
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+  }
+
+  @keyframes slideDownFadeSmall {
+    from {
+      opacity: 1;
+      transform: translateY(0px) scale(0.85);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(30px) scale(0.75);
+    }
+  }
+
+  /* Toast hover effects */
+  [data-sonner-toast]:hover,
+  .react-hot-toast:hover {
+    transform: scale(0.87) !important; /* Tăng nhẹ từ 0.85 lên 0.87 */
+    transition: transform 0.2s ease !important;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .toast-container {
+      bottom: 15px !important; /* Sát dưới hơn trên mobile */
+      left: 16px !important;
+      right: 16px !important;
+      transform: none !important;
+    }
+    
+    /* Mobile animations với scale nhỏ hơn */
+    @keyframes slideUpFadeInSmall {
+      from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.4);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0px) scale(0.8);
+      }
+    }
+    
+    .react-hot-toast:hover {
+      transform: scale(0.82) !important;
+    }
+  }
+}
+
+/* Music button responsive */
+@media (max-width: 768px) {
+  .music-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 1000;
+  }
+  
+  .effect-btn.music-btn {
+    width: 3rem;
+    height: 3rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+  }
+  
+  .effect-btn.music-btn .effect-text {
+    display: none;
+  }
+  
+  .effect-btn.music-btn .effect-icon {
+    font-size: 1.25rem;
+  }
+  
+  /* DISABLED: MediaPlayer responsive override to keep desktop size */
+  /* .media-player-box {
+    position: fixed !important;
+    bottom: 5rem !important;
+    right: 1rem !important;
+    left: 1rem !important;
+    width: auto !important;
+    max-width: none !important;
+  } */
+}
+
+@media (max-width: 480px) {
+  .music-container {
+    bottom: 0.75rem;
+    right: 0.75rem;
+  }
+  
+  .effect-btn.music-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.375rem;
+  }
+  
+  .effect-btn.music-btn .effect-icon {
+    font-size: 1rem;
+  }
+  
+  /* DISABLED: MediaPlayer responsive override to keep desktop size */
+  /* .media-player-box {
+    bottom: 4rem !important;
+    right: 0.75rem !important;
+    left: 0.75rem !important;
+  } */
 }
