@@ -829,7 +829,7 @@ const EditQuizPage: React.FC = () => {
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Xuất bản bài quiz
+                  Xuất bản Quiz
                 </>
               )}
             </button>
@@ -839,19 +839,19 @@ const EditQuizPage: React.FC = () => {
         {/* Quiz Info */}
         <div className="card p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-            Thông tin bài quiz
+            Thông tin Quiz
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tiêu đề bài quiz
+                Tiêu đề Quiz
               </label>
               <input
                 type="text"
                 value={quizTitle}
                 onChange={(e) => setQuizTitle(e.target.value)}
                 className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="Nhập tiêu đề bài quiz"
+                placeholder="Nhập tiêu đề Quiz"
               />
             </div>
             <div>
@@ -863,7 +863,7 @@ const EditQuizPage: React.FC = () => {
                 value={quizDescription}
                 onChange={(e) => setQuizDescription(e.target.value)}
                 className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="Nhập mô tả bài quiz"
+                placeholder="Nhập mô tả Quiz"
               />
             </div>
           </div>
@@ -926,7 +926,7 @@ const EditQuizPage: React.FC = () => {
                 Chưa có câu hỏi nào
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Thêm câu hỏi đầu tiên để bắt đầu tạo bài quiz
+                Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
               </p>
             </div>
           )}
@@ -963,7 +963,7 @@ const EditQuizPage: React.FC = () => {
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Xuất bản bài quiz
+                    Xuất bản Quiz
                   </>
                 )}
               </button>

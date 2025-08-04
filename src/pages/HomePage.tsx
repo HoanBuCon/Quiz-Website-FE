@@ -408,7 +408,7 @@ const HomePage: React.FC = () => {
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
                           <span className="mx-2">•</span>
-                          <span>{classRoom.quizzes?.length || 0} bài quiz</span>
+                          <span>{classRoom.quizzes?.length || 0} bài kiểm tra</span>
                         </div>
                       </div>
                       <div className="relative dropdown-container">
@@ -522,7 +522,7 @@ const HomePage: React.FC = () => {
                 <span className="font-semibold text-green-600">24</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Bài quiz đã tạo:</span>
+                <span className="text-gray-600 dark:text-gray-400">Quiz đã tạo:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">{totalQuizzes}</span>
               </div>
             </div>
