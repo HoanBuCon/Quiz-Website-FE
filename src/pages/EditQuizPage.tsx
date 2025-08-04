@@ -25,6 +25,12 @@ const EditQuizPage: React.FC = () => {
     try {
       setIsPublishing(true);
 
+      // Validation: Phải có ít nhất 1 câu hỏi
+      if (questions.length === 0) {
+        alert('Vui lòng thêm ít nhất một câu hỏi trước khi xuất bản');
+        return;
+      }
+
       // Validation trước khi xuất bản
       const invalidQuestions = [];
       for (let i = 0; i < questions.length; i++) {
@@ -57,26 +63,34 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // Lưu quiz vào localStorage
+      // Lưu quiz vào localStorage chỉ khi xuất bản
       const savedQuizzes = localStorage.getItem('quizzes') || '[]';
       const quizzes = JSON.parse(savedQuizzes);
       
-      // Xóa quiz cũ nếu đã tồn tại
-      const filteredQuizzes = quizzes.filter((q: Quiz) => q.id !== state.fileId);
+      // Kiểm tra xem quiz đã tồn tại chưa - nếu chưa thì tạo mới
+      const existingQuizIndex = quizzes.findIndex((q: Quiz) => q.id === state.fileId);
       
-      // Thêm quiz mới với dữ liệu đã được cập nhật
+      // Tạo quiz mới với dữ liệu đã được cập nhật
       const newQuiz = {
         id: state.fileId,
         title: quizTitle || `Quiz từ file ${state.fileName}`,
         description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
         questions: questions, // Sử dụng questions state hiện tại (đã được cập nhật)
         fileName: state.fileName,
-        createdAt: new Date(),
-        updatedAt: new Date(), // Thêm updatedAt
+        createdAt: existingQuizIndex >= 0 ? quizzes[existingQuizIndex].createdAt : new Date(),
+        updatedAt: new Date(),
         published: true
       };
-      filteredQuizzes.push(newQuiz);
-      localStorage.setItem('quizzes', JSON.stringify(filteredQuizzes));
+      
+      if (existingQuizIndex >= 0) {
+        // Cập nhật quiz có sẵn
+        quizzes[existingQuizIndex] = newQuiz;
+      } else {
+        // Thêm quiz mới
+        quizzes.push(newQuiz);
+      }
+      
+      localStorage.setItem('quizzes', JSON.stringify(quizzes));
       
       console.log('Quiz saved with questions:', questions); // Debug log
       
@@ -91,7 +105,27 @@ const EditQuizPage: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('EditQuizPage: received state', state);
+    
+    if (!state) {
+      console.log('No state provided, redirecting');
+      toast.error('Không có thông tin quiz');
+      navigate('/create');
+      return;
+    }
+
+    // Kiểm tra xem có phải là manual quiz không (từ nút "Tạo bài trắc nghiệm")
+    if (state.fileName === 'Quiz thủ công' && (!state.questions || state.questions.length === 0)) {
+      console.log('Manual quiz - initializing empty questions');
+      setQuestions([]);
+      setQuizTitle('Quiz thủ công');
+      setQuizDescription('Bài trắc nghiệm tạo thủ công');
+      return;
+    }
+
+    // Với file upload - cần có câu hỏi
     if (!state?.questions || state.questions.length === 0) {
+      console.log('No questions found, redirecting');
       toast.error('Không có câu hỏi nào được tải lên');
       navigate('/create');
       return;
@@ -631,7 +665,7 @@ const EditQuizPage: React.FC = () => {
     );
   };
 
-  if (!state?.questions) {
+  if (!state) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
@@ -639,7 +673,7 @@ const EditQuizPage: React.FC = () => {
             Không có dữ liệu để chỉnh sửa
           </h1>
           <button
-            onClick={() => navigate('/create-class')}
+            onClick={() => navigate('/create')}
             className="btn-primary"
           >
             Quay lại trang tạo lớp
@@ -665,9 +699,24 @@ const EditQuizPage: React.FC = () => {
             <button
               onClick={handlePublish}
               disabled={isPublishing}
-              className="btn-primary"
+              className="btn-primary flex items-center"
             >
-              {isPublishing ? 'Đang xuất bản...' : 'Xuất bản bài quiz'}
+              {isPublishing ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang xuất bản...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Xuất bản bài quiz
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -713,7 +762,7 @@ const EditQuizPage: React.FC = () => {
              </h2>
             <button
               onClick={handleAddQuestion}
-              className="btn-secondary"
+              className="btn-secondary flex items-center"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -744,18 +793,51 @@ const EditQuizPage: React.FC = () => {
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Chưa có câu hỏi nào
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 dark:text-gray-400">
                 Thêm câu hỏi đầu tiên để bắt đầu tạo bài quiz
               </p>
-              <button
-                onClick={handleAddQuestion}
-                className="btn-primary"
-              >
-                Thêm câu hỏi đầu tiên
-              </button>
             </div>
           )}
         </div>
+        
+        {/* Nút xuất bản ở cuối trang */}
+        {questions.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-center items-center gap-4">
+              <button
+                onClick={handleAddQuestion}
+                className="btn-secondary flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Thêm câu hỏi
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="btn-primary flex items-center"
+              >
+                {isPublishing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xuất bản...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Xuất bản bài quiz
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

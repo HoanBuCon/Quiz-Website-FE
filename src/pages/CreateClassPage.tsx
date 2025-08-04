@@ -152,6 +152,8 @@ const CreateClassPage: React.FC = () => {
 
   // Xử lý chuyển đến trang tạo quiz thủ công
   const handleCreateManualQuiz = () => {
+    console.log('handleCreateManualQuiz called');
+    
     // Kiểm tra validation trước
     if (!isFormValid()) {
       if (isCreateNewClass) {
@@ -163,9 +165,25 @@ const CreateClassPage: React.FC = () => {
     }
     
     const quizId = `manual-${Date.now()}-${Math.random()}`;
-    const classId = createNewClass(quizId);
+    console.log('Generated quizId:', quizId);
     
-    if (!classId) return; // Dừng nếu không tạo được lớp
+    // KHÔNG lưu quiz vào localStorage ngay - chỉ lưu khi xuất bản
+    
+    // Tạo lớp học
+    const classId = createNewClass(quizId);
+    console.log('Created classId:', classId);
+    
+    if (!classId) {
+      console.log('Failed to create class, returning');
+      return; // Dừng nếu không tạo được lớp
+    }
+    
+    console.log('About to navigate to /edit-quiz with state:', {
+      questions: [],
+      fileName: 'Quiz thủ công',
+      fileId: quizId,
+      classId: classId
+    });
     
     navigate('/edit-quiz', {
       state: {
@@ -175,6 +193,8 @@ const CreateClassPage: React.FC = () => {
         classId: classId
       }
     });
+    
+    console.log('Navigation completed');
   };
 
   // Xử lý upload files
