@@ -233,8 +233,20 @@ const ClassesPage: React.FC = () => {
             // Danh sách lớp học
             <div className="space-y-6">
               {classes.map((classRoom: ClassRoom) => (
-                <div key={classRoom.id} className="card p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <div key={classRoom.id} className="card p-6 relative">
+                  {/* Nút xóa lớp học - chỉ mobile - góc trên phải */}
+                  <button
+                    onClick={() => handleDeleteClass(classRoom.id, classRoom.name)}
+                    className="absolute top-2.5 right-2.5 w-3 h-3 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                    title="Xóa lớp học"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+
+                  {/* Desktop Layout - flex ngang */}
+                  <div className="hidden sm:flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                         {classRoom.name}
@@ -248,24 +260,19 @@ const ClassesPage: React.FC = () => {
                         <span>{(classRoom.quizzes?.length ?? 0)} bài kiểm tra</span>
                       </div>
                     </div>
+                    
+                    {/* Desktop buttons - bên phải */}
                     <div className="flex items-center gap-2">
-                      <div className="relative dropdown-container">
-                        <button 
-                          className="btn-primary flex items-center"
-                          disabled={!classRoom.quizzes?.length}
-                          onClick={() => {
-                            if (classRoom.quizzes && classRoom.quizzes.length === 1) {
-                              // Nếu chỉ có 1 quiz, vào luôn
-                              const firstQuiz = classRoom.quizzes[0] as Quiz;
-                              navigate(`/quiz/${firstQuiz.id}`);
-                            } else if (classRoom.quizzes && classRoom.quizzes.length > 1) {
-                              // Nếu có nhiều quiz, mở dropdown
+                      {classRoom.quizzes && classRoom.quizzes.length > 3 ? (
+                        // Nếu có hơn 3 quiz, hiện dropdown để xem tất cả
+                        <div className="relative dropdown-container">
+                          <button 
+                            className="btn-primary flex items-center"
+                            onClick={() => {
                               setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                            }
-                          }}
-                        >
-                          {classRoom.quizzes?.length ? 'Vào lớp' : 'Chưa có bài tập'}
-                          {classRoom.quizzes && classRoom.quizzes.length > 1 && (
+                            }}
+                          >
+                            Vào lớp ({classRoom.quizzes.length} bài)
                             <svg 
                               className={`w-4 h-4 ml-1 transition-transform duration-200 ${
                                 openDropdown === classRoom.id ? 'rotate-180' : ''
@@ -276,37 +283,54 @@ const ClassesPage: React.FC = () => {
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
-                          )}
-                        </button>
-                        
-                        {/* Dropdown Menu */}
-                        {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                          <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
-                            <div className="p-2">
-                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                Chọn bài kiểm tra:
+                          </button>
+                          
+                          {/* Dropdown Menu - Hiện tất cả quiz */}
+                          {openDropdown === classRoom.id && (
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                              <div className="p-2">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                  Tất cả bài kiểm tra:
+                                </div>
+                                {(classRoom.quizzes as Quiz[]).map((quiz) => (
+                                  <button
+                                    key={quiz.id}
+                                    onClick={() => {
+                                      navigate(`/quiz/${quiz.id}`);
+                                      setOpenDropdown(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                  >
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {quiz.title}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {quiz.questions.length} câu hỏi
+                                    </div>
+                                  </button>
+                                ))}
                               </div>
-                              {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                                <button
-                                  key={quiz.id}
-                                  onClick={() => {
-                                    navigate(`/quiz/${quiz.id}`);
-                                    setOpenDropdown(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
-                                >
-                                  <div className="font-medium text-gray-900 dark:text-white">
-                                    {quiz.title}
-                                  </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {quiz.questions.length} câu hỏi
-                                  </div>
-                                </button>
-                              ))}
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      ) : classRoom.quizzes && classRoom.quizzes.length === 1 ? (
+                        // Nếu chỉ có 1 quiz, vào luôn
+                        <button 
+                          className="btn-primary"
+                          onClick={() => {
+                            const firstQuiz = classRoom.quizzes![0] as Quiz;
+                            navigate(`/quiz/${firstQuiz.id}`);
+                          }}
+                        >
+                          Vào lớp
+                        </button>
+                      ) : (
+                        // Nếu không có quiz
+                        <button className="btn-primary" disabled>
+                          Chưa có bài tập
+                        </button>
+                      )}
+                      
                       <button
                         onClick={() => handleDeleteClass(classRoom.id, classRoom.name)}
                         className="btn-secondary !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/40"
@@ -319,42 +343,167 @@ const ClassesPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Danh sách bài kiểm tra */}
+                  {/* Mobile Layout - flex dọc */}
+                  <div className="sm:hidden mb-4">
+                    <div className="pr-8">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        {classRoom.name}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-2">
+                        {classRoom.description}
+                      </p>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
+                        <span className="mx-2">•</span>
+                        <span>{(classRoom.quizzes?.length ?? 0)} bài kiểm tra</span>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile buttons - chỉ nút Vào lớp */}
+                    <div className="flex flex-col">
+                      {classRoom.quizzes && classRoom.quizzes.length > 3 ? (
+                        // Nếu có hơn 3 quiz, hiện dropdown để xem tất cả
+                        <div className="relative dropdown-container">
+                          <button 
+                            className="btn-primary flex items-center justify-center w-full"
+                            onClick={() => {
+                              setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
+                            }}
+                          >
+                            Vào lớp ({classRoom.quizzes.length} bài)
+                            <svg 
+                              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                                openDropdown === classRoom.id ? 'rotate-180' : ''
+                              }`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Dropdown Menu - Hiện tất cả quiz */}
+                          {openDropdown === classRoom.id && (
+                            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                              <div className="p-2">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                                  Tất cả bài kiểm tra:
+                                </div>
+                                {(classRoom.quizzes as Quiz[]).map((quiz) => (
+                                  <button
+                                    key={quiz.id}
+                                    onClick={() => {
+                                      navigate(`/quiz/${quiz.id}`);
+                                      setOpenDropdown(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                  >
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {quiz.title}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {quiz.questions.length} câu hỏi
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : classRoom.quizzes && classRoom.quizzes.length === 1 ? (
+                        // Nếu chỉ có 1 quiz, vào luôn
+                        <button 
+                          className="btn-primary w-full"
+                          onClick={() => {
+                            const firstQuiz = classRoom.quizzes![0] as Quiz;
+                            navigate(`/quiz/${firstQuiz.id}`);
+                          }}
+                        >
+                          Vào lớp
+                        </button>
+                      ) : (
+                        // Nếu không có quiz
+                        <button className="btn-primary w-full" disabled>
+                          Chưa có bài tập
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Danh sách bài kiểm tra - chỉ hiển thị tối đa 3 bài đầu tiên */}
                   {(classRoom.quizzes?.length ?? 0) > 0 && (
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                       <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                         Bài kiểm tra trong lớp:
+                        {classRoom.quizzes && classRoom.quizzes.length > 3 && (
+                          <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                            (Hiển thị 3/{classRoom.quizzes.length} bài - xem tất cả tại nút "Vào lớp")
+                          </span>
+                        )}
                       </h4>
                       <div className="space-y-2">
-                        {(classRoom.quizzes as Quiz[])?.map((quiz) => (
+                        {(classRoom.quizzes as Quiz[])?.slice(0, 3).map((quiz) => (
                           <div
                             key={quiz.id}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                            className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative"
                           >
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">
+                            {/* Nút xóa quiz - chỉ mobile - góc trên phải */}
+                            <button
+                              onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
+                              className="absolute top-2 right-2 w-3 h-3 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                              title="Xóa bài kiểm tra"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+
+                            {/* Desktop Layout cho quiz items */}
+                            <div className="hidden sm:flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-white">
+                                  {quiz.title}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {quiz.description}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  to={`/quiz/${quiz.id}`}
+                                  className="btn-secondary text-sm"
+                                >
+                                  Làm bài
+                                </Link>
+                                <button
+                                  onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
+                                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
+                                  title="Xóa bài kiểm tra"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Mobile Layout cho quiz items - bố cục dọc */}
+                            <div className="sm:hidden pr-6">
+                              <p className="font-medium text-gray-900 dark:text-white mb-1">
                                 {quiz.title}
                               </p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                 {quiz.description}
                               </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Link
-                                to={`/quiz/${quiz.id}`}
-                                className="btn-secondary text-sm"
-                              >
-                                Làm bài
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
-                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
-                                title="Xóa bài kiểm tra"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                              <div className="flex flex-col gap-2">
+                                <Link
+                                  to={`/quiz/${quiz.id}`}
+                                  className="btn-secondary text-sm text-center w-full"
+                                >
+                                  Làm bài
+                                </Link>
+                              </div>
                             </div>
                           </div>
                         ))}

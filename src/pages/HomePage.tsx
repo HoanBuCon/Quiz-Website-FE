@@ -478,21 +478,41 @@ const HomePage: React.FC = () => {
                         </h4>
                         <div className="space-y-2">
                           {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                            <div key={quiz.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-white">
+                            <div key={quiz.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
+                              {/* Desktop layout: horizontal */}
+                              <div className="hidden sm:flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-white">
+                                    {quiz.title}
+                                  </p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    {quiz.description}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => navigate(`/quiz/${quiz.id}`)}
+                                  className="btn-secondary text-sm"
+                                >
+                                  Làm bài
+                                </button>
+                              </div>
+                              {/* Mobile layout: vertical */}
+                              <div className="sm:hidden pr-0">
+                                <p className="font-medium text-gray-900 dark:text-white mb-1">
                                   {quiz.title}
                                 </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                   {quiz.description}
                                 </p>
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={() => navigate(`/quiz/${quiz.id}`)}
+                                    className="btn-secondary text-sm text-center w-full"
+                                  >
+                                    Làm bài
+                                  </button>
+                                </div>
                               </div>
-                              <button
-                                onClick={() => navigate(`/quiz/${quiz.id}`)}
-                                className="btn-secondary text-sm"
-                              >
-                                Làm bài
-                              </button>
                             </div>
                           ))}
                         </div>
