@@ -133,7 +133,25 @@ const EditQuizPage: React.FC = () => {
       
       localStorage.setItem('quizzes', JSON.stringify(quizzes));
       
+      // Tạo lớp học với quiz vừa được xuất bản
+      const newClass = {
+        id: `class-${Date.now()}-${Math.random()}`,
+        name: quizTitle || `Lớp học ${state.fileName}`,
+        description: quizDescription || 'Lớp học được tạo từ quiz',
+        quizzes: [state.fileId], // Gắn quiz vào lớp
+        students: [],
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const savedClasses = localStorage.getItem('classes') || '[]';
+      const classes = JSON.parse(savedClasses);
+      classes.push(newClass);
+      localStorage.setItem('classes', JSON.stringify(classes));
+      
       console.log('Quiz saved with questions:', questions); // Debug log
+      console.log('Class created with quiz:', state.fileId); // Debug log
       
       toast.success('Xuất bản thành công!');
       navigate('/classes');

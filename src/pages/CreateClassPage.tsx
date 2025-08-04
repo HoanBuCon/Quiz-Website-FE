@@ -242,23 +242,10 @@ const CreateClassPage: React.FC = () => {
 
           const quizId = `file-${Date.now()}-${Math.random()}`;
           
-          // Tạo quiz mới
-          const newQuiz = {
-            id: quizId,
-            title: file.name.replace(/\.[^/.]+$/, ""), // Loại bỏ phần mở rộng của file
-            description: `Quiz từ file ${file.name}`,
-            questions: result.questions,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-
-          // Lưu quiz vào localStorage
-          const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-          const quizzes = JSON.parse(savedQuizzes);
-          quizzes.push(newQuiz);
-          localStorage.setItem('quizzes', JSON.stringify(quizzes));
-
-          // Lưu file vào documents (nếu cần)
+          // KHÔNG tự động lưu quiz - chỉ chuẩn bị dữ liệu
+          // Quiz sẽ được tạo khi user bấm "Xuất bản" trong EditQuizPage
+          
+          // Lưu file vào documents (để backup)
           const savedDocs = localStorage.getItem('documents') || '[]';
           const docs = JSON.parse(savedDocs);
           docs.push({
@@ -277,25 +264,16 @@ const CreateClassPage: React.FC = () => {
             continue;
           }
 
-          // Tạo lớp học mới và gắn quiz với lớp học đó
-          console.log('Creating class with quiz ID:', quizId);
-          const classId = createNewClass(quizId);
-          console.log('Created class ID:', classId);
-          
-          if (!classId) {
-            console.log('Failed to create class, stopping upload');
-            setIsUploading(false);
-            setProcessingFile(null);
-            return;
-          }
+          // KHÔNG tự động tạo lớp học - chỉ chuyển đến EditQuizPage
+          // Lớp học sẽ được tạo khi user bấm "Xuất bản"
 
           // Chuyển đến trang chỉnh sửa với câu hỏi đã parse
+          // KHÔNG truyền classId vì chưa tạo lớp
           navigate('/edit-quiz', {
             state: {
               questions: result.questions,
               fileName: file.name,
-              fileId: quizId,
-              classId: classId
+              fileId: quizId
             }
           });
           return; // Dừng xử lý các file khác
