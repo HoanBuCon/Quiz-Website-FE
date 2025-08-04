@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
 
 const DocumentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<UploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -11,6 +12,16 @@ const DocumentsPage: React.FC = () => {
   const [processingFile, setProcessingFile] = useState<string | null>(null);
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalQuizzes, setTotalQuizzes] = useState(0);
+  
+  // Modal states
+  const [showClassModal, setShowClassModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [isCreateNewClass, setIsCreateNewClass] = useState(true);
+  const [className, setClassName] = useState('');
+  const [classDescription, setClassDescription] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [existingClasses, setExistingClasses] = useState<any[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // Lấy documents từ localStorage
@@ -28,6 +39,7 @@ const DocumentsPage: React.FC = () => {
     if (savedClasses) {
       const classes = JSON.parse(savedClasses);
       setTotalClasses(classes.length);
+      setExistingClasses(classes);
       
       // Tính tổng số quiz
       const total = classes.reduce((sum: number, classroom: any) => {
@@ -115,12 +127,35 @@ const DocumentsPage: React.FC = () => {
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      
       reader.onload = (e) => {
-        const content = e.target?.result as string;
-        resolve(content);
+        if (fileExtension === 'doc' || fileExtension === 'docx') {
+          // Đối với file Word, đọc dưới dạng ArrayBuffer
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          // Chuyển ArrayBuffer thành base64 string để lưu trữ
+          const uint8Array = new Uint8Array(arrayBuffer);
+          let binaryString = '';
+          for (let i = 0; i < uint8Array.length; i++) {
+            binaryString += String.fromCharCode(uint8Array[i]);
+          }
+          const base64String = btoa(binaryString);
+          resolve(base64String);
+        } else {
+          // Đối với file text, đọc bình thường
+          const content = e.target?.result as string;
+          resolve(content);
+        }
       };
+      
       reader.onerror = () => reject(new Error('Không thể đọc file'));
-      reader.readAsText(file);
+      
+      // Chọn phương thức đọc phù hợp
+      if (fileExtension === 'doc' || fileExtension === 'docx') {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -134,17 +169,150 @@ const DocumentsPage: React.FC = () => {
 
   // Xử lý download file
   const handleDownload = (file: UploadedFile) => {
-    // Giả lập download
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([file.content || ''], { type: 'text/plain' }));
+    
+    if (file.type === 'docs') {
+      // Đối với file Word, chuyển base64 về binary
+      const binaryString = atob(file.content || '');
+      const uint8Array = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        uint8Array[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([uint8Array], { 
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+      });
+      link.href = URL.createObjectURL(blob);
+    } else {
+      // Đối với file text
+      const blob = new Blob([file.content || ''], { type: 'text/plain' });
+      link.href = URL.createObjectURL(blob);
+    }
+    
     link.download = file.name;
     link.click();
   };
 
   // Xử lý tạo lớp từ file
   const handleCreateClass = (file: UploadedFile) => {
-    // Chuyển đến trang tạo lớp với file đã chọn
-    console.log('Tạo lớp từ file:', file.name);
+    setSelectedFile(file);
+    setClassName('');
+    setClassDescription('');
+    setSelectedClassId('');
+    setShowClassModal(true);
+  };
+
+  // Đóng modal
+  const handleCloseModal = () => {
+    setShowClassModal(false);
+    setSelectedFile(null);
+    setClassName('');
+    setClassDescription('');
+    setSelectedClassId('');
+    setIsCreateNewClass(true);
+  };
+
+  // Xử lý submit modal
+  const handleModalSubmit = async () => {
+    if (!selectedFile) return;
+
+    // Validation
+    if (isCreateNewClass) {
+      if (!className.trim()) {
+        alert('Vui lòng nhập tên lớp học');
+        return;
+      }
+      if (!classDescription.trim()) {
+        alert('Vui lòng nhập mô tả lớp học');
+        return;
+      }
+    } else {
+      if (!selectedClassId) {
+        alert('Vui lòng chọn lớp học');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Parse file để lấy câu hỏi
+      const fileType = getFileType(selectedFile.name);
+      let questions = [];
+
+      if (fileType === 'docs' || fileType === 'txt') {
+        if (fileType === 'docs') {
+          // Đối với file Word, chuyển base64 về ArrayBuffer
+          const binaryString = atob(selectedFile.content || '');
+          const uint8Array = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            uint8Array[i] = binaryString.charCodeAt(i);
+          }
+          const fileBlob = new Blob([uint8Array], { 
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+          });
+          const file = new File([fileBlob], selectedFile.name, { 
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+          });
+          
+          const result = await parseFile(file);
+          if (result.success && result.questions) {
+            questions = result.questions;
+          } else {
+            alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+            return;
+          }
+        } else {
+          // Đối với file text
+          const fileBlob = new Blob([selectedFile.content || ''], { type: 'text/plain' });
+          const file = new File([fileBlob], selectedFile.name, { type: 'text/plain' });
+          
+          const result = await parseFile(file);
+          if (result.success && result.questions) {
+            questions = result.questions;
+          } else {
+            alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+            return;
+          }
+        }
+      } else {
+        alert('Hiện tại chỉ hỗ trợ file .doc, .docx, .txt');
+        return;
+      }
+
+      if (questions.length === 0) {
+        alert('Không tìm thấy câu hỏi nào trong file');
+        return;
+      }
+
+      // Tạo quiz ID
+      const quizId = `file-${Date.now()}-${Math.random()}`;
+
+      // Chuyển đến EditQuizPage với dữ liệu
+      navigate('/edit-quiz', {
+        state: {
+          questions: questions,
+          fileName: selectedFile.name,
+          fileId: quizId,
+          // Thông tin lớp học
+          classInfo: isCreateNewClass ? {
+            isNew: true,
+            name: className,
+            description: classDescription
+          } : {
+            isNew: false,
+            classId: selectedClassId
+          }
+        }
+      });
+
+      handleCloseModal();
+
+    } catch (error) {
+      console.error('Lỗi khi xử lý file:', error);
+      alert('Có lỗi xảy ra khi xử lý file');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Xóa file
@@ -367,7 +535,7 @@ const DocumentsPage: React.FC = () => {
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Tổng tài liệu:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng tài liệu:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {documents.length}
                 </span>
@@ -379,11 +547,11 @@ const DocumentsPage: React.FC = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Lớp đã tạo:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng lớp đã tạo:</span>
                 <span className="font-semibold text-green-600">{totalClasses}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Quiz đã tạo:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng bài kiểm tra:</span>
                 <span className="font-semibold text-blue-600">{totalQuizzes}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -408,6 +576,125 @@ const DocumentsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal tạo lớp */}
+      {showClassModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Tạo lớp từ tài liệu: {selectedFile?.name}
+            </h3>
+
+            {/* Radio buttons */}
+            <div className="mb-6">
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(true)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-300">
+                    Tạo lớp học mới
+                  </span>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="classOption"
+                    checked={!isCreateNewClass}
+                    onChange={() => setIsCreateNewClass(false)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-gray-700 dark:text-gray-300">
+                    Chọn lớp học có sẵn
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Form fields */}
+            {isCreateNewClass ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Tên lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                    placeholder="Nhập tên lớp học"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mô tả lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={classDescription}
+                    onChange={(e) => setClassDescription(e.target.value)}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                    rows={3}
+                    placeholder="Nhập mô tả lớp học"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Chọn lớp học <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">-- Chọn lớp học --</option>
+                  {existingClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={handleModalSubmit}
+                disabled={isProcessing}
+                className="flex-1 btn-primary flex items-center justify-center"
+              >
+                {isProcessing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Tiếp tục'
+                )}
+              </button>
+              <button
+                onClick={handleCloseModal}
+                disabled={isProcessing}
+                className="flex-1 btn-secondary"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -508,22 +508,22 @@ const HomePage: React.FC = () => {
         <div className="w-1/3">
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Thống kê nhanh
+              Thống kê
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Tổng lớp học:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng lớp học:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {totalClasses}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Người dùng online:</span>
-                <span className="font-semibold text-green-600">24</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng bài kiểm tra:</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{totalQuizzes}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Quiz đã tạo:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{totalQuizzes}</span>
+                <span className="text-gray-600 dark:text-gray-400">Người dùng online:</span>
+                <span className="font-semibold text-green-600">24</span>
               </div>
             </div>
           </div>

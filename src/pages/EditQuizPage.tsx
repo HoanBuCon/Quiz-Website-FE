@@ -27,6 +27,12 @@ interface LocationState {
   questions: ParsedQuestion[];
   fileName: string;
   fileId: string;
+  classInfo?: {
+    isNew: boolean;
+    name?: string;
+    description?: string;
+    classId?: string;
+  };
 }
 
 const EditQuizPage: React.FC = () => {
@@ -133,22 +139,57 @@ const EditQuizPage: React.FC = () => {
       
       localStorage.setItem('quizzes', JSON.stringify(quizzes));
       
-      // Tạo lớp học với quiz vừa được xuất bản
-      const newClass = {
-        id: `class-${Date.now()}-${Math.random()}`,
-        name: quizTitle || `Lớp học ${state.fileName}`,
-        description: quizDescription || 'Lớp học được tạo từ quiz',
-        quizzes: [state.fileId], // Gắn quiz vào lớp
-        students: [],
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      const savedClasses = localStorage.getItem('classes') || '[]';
+      // Xử lý lớp học
+      const savedClasses = localStorage.getItem('classrooms') || '[]';
       const classes = JSON.parse(savedClasses);
-      classes.push(newClass);
-      localStorage.setItem('classes', JSON.stringify(classes));
+      
+      if (state.classInfo) {
+        // Đến từ DocumentsPage - có thông tin lớp học
+        if (state.classInfo.isNew) {
+          // Tạo lớp học mới
+          const newClass = {
+            id: `class-${Date.now()}-${Math.random()}`,
+            name: state.classInfo.name || quizTitle || `Lớp học ${state.fileName}`,
+            description: state.classInfo.description || quizDescription || 'Lớp học được tạo từ quiz',
+            quizzes: [state.fileId],
+            students: [],
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          classes.push(newClass);
+          console.log('Created new class from DocumentsPage:', newClass);
+        } else {
+          // Thêm quiz vào lớp học có sẵn
+          const existingClassIndex = classes.findIndex((c: any) => c.id === state.classInfo?.classId);
+          if (existingClassIndex >= 0) {
+            if (!classes[existingClassIndex].quizzes) {
+              classes[existingClassIndex].quizzes = [];
+            }
+            classes[existingClassIndex].quizzes.push(state.fileId);
+            classes[existingClassIndex].updatedAt = new Date();
+            console.log('Added quiz to existing class:', classes[existingClassIndex]);
+          } else {
+            console.error('Existing class not found:', state.classInfo.classId);
+          }
+        }
+      } else {
+        // Đến từ CreateClassPage - tạo lớp học mới như trước
+        const newClass = {
+          id: `class-${Date.now()}-${Math.random()}`,
+          name: quizTitle || `Lớp học ${state.fileName}`,
+          description: quizDescription || 'Lớp học được tạo từ quiz',
+          quizzes: [state.fileId],
+          students: [],
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        classes.push(newClass);
+        console.log('Created new class from CreateClassPage:', newClass);
+      }
+      
+      localStorage.setItem('classrooms', JSON.stringify(classes));
       
       console.log('Quiz saved with questions:', questions); // Debug log
       console.log('Class created with quiz:', state.fileId); // Debug log
@@ -200,7 +241,14 @@ const EditQuizPage: React.FC = () => {
       explanation: q.explanation
     }));
     setQuestions(convertedQuestions);
-    setQuizTitle(`Quiz từ file ${state.fileName}`);
+    
+    // Thiết lập title và description dựa trên classInfo
+    if (state.classInfo && state.classInfo.isNew) {
+      setQuizTitle(state.classInfo.name || `Quiz từ file ${state.fileName}`);
+      setQuizDescription(state.classInfo.description || `Bài trắc nghiệm từ tài liệu ${state.fileName}`);
+    } else {
+      setQuizTitle(`Quiz từ file ${state.fileName}`);
+    }
   }, [state]);
 
   const handleQuestionEdit = (questionId: string) => {
@@ -838,12 +886,12 @@ const EditQuizPage: React.FC = () => {
 
         {/* Quiz Info */}
         <div className="card p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
             Thông tin Quiz
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
                 Tiêu đề Quiz
               </label>
               <input
@@ -855,7 +903,7 @@ const EditQuizPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
                 Mô tả (tùy chọn)
               </label>
               <input

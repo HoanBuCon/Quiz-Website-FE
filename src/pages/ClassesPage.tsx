@@ -343,13 +343,13 @@ const ClassesPage: React.FC = () => {
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Tổng lớp học:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng lớp học:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {classes.length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400">Tổng bài kiểm tra:</span>
+                <span className="text-gray-600 dark:text-gray-400">Số lượng bài kiểm tra:</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {classes.reduce((total, cls) => total + (cls.quizzes?.length ?? 0), 0)}
                 </span>
@@ -371,8 +371,9 @@ const ClassesPage: React.FC = () => {
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <p>• Chọn lớp học để xem danh sách bài kiểm tra</p>
-              <p>• Click "Làm bài" để bắt đầu làm trắc nghiệm</p>
+              <p>• Click "Làm bài" để bắt đầu làm bài tập trắc nghiệm</p>
               <p>• Theo dõi tiến độ học tập của bạn</p>
+              <p>• Xóa lớp học hoặc bài kiểm tra nếu không cần thiết</p>
             </div>
           </div>
         </div>
