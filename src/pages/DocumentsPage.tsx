@@ -139,21 +139,35 @@ const DocumentsPage: React.FC = () => {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       
       reader.onload = (e) => {
-        if (fileExtension === 'doc' || fileExtension === 'docx') {
-          // Đối với file Word, đọc dưới dạng ArrayBuffer
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          // Chuyển ArrayBuffer thành base64 string để lưu trữ
-          const uint8Array = new Uint8Array(arrayBuffer);
-          let binaryString = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binaryString += String.fromCharCode(uint8Array[i]);
+        try {
+          if (fileExtension === 'doc' || fileExtension === 'docx') {
+            // Đối với file Word, đọc dưới dạng ArrayBuffer và chuyển thành base64
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            if (!arrayBuffer) {
+              reject(new Error('Không thể đọc file Word'));
+              return;
+            }
+            
+            // Chuyển ArrayBuffer thành base64 string một cách an toàn
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binaryString = '';
+            const chunkSize = 8192; // Xử lý theo chunks để tránh stack overflow
+            
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.slice(i, i + chunkSize);
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+            }
+            
+            const base64String = btoa(binaryString);
+            resolve(base64String);
+          } else {
+            // Đối với file text, đọc bình thường
+            const content = e.target?.result as string;
+            resolve(content || '');
           }
-          const base64String = btoa(binaryString);
-          resolve(base64String);
-        } else {
-          // Đối với file text, đọc bình thường
-          const content = e.target?.result as string;
-          resolve(content);
+        } catch (error) {
+          console.error('Lỗi khi xử lý nội dung file:', error);
+          reject(new Error('Lỗi khi xử lý nội dung file'));
         }
       };
       
@@ -181,16 +195,33 @@ const DocumentsPage: React.FC = () => {
     const link = document.createElement('a');
     
     if (file.type === 'docs') {
-      // Đối với file Word, chuyển base64 về binary
-      const binaryString = atob(file.content || '');
-      const uint8Array = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        uint8Array[i] = binaryString.charCodeAt(i);
+      try {
+        // Đối với file Word, chuyển base64 về binary một cách an toàn
+        const base64Content = file.content || '';
+        
+        // Kiểm tra xem content có phải là base64 hợp lệ không
+        if (!base64Content) {
+          alert('File không có nội dung để tải về');
+          return;
+        }
+        
+        // Sử dụng fetch để tạo binary data từ base64
+        const byteCharacters = atob(base64Content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        
+        const blob = new Blob([byteArray], { 
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+        });
+        link.href = URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Lỗi khi xử lý file Word:', error);
+        alert('Có lỗi xảy ra khi tải file Word. File có thể bị hỏng.');
+        return;
       }
-      const blob = new Blob([uint8Array], { 
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-      });
-      link.href = URL.createObjectURL(blob);
     } else {
       // Đối với file text
       const blob = new Blob([file.content || ''], { type: 'text/plain' });
@@ -199,6 +230,11 @@ const DocumentsPage: React.FC = () => {
     
     link.download = file.name;
     link.click();
+    
+    // Cleanup URL sau khi download
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+    }, 1000);
   };
 
   // Xử lý tạo lớp từ file
@@ -250,24 +286,37 @@ const DocumentsPage: React.FC = () => {
 
       if (fileType === 'docs' || fileType === 'txt') {
         if (fileType === 'docs') {
-          // Đối với file Word, chuyển base64 về ArrayBuffer
-          const binaryString = atob(selectedFile.content || '');
-          const uint8Array = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            uint8Array[i] = binaryString.charCodeAt(i);
-          }
-          const fileBlob = new Blob([uint8Array], { 
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-          });
-          const file = new File([fileBlob], selectedFile.name, { 
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-          });
-          
-          const result = await parseFile(file);
-          if (result.success && result.questions) {
-            questions = result.questions;
-          } else {
-            alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+          try {
+            // Đối với file Word, chuyển base64 về ArrayBuffer một cách an toàn
+            const base64Content = selectedFile.content || '';
+            if (!base64Content) {
+              alert('File Word không có nội dung');
+              return;
+            }
+            
+            const binaryString = atob(base64Content);
+            const uint8Array = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              uint8Array[i] = binaryString.charCodeAt(i);
+            }
+            
+            const fileBlob = new Blob([uint8Array], { 
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            const file = new File([fileBlob], selectedFile.name, { 
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            
+            const result = await parseFile(file);
+            if (result.success && result.questions) {
+              questions = result.questions;
+            } else {
+              alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+              return;
+            }
+          } catch (error) {
+            console.error('Lỗi khi xử lý file Word:', error);
+            alert('Có lỗi xảy ra khi xử lý file Word. File có thể bị hỏng.');
             return;
           }
         } else {
