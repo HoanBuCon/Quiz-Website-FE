@@ -343,7 +343,7 @@ const HomePage: React.FC = () => {
       setTotalClasses(mockClasses.length);
       setTotalQuizzes(publicQuizCount);
       setLoading(false);
-    }, 1000);
+    }, 0); // Không đặt timeout để tránh delay không cần thiết
   }, []);
 
   // Handle click outside để đóng dropdown
