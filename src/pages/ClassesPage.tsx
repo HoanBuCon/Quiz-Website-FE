@@ -91,6 +91,14 @@ const ClassesPage: React.FC = () => {
     }
   };
 
+  // Handle dropdown toggle
+  const handleDropdownToggle = (classId: string) => {    
+    if (openDropdown === classId) {
+      setOpenDropdown(null);
+    } else {
+      setOpenDropdown(classId);
+    }
+  };
   // Helper function để lấy danh sách quiz hợp lệ
   const getValidQuizzes = (classRoom: ClassRoom): Quiz[] => {
     if (!classRoom.quizzes) return [];
@@ -250,7 +258,10 @@ const ClassesPage: React.FC = () => {
                 const quizCount = validQuizzes.length;
                 
                 return (
-                  <div key={classRoom.id} className="card p-6 relative">
+                  <div 
+                    key={classRoom.id} 
+                    className={`card p-6 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
+                  >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -276,9 +287,7 @@ const ClassesPage: React.FC = () => {
                               <div className="relative dropdown-container">
                                 <button 
                                   className="btn-primary flex items-center"
-                                  onClick={() => {
-                                    setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                  }}
+                                  onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
                                   Tham gia ({quizCount})
                                   <svg 
@@ -294,7 +303,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                     <div className="p-2">
                                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                         Tất cả bài kiểm tra:
@@ -336,14 +345,11 @@ const ClassesPage: React.FC = () => {
                                 </button>
                               );
                             } else {
-                              // 2-3 quiz, vẫn hiện dropdown
                               return (
                                 <div className="relative dropdown-container">
                                   <button 
                                     className="btn-primary flex items-center"
-                                    onClick={() => {
-                                      setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                    }}
+                                    onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
                                     Tham gia ({quizCount})
                                     <svg 
@@ -359,7 +365,7 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   {/* Dropdown Menu */}
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                       <div className="p-2">
                                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                           Tất cả bài kiểm tra:
@@ -432,9 +438,7 @@ const ClassesPage: React.FC = () => {
                               <div className="relative dropdown-container flex-1">
                                 <button
                                   className="btn-primary flex items-center justify-center w-full"
-                                  onClick={() => {
-                                    setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                  }}
+                                  onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
                                   Tham gia ({quizCount})
                                   <svg
@@ -450,7 +454,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz (mobile) */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                     <div className="p-2">
                                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                         Tất cả bài kiểm tra:
@@ -496,9 +500,7 @@ const ClassesPage: React.FC = () => {
                                 <div className="relative dropdown-container flex-1">
                                   <button
                                     className="btn-primary flex items-center justify-center w-full"
-                                    onClick={() => {
-                                      setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                    }}
+                                    onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
                                     Tham gia ({quizCount})
                                     <svg
@@ -513,7 +515,7 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                       <div className="p-2">
                                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                           Tất cả bài kiểm tra:
@@ -701,7 +703,7 @@ const ClassesPage: React.FC = () => {
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <p>• Chọn lớp học để xem danh sách bài kiểm tra</p>
-              <p>• Click "Làm bài" để bắt đầu làm bài tập trắc nghiệm</p>
+              <p>• Click "Làm bài" để bắt đầu làm  bài tập trắc nghiệm</p>
               <p>• Theo dõi tiến độ học tập của bạn</p>
               <p>• Xóa lớp học hoặc bài kiểm tra nếu không cần thiết</p>
             </div>
