@@ -446,6 +446,18 @@ const QuizPage: React.FC = () => {
               </span>
             </div>
 
+
+            {/* Question image nếu có */}
+            {currentQuestion.questionImage && (
+              <div className="mb-4 sm:mb-6">
+                <img
+                  src={currentQuestion.questionImage}
+                  alt="Question"
+                  className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain"
+                  style={{ display: 'block', width: '100%', objectFit: 'contain', margin: '0 auto' }}
+                />
+              </div>
+            )}
             {/* Question text */}
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6">
               {currentQuestion.question}
@@ -462,19 +474,32 @@ const QuizPage: React.FC = () => {
                   onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
                 />
               ) : (
-                currentQuestion.options?.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                    className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
-                      getCurrentAnswer(currentQuestion.id).includes(option)
-                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
-                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
-                    }`}
-                  >
-                    {String.fromCharCode(65 + index)}. {option}
-                  </button>
-                ))
+                currentQuestion.options?.map((option, index) => {
+                  const optionImage = currentQuestion.optionImages && currentQuestion.optionImages[option];
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(currentQuestion.id, option)}
+                      className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
+                        getCurrentAnswer(currentQuestion.id).includes(option)
+                          ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
+                          : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start gap-2 w-full">
+                        <span>{String.fromCharCode(65 + index)}. {option}</span>
+                        {optionImage && (
+                          <img
+                            src={optionImage}
+                            alt={`Option ${String.fromCharCode(65 + index)}`}
+                            className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain"
+                            style={{ display: 'block', width: '100%', objectFit: 'contain', margin: '0.25rem 0 0 0' }}
+                          />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
