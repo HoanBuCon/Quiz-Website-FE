@@ -37,12 +37,139 @@ interface LocationState {
   };
 }
 
+// Extended Question interface to support images
+interface QuestionWithImages extends Question {
+  questionImage?: string; // Base64 encoded image for question
+  optionImages?: { [key: string]: string }; // Map of option text to base64 image
+}
+
+// Image upload component
+const ImageUpload: React.FC<{
+  onImageUpload: (imageData: string) => void;
+  currentImage?: string;
+  placeholder?: string;
+  className?: string;
+}> = ({ onImageUpload, currentImage, placeholder = "Thêm ảnh", className = "" }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+  };
+
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast.error('Kích thước ảnh không được vượt quá 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      onImageUpload(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      handleFile(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const items = event.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleFile(file);
+          }
+          break;
+        }
+      }
+    }
+  };
+
+  const removeImage = () => {
+    onImageUpload('');
+  };
+
+  return (
+    <div className={className}>
+      {currentImage ? (
+        <div className="relative group">
+          <img 
+            src={currentImage} 
+            alt="Uploaded" 
+            className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+          />
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              onClick={removeImage}
+              className="bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
+              title="Xóa ảnh"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onPaste={handlePaste}
+          onClick={() => fileInputRef.current?.click()}
+          className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-400 transition-colors group"
+          tabIndex={0}
+        >
+          <div className="flex flex-col items-center space-y-2">
+            <svg className="w-8 h-8 text-gray-400 group-hover:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium text-primary-600 dark:text-primary-400">{placeholder}</span>
+            </div>
+            <div className="text-xs text-gray-500">
+              Click, kéo thả hoặc Ctrl+V để thêm ảnh
+            </div>
+          </div>
+        </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+    </div>
+  );
+};
+
 const EditQuizPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState;
   
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<QuestionWithImages[]>([]);
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -58,11 +185,11 @@ const EditQuizPage: React.FC = () => {
   };
 
   // Hàm parse nội dung text thành questions
-  const parseEditedContent = (content: string): Question[] => {
+  const parseEditedContent = (content: string): QuestionWithImages[] => {
     const lines = content.split('\n').filter(line => line.trim());
-    const parsedQuestions: Question[] = [];
+    const parsedQuestions: QuestionWithImages[] = [];
     
-    let currentQuestion: Partial<Question> = {};
+    let currentQuestion: Partial<QuestionWithImages> = {};
     let currentOptions: string[] = [];
     let currentCorrectAnswers: string[] = [];
     
@@ -78,8 +205,10 @@ const EditQuizPage: React.FC = () => {
             type: currentOptions.length > 0 ? (currentCorrectAnswers.length > 1 ? 'multiple' : 'single') : 'text',
             options: currentOptions.length > 0 ? currentOptions : undefined,
             correctAnswers: currentCorrectAnswers,
-            explanation: currentQuestion.explanation || ''
-          } as Question);
+            explanation: currentQuestion.explanation || '',
+            questionImage: currentQuestion.questionImage,
+            optionImages: currentQuestion.optionImages
+          } as QuestionWithImages);
         }
         
         // Reset cho câu hỏi mới
@@ -111,8 +240,10 @@ const EditQuizPage: React.FC = () => {
         type: currentOptions.length > 0 ? (currentCorrectAnswers.length > 1 ? 'multiple' : 'single') : 'text',
         options: currentOptions.length > 0 ? currentOptions : undefined,
         correctAnswers: currentCorrectAnswers,
-        explanation: currentQuestion.explanation || ''
-      } as Question);
+        explanation: currentQuestion.explanation || '',
+        questionImage: currentQuestion.questionImage,
+        optionImages: currentQuestion.optionImages
+      } as QuestionWithImages);
     }
     
     return parsedQuestions;
@@ -377,14 +508,16 @@ const EditQuizPage: React.FC = () => {
       return;
     }
 
-    // Chuyển đổi ParsedQuestion thành Question
-    const convertedQuestions: Question[] = state.questions.map(q => ({
+    // Chuyển đổi ParsedQuestion thành QuestionWithImages
+    const convertedQuestions: QuestionWithImages[] = state.questions.map(q => ({
       id: q.id,
       question: q.question,
       type: q.type,
       options: q.options,
       correctAnswers: q.correctAnswers,
-      explanation: q.explanation
+      explanation: q.explanation,
+      questionImage: undefined,
+      optionImages: undefined
     }));
     setQuestions(convertedQuestions);
     
@@ -412,7 +545,7 @@ const EditQuizPage: React.FC = () => {
     setIsEditing(questionId);
   };
 
-  const handleQuestionSave = (questionId: string, updatedQuestion: Partial<Question>) => {
+  const handleQuestionSave = (questionId: string, updatedQuestion: Partial<QuestionWithImages>) => {
     console.log('Saving question:', questionId, updatedQuestion); // Debug log
     
     setQuestions(prev => {
@@ -455,7 +588,7 @@ const EditQuizPage: React.FC = () => {
   };
 
   // Hàm tạo nội dung preview từ questions
-  const generatePreviewContent = (questionsArray: Question[]) => {
+  const generatePreviewContent = (questionsArray: QuestionWithImages[]) => {
     let content = '';
     
     questionsArray.forEach((q, index) => {
@@ -494,13 +627,15 @@ const EditQuizPage: React.FC = () => {
   };
 
   const handleAddQuestion = () => {
-    const newQuestion: Question = {
+    const newQuestion: QuestionWithImages = {
       id: `q-${Date.now()}-${Math.random()}`,
       question: '',
       type: 'single',
       options: ['', ''], // Bắt đầu với 2 đáp án trống
       correctAnswers: [],
-      explanation: ''
+      explanation: '',
+      questionImage: undefined,
+      optionImages: undefined
     };
     setQuestions(prev => {
       const updated = [...prev, newQuestion];
@@ -515,7 +650,7 @@ const EditQuizPage: React.FC = () => {
   };
 
   // Component để wrap các câu hỏi với drag & drop
-  const SortableQuestionItem: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
+  const SortableQuestionItem: React.FC<{ question: QuestionWithImages; index: number }> = ({ question, index }) => {
     const {
       attributes,
       listeners,
@@ -557,8 +692,8 @@ const EditQuizPage: React.FC = () => {
     );
   };
 
-  const QuestionEditor: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
-    const [editedQuestion, setEditedQuestion] = useState<Question>(question);
+  const QuestionEditor: React.FC<{ question: QuestionWithImages; index: number }> = ({ question, index }) => {
+    const [editedQuestion, setEditedQuestion] = useState<QuestionWithImages>(question);
     const savedOptionsRef = useRef<string[]>(question.options || ["", ""]);
 
     useEffect(() => {
@@ -640,8 +775,6 @@ const EditQuizPage: React.FC = () => {
       // Cập nhật luôn vào ref để giữ lại khi chuyển kiểu
       savedOptionsRef.current = newOptions;
     };
-    
-    
 
     const handleTypeChange = (newType: 'single' | 'multiple' | 'text') => {
       setEditedQuestion(prev => {
@@ -673,7 +806,6 @@ const EditQuizPage: React.FC = () => {
         }
       });
     };
-      
 
     const handleCorrectAnswerToggle = (option: string) => {
       setEditedQuestion(prev => {
@@ -696,30 +828,62 @@ const EditQuizPage: React.FC = () => {
         }
       });
     };
+
+    // Handle image uploads for question
+    const handleQuestionImageUpload = (imageData: string) => {
+      setEditedQuestion(prev => ({
+        ...prev,
+        questionImage: imageData
+      }));
+    };
+
+    // Handle image uploads for options
+    const handleOptionImageUpload = (optionText: string, imageData: string) => {
+      setEditedQuestion(prev => ({
+        ...prev,
+        optionImages: {
+          ...prev.optionImages,
+          [optionText]: imageData
+        }
+      }));
+    };
     
-      return (
-       <div className="card p-6 mb-4 relative">
-         <div className="mb-4">
-           <div className="flex items-center mb-2">
-             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
-               Câu {index + 1}
-             </span>
-             <span className="text-xs text-gray-400 dark:text-gray-500">
-               ID: {question.id}
-             </span>
-           </div>
-         </div>
-         <div className="space-y-4">
-           <div>
-             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-               Câu hỏi
-             </label>
+    return (
+      <div className="card p-6 mb-4 relative">
+        <div className="mb-4">
+          <div className="flex items-center mb-2">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
+              Câu {index + 1}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              ID: {question.id}
+            </span>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Câu hỏi
+            </label>
             <textarea
               value={editedQuestion.question}
               onChange={(e) => setEditedQuestion(prev => ({ ...prev, question: e.target.value }))}
               className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
               rows={3}
             />
+            
+            {/* Question Image Upload */}
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Ảnh cho câu hỏi (tùy chọn)
+              </label>
+              <ImageUpload
+                onImageUpload={handleQuestionImageUpload}
+                currentImage={editedQuestion.questionImage}
+                placeholder="Thêm ảnh cho câu hỏi"
+                className="max-w-md"
+              />
+            </div>
           </div>
 
           <div>
@@ -758,44 +922,64 @@ const EditQuizPage: React.FC = () => {
                   Thêm đáp án
                 </button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {(editedQuestion.options || []).map((option, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <input
-                      type={editedQuestion.type === 'single' ? 'radio' : 'checkbox'}
-                      name={`correct-${editedQuestion.id}`} // group cho radio
-                      checked={editedQuestion.correctAnswers.includes(option)}
-                      onChange={() => handleCorrectAnswerToggle(option)}
-                      disabled={!option.trim()}
-                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                    />
-                    <input
-                      type="text"
-                      value={option}
-                      onChange={(e) => handleOptionChange(index, e.target.value)}
-                      className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder={`Đáp án ${String.fromCharCode(65 + index)}`}
-                    />
-                    {(editedQuestion.options || []).length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newOptions = (editedQuestion.options || []).filter((_, i) => i !== index);
-                          // Cập nhật correctAnswers để loại bỏ đáp án đã xóa
-                          const newCorrectAnswers = editedQuestion.correctAnswers.filter(ans => newOptions.includes(ans));
-                          setEditedQuestion(prev => ({ 
-                            ...prev, 
-                            options: newOptions,
-                            correctAnswers: newCorrectAnswers
-                          }));
-                          savedOptionsRef.current = newOptions;
-                        }}
-                        className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                  <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <input
+                        type={editedQuestion.type === 'single' ? 'radio' : 'checkbox'}
+                        name={`correct-${editedQuestion.id}`}
+                        checked={editedQuestion.correctAnswers.includes(option)}
+                        onChange={() => handleCorrectAnswerToggle(option)}
+                        disabled={!option.trim()}
+                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                        className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                        placeholder={`Đáp án ${String.fromCharCode(65 + index)}`}
+                      />
+                      {(editedQuestion.options || []).length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOptions = (editedQuestion.options || []).filter((_, i) => i !== index);
+                            const newCorrectAnswers = editedQuestion.correctAnswers.filter(ans => newOptions.includes(ans));
+                            // Remove image for deleted option
+                            const newOptionImages = { ...editedQuestion.optionImages };
+                            delete newOptionImages[option];
+                            setEditedQuestion(prev => ({ 
+                              ...prev, 
+                              options: newOptions,
+                              correctAnswers: newCorrectAnswers,
+                              optionImages: newOptionImages
+                            }));
+                            savedOptionsRef.current = newOptions;
+                          }}
+                          className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Option Image Upload */}
+                    {option.trim() && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                          Ảnh cho đáp án {String.fromCharCode(65 + index)} (tùy chọn)
+                        </label>
+                        <ImageUpload
+                          onImageUpload={(imageData) => handleOptionImageUpload(option, imageData)}
+                          currentImage={editedQuestion.optionImages?.[option]}
+                          placeholder="Thêm ảnh cho đáp án"
+                          className="max-w-xs"
+                        />
+                      </div>
                     )}
                   </div>
                 ))}
@@ -903,7 +1087,7 @@ const EditQuizPage: React.FC = () => {
     );
   };
 
-  const QuestionDisplay: React.FC<{ question: Question; index: number }> = ({ question, index }) => {
+  const QuestionDisplay: React.FC<{ question: QuestionWithImages; index: number }> = ({ question, index }) => {
     return (
       <div className="card p-6 mb-4 relative">
         <div className="flex justify-between items-start mb-4">
@@ -919,6 +1103,18 @@ const EditQuizPage: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {question.question}
             </h3>
+            
+            {/* Question Image Display */}
+            {question.questionImage && (
+              <div className="mb-4">
+                <img 
+                  src={question.questionImage} 
+                  alt="Question" 
+                  className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                />
+              </div>
+            )}
+            
             <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
               <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
                 {question.type === 'single' ? 'Chọn 1' : question.type === 'multiple' ? 'Chọn nhiều' : 'Điền đáp án'}
@@ -929,6 +1125,14 @@ const EditQuizPage: React.FC = () => {
                   : `${question.options?.length || 0} đáp án`
                 }
               </span>
+              {(question.questionImage || (question.optionImages && Object.keys(question.optionImages).length > 0)) && (
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Có ảnh
+                </span>
+              )}
             </div>
           </div>
           <div className="flex space-x-2">
@@ -952,7 +1156,7 @@ const EditQuizPage: React.FC = () => {
         </div>
 
         {question.type !== 'text' && question.options && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
               {question.type === 'single' 
                 ? 'Chọn 1 đáp án đúng' 
@@ -968,15 +1172,31 @@ const EditQuizPage: React.FC = () => {
                     : 'border-gray-200 dark:border-gray-600'
                 }`}
               >
-                <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">
-                  {String.fromCharCode(65 + index)}.
-                </span>
-                <span className="text-gray-900 dark:text-gray-100">
-                  {option}
-                </span>
-                {question.correctAnswers.includes(option) && (
-                  <span className="ml-2 text-green-600 dark:text-green-400">✓</span>
-                )}
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="font-medium text-gray-600 dark:text-gray-300">
+                      {String.fromCharCode(65 + index)}.
+                    </span>
+                    {question.correctAnswers.includes(option) && (
+                      <span className="ml-2 text-green-600 dark:text-green-400">✓</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-gray-900 dark:text-gray-100">
+                      {option}
+                    </span>
+                    {/* Option Image Display */}
+                    {question.optionImages?.[option] && (
+                      <div className="mt-2">
+                        <img 
+                          src={question.optionImages[option]} 
+                          alt={`Option ${String.fromCharCode(65 + index)}`}
+                          className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1006,22 +1226,6 @@ const EditQuizPage: React.FC = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Học sinh chỉ cần nhập một trong các đáp án trên (không phân biệt hoa thường)
             </p>
-            {/* Debug info */}
-            <details className="mt-2">
-              <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
-                Debug Info (Click to expand)
-              </summary>
-              <pre className="text-xs text-gray-500 mt-1 bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                {JSON.stringify({
-                  id: question.id,
-                  type: question.type,
-                  correctAnswers: question.correctAnswers,
-                  validAnswersCount: question.correctAnswers.filter(ans => ans?.trim()).length,
-                  hasOptions: !!question.options,
-                  optionsLength: question.options?.length || 0
-                }, null, 2)}
-              </pre>
-            </details>
           </div>
         )}
 
@@ -1249,4 +1453,4 @@ const EditQuizPage: React.FC = () => {
   );
 };
 
-export default EditQuizPage; 
+export default EditQuizPage;
