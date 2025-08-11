@@ -35,6 +35,9 @@ interface LocationState {
     description?: string;
     classId?: string;
   };
+  quizTitle?: string;
+  quizDescription?: string;
+  isEdit?: boolean;
 }
 
 // Extended Question interface to support images
@@ -169,8 +172,8 @@ const EditQuizPage: React.FC = () => {
   const state = location.state as LocationState;
   
   const [questions, setQuestions] = useState<QuestionWithImages[]>([]);
-  const [quizTitle, setQuizTitle] = useState('');
-  const [quizDescription, setQuizDescription] = useState('');
+  const [quizTitle, setQuizTitle] = useState(state?.quizTitle || '');
+  const [quizDescription, setQuizDescription] = useState(state?.quizDescription || '');
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [previewContent, setPreviewContent] = useState('');
@@ -291,12 +294,10 @@ const EditQuizPage: React.FC = () => {
       const invalidQuestions = [];
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-        
         if (!q.question.trim()) {
           invalidQuestions.push(`Câu ${i + 1}: Chưa có nội dung câu hỏi`);
           continue;
         }
-        
         if (q.type === 'text') {
           if (!q.correctAnswers[0]?.trim()) {
             invalidQuestions.push(`Câu ${i + 1}: Câu hỏi tự luận chưa có đáp án đúng`);
@@ -306,16 +307,40 @@ const EditQuizPage: React.FC = () => {
           if (validOptions.length < 2) {
             invalidQuestions.push(`Câu ${i + 1}: Câu hỏi trắc nghiệm cần ít nhất 2 đáp án`);
           }
-          
           const validCorrectAnswers = q.correctAnswers.filter(ans => validOptions.includes(ans));
           if (validCorrectAnswers.length === 0) {
             invalidQuestions.push(`Câu ${i + 1}: Chưa chọn đáp án đúng`);
           }
         }
       }
-      
       if (invalidQuestions.length > 0) {
         alert(`Vui lòng sửa các lỗi sau:\n\n${invalidQuestions.join('\n')}`);
+        return;
+      }
+
+      // Nếu là chỉnh sửa quiz (isEdit), chỉ cập nhật quiz, không thêm vào lớp học nữa
+      if (state?.isEdit) {
+        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+        const quizzes = JSON.parse(savedQuizzes);
+        const existingQuizIndex = quizzes.findIndex((q: Quiz) => q.id === state.fileId);
+        const newQuiz = {
+          id: state.fileId,
+          title: quizTitle || `Quiz từ file ${state.fileName}`,
+          description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+          questions: questions,
+          fileName: state.fileName,
+          createdAt: existingQuizIndex >= 0 ? quizzes[existingQuizIndex].createdAt : new Date(),
+          updatedAt: new Date(),
+          published: true
+        };
+        if (existingQuizIndex >= 0) {
+          quizzes[existingQuizIndex] = newQuiz;
+        } else {
+          quizzes.push(newQuiz);
+        }
+        localStorage.setItem('quizzes', JSON.stringify(quizzes));
+        toast.success('Cập nhật quiz thành công!');
+        navigate('/classes');
         return;
       }
 
