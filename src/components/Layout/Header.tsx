@@ -33,7 +33,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 shadow-xl border-b border-slate-200/80 dark:border-slate-700/80 header-texture premium-gradient">
+  <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
@@ -47,7 +47,7 @@ const Header: React.FC = () => {
                     className="w-8 h-8 sm:w-10 sm:h-10 object-contain group-hover:scale-110 transition-transform duration-200 ease-out"
                   />
                 </div>
-                <span className="text-lg sm:text-xl logo-text">
+                <span className="text-lg sm:text-xl logo-text text-white dark:text-primary-300">
                   liemdai
                 </span>
               </Link>
@@ -59,19 +59,17 @@ const Header: React.FC = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium relative group ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium relative overflow-hidden group ${
                     isActive(item.path)
-                      ? 'bg-gradient-to-r from-primary-300/90 to-primary-200/90 dark:from-primary-900/50 dark:to-primary-800/50 text-primary-700 dark:text-primary-300 shadow-sm border border-primary-300/40 shadow-primary-300/30 dark:border-primary-700/30 dark:shadow-primary-700/20'
-                      : 'text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                      ? `${isDarkMode
+                          ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
+                          : 'header-nav-active border-0'} `
+                      : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/50 dark:hover:bg-slate-800/50 border-0'
                   }`}
                 >
                   {item.label}
-                  {/* Thanh loading hover effect cho tất cả items */}
-                  <div className={`absolute bottom-0 left-0 h-0.5 w-0 group-hover:w-full transition-all duration-300 ease-out ${
-                    isActive(item.path) 
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-500' 
-                      : 'bg-gradient-to-r from-primary-500 to-primary-400'
-                  }`}></div>
+                  {/* Thanh loading shimmer effect cho tất cả items */}
+                  <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                 </Link>
               ))}
             </nav>
