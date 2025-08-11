@@ -440,7 +440,7 @@ const CreateClassPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-sm text-primary-600 dark:text-primary-400">
-                setSelectedClassId
+                Tạo lớp học mới hoặc chọn lớp học có sẵn
               </p>
             </div>
             
