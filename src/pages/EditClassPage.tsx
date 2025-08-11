@@ -39,12 +39,13 @@ const EditClassPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Chỉnh sửa lớp học</h1>
+  <div className="min-h-screen flex items-center justify-center pt-0 bg-transparent" style={{ transform: 'translateY(-5%)' }}>
+  <div className="max-w-lg w-full px-4 py-12 mx-6 bg-white border border-gray-300 dark:border-gray-600 dark:!bg-gray-900 dark:!text-gray-100 rounded-lg shadow flex flex-col justify-center">
+  <h1 className="text-2xl font-bold mt-0 mb-8 text-center">Chỉnh sửa lớp học</h1>
       <div className="mb-4">
         <label className="block mb-1 font-medium">Tên lớp học</label>
         <input
-          className="w-full border rounded px-3 py-2"
+          className="w-full border border-stone-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 text-gray-900 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white dark:focus:border-primary-500"
           value={name}
           onChange={e => setName(e.target.value)}
           disabled={saving}
@@ -53,14 +54,14 @@ const EditClassPage: React.FC = () => {
       <div className="mb-4">
         <label className="block mb-1 font-medium">Mô tả lớp học</label>
         <textarea
-          className="w-full border rounded px-3 py-2"
+          className="w-full border border-stone-300 dark:border-gray-600 rounded px-3 py-2 bg-gray-50 text-gray-900 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white dark:focus:border-primary-500"
           value={description}
           onChange={e => setDescription(e.target.value)}
           rows={3}
           disabled={saving}
         />
       </div>
-      <div className="flex gap-2">
+  <div className="flex gap-2 justify-center mt-6">
         <button className="btn-primary" onClick={handleSave} disabled={saving}>
           Lưu thay đổi
         </button>
@@ -69,6 +70,7 @@ const EditClassPage: React.FC = () => {
         </button>
       </div>
     </div>
+  </div>
   );
 };
 

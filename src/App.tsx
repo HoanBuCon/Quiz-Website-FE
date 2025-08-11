@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import ClassesPage from './pages/ClassesPage';
 import CreateClassPage from './pages/CreateClassPage';
 import EditQuizPage from './pages/EditQuizPage';
+import EditClassPage from './pages/EditClassPage';
 import DocumentsPage from './pages/DocumentsPage';
 import QuizPage from './pages/QuizPage';
 import ResultsPage from './pages/ResultsPage';
@@ -31,6 +32,8 @@ function App() {
               
               {/* Route trang chỉnh sửa quiz */}
               <Route path="/edit-quiz" element={<EditQuizPage />} />
+              {/* Route trang chỉnh sửa lớp học */}
+              <Route path="/edit-class/:classId" element={<EditClassPage />} />
               
               {/* Route trang tài liệu */}
               <Route path="/documents" element={<DocumentsPage />} />
