@@ -1,3 +1,4 @@
+import { FaRegDotCircle, FaRegEdit } from "react-icons/fa";
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Question, UserAnswer, Quiz } from '../types';
@@ -11,7 +12,7 @@ const QuizPage: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [markedQuestions, setMarkedQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(3600); // 60 phút
+  const [timeLeft, setTimeLeft] = useState(0); // Sẽ set sau khi load quiz
   const [quizTitle, setQuizTitle] = useState('');
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
 
@@ -224,6 +225,13 @@ const QuizPage: React.FC = () => {
     loadQuiz();
   }, [quizId, navigate]);
 
+  // Set timeout = 5 phút * số lượng câu hỏi sau khi load quiz
+  useEffect(() => {
+    if (questions.length > 0) {
+      setTimeLeft(questions.length * 5 * 60); // 5 phút mỗi câu hỏi
+    }
+  }, [questions]);
+
   // Countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
@@ -417,39 +425,64 @@ const QuizPage: React.FC = () => {
           {/* Question */}
           <div className="card p-4 sm:p-6">
             {/* Question number */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
+            <div className="flex flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Câu {currentQuestionIndex + 1}/{questions.length} (ID: {currentQuestion.id})
                 </span>
-                <button
-                  onClick={() => {
-                    setMarkedQuestions(prev => 
-                      prev.includes(currentQuestion.id)
-                        ? prev.filter(id => id !== currentQuestion.id)
-                        : [...prev, currentQuestion.id]
-                    );
-                  }}
-                  className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit ${
-                    markedQuestions.includes(currentQuestion.id)
-                      ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {markedQuestions.includes(currentQuestion.id) ? 'Đã đánh dấu' : 'Xem lại câu này'}
-                </button>
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  {currentQuestion.type === 'single' ? 'Chọn một đáp án' : 
+                   currentQuestion.type === 'multiple' ? 'Chọn nhiều đáp án' : 
+                   'Điền đáp án'}
+                </span>
               </div>
-              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                {currentQuestion.type === 'single' ? 'Chọn một đáp án' : 
-                 currentQuestion.type === 'multiple' ? 'Chọn nhiều đáp án' : 
-                 'Điền đáp án'}
-              </span>
+              <button
+                onClick={() => {
+                  setMarkedQuestions(prev => 
+                    prev.includes(currentQuestion.id)
+                      ? prev.filter(id => id !== currentQuestion.id)
+                      : [...prev, currentQuestion.id]
+                  );
+                }}
+                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit mt-0 sm:mt-0 ${
+                  markedQuestions.includes(currentQuestion.id)
+                    ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {markedQuestions.includes(currentQuestion.id) ? 'Đã đánh dấu' : 'Xem lại câu này'}
+              </button>
             </div>
+
 
             {/* Question text */}
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6">
               {currentQuestion.question}
             </h2>
+            {/* Question image nếu có */}
+            {currentQuestion.questionImage && (
+              <div className="mb-4 sm:mb-6">
+                <img
+                  src={currentQuestion.questionImage}
+                  alt="Question"
+                  className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain"
+                  style={{ display: 'block', width: '100%', objectFit: 'contain', margin: '0 auto' }}
+                />
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="w-full flex items-center my-4 sm:my-6">
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+              <span className="px-3 flex items-center justify-center">
+                {currentQuestion.type === 'single' || currentQuestion.type === 'multiple' ? (
+                  <FaRegDotCircle className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+                ) : (
+                  <FaRegEdit className="w-5 h-5 text-green-500 dark:text-green-400" />
+                )}
+              </span>
+              <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
 
             {/* Answer options */}
             <div className="space-y-2 sm:space-y-3">
@@ -462,31 +495,44 @@ const QuizPage: React.FC = () => {
                   onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
                 />
               ) : (
-                currentQuestion.options?.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                    className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
-                      getCurrentAnswer(currentQuestion.id).includes(option)
-                        ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
-                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
-                    }`}
-                  >
-                    {String.fromCharCode(65 + index)}. {option}
-                  </button>
-                ))
+                currentQuestion.options?.map((option, index) => {
+                  const optionImage = currentQuestion.optionImages && currentQuestion.optionImages[option];
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(currentQuestion.id, option)}
+                      className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
+                        getCurrentAnswer(currentQuestion.id).includes(option)
+                          ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-900 dark:text-primary-100 border-primary-500 dark:border-primary-400 shadow-md shadow-primary-500/20 dark:shadow-lg dark:shadow-primary-500/25'
+                          : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-stone-200 dark:border-gray-700 hover:border-stone-300 dark:hover:border-gray-600 hover:bg-stone-100 dark:hover:bg-gray-700/50 hover:shadow-md hover:shadow-gray-400/15 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start gap-2 w-full">
+                        <span>{String.fromCharCode(65 + index)}. {option}</span>
+                        {optionImage && (
+                          <img
+                            src={optionImage}
+                            alt={`Option ${String.fromCharCode(65 + index)}`}
+                            className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain"
+                            style={{ display: 'block', width: '100%', objectFit: 'contain', margin: '0.25rem 0 0 0' }}
+                          />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex flex-col sm:flex-row justify-between mt-4 sm:mt-6 gap-3 sm:gap-0">
+          <div className="flex flex-row justify-between mt-4 sm:mt-6 gap-3 w-full">
             <button
               onClick={handlePrevQuestion}
               disabled={currentQuestionIndex === 0}
-              className="btn-secondary flex items-center justify-center gap-2 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2"
+              className="btn-secondary flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Câu trước
@@ -495,10 +541,10 @@ const QuizPage: React.FC = () => {
             <button
               onClick={handleNextQuestion}
               disabled={currentQuestionIndex === questions.length - 1}
-              className="btn-secondary flex items-center justify-center gap-2 text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2"
+              className="btn-secondary flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
             >
               Câu sau
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>

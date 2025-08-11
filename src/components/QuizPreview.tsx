@@ -43,14 +43,18 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     return content;
   };
 
+
   const [editableContent, setEditableContent] = React.useState(generatePreviewText());
   const [isContentChanged, setIsContentChanged] = React.useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Cập nhật nội dung khi questions thay đổi
+  // Cập nhật nội dung khi questions thay đổi, chỉ khi textarea không focus
   React.useEffect(() => {
-    const newContent = generatePreviewText();
-    setEditableContent(newContent);
-    setIsContentChanged(false);
+    if (document.activeElement !== textareaRef.current) {
+      const newContent = generatePreviewText();
+      setEditableContent(newContent);
+      setIsContentChanged(false);
+    }
   }, [questions]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -160,6 +164,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       <div className="flex-1 p-4 overflow-auto">
         {isEditable ? (
           <textarea
+            ref={textareaRef}
             value={editableContent}
             onChange={handleContentChange}
             className="w-full h-full min-h-[600px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"

@@ -7,6 +7,8 @@ export interface Question {
   options?: string[]; // Các lựa chọn cho câu hỏi trắc nghiệm
   correctAnswers: string[]; // Đáp án đúng (có thể nhiều đáp án)
   explanation?: string; // Giải thích đáp án
+  questionImage?: string; // Ảnh cho câu hỏi (base64 hoặc url)
+  optionImages?: { [key: string]: string }; // Ảnh cho từng đáp án (key là text đáp án)
 }
 
 export interface Quiz {

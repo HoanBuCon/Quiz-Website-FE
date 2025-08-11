@@ -39,9 +39,9 @@ const CreateClassPage: React.FC = () => {
     if (!isFormValid()) {
       event.target.value = ''; // Reset input
       if (isCreateNewClass) {
-        alert('Vui lòng nhập tên và mô tả lớp học trước khi tải File');
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
       } else {
-        alert('Vui lòng chọn lớp học trước khi tải File');
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
       }
       return;
     }
@@ -72,9 +72,9 @@ const CreateClassPage: React.FC = () => {
     // Kiểm tra validation trước
     if (!isFormValid()) {
       if (isCreateNewClass) {
-        alert('Vui lòng nhập tên và mô tả lớp học trước khi tải File');
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
       } else {
-        alert('Vui lòng chọn lớp học trước khi tải File');
+        alert('Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz');
       }
       return;
     }
@@ -440,7 +440,7 @@ const CreateClassPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-sm text-primary-600 dark:text-primary-400">
-                Bạn có thể tạo bài kiểm tra thủ công hoặc tải lên file có sẵn
+                setSelectedClassId
               </p>
             </div>
             
@@ -593,15 +593,15 @@ const CreateClassPage: React.FC = () => {
           {/* Upload Area */}
           <div className="card p-8">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              Tải lên file câu hỏi
+              Tải lên File câu hỏi
             </h3>
             
             {!isFormValid() && (
               <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
                 <p className="text-sm text-amber-700 dark:text-amber-300">
                   {isCreateNewClass 
-                    ? 'Vui lòng nhập tên và mô tả lớp học trước khi tải File'
-                    : 'Vui lòng chọn lớp học trước khi tải File'
+                    ? 'Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz'
+                    : 'Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz'
                   }
                 </p>
               </div>

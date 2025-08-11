@@ -100,7 +100,7 @@ const BackgroundMusic: React.FC = () => {
     // Lắng nghe tất cả các loại tương tác
     const interactionEvents = [
       'click', 'mousedown', 'pointerdown',
-      'touchend', 'keydown', 'wheel', 'mousemove'
+      'touchend', 'keydown' // Loai bo 'mousemove' va 'wheel'
     ];
 
     interactionEvents.forEach(event => {

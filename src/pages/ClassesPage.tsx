@@ -91,6 +91,14 @@ const ClassesPage: React.FC = () => {
     }
   };
 
+  // Handle dropdown toggle
+  const handleDropdownToggle = (classId: string) => {    
+    if (openDropdown === classId) {
+      setOpenDropdown(null);
+    } else {
+      setOpenDropdown(classId);
+    }
+  };
   // Helper function để lấy danh sách quiz hợp lệ
   const getValidQuizzes = (classRoom: ClassRoom): Quiz[] => {
     if (!classRoom.quizzes) return [];
@@ -250,7 +258,10 @@ const ClassesPage: React.FC = () => {
                 const quizCount = validQuizzes.length;
                 
                 return (
-                  <div key={classRoom.id} className="card p-6 relative">
+                  <div 
+                    key={classRoom.id} 
+                    className={`card p-6 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
+                  >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -276,9 +287,7 @@ const ClassesPage: React.FC = () => {
                               <div className="relative dropdown-container">
                                 <button 
                                   className="btn-primary flex items-center"
-                                  onClick={() => {
-                                    setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                  }}
+                                  onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
                                   Tham gia ({quizCount})
                                   <svg 
@@ -294,7 +303,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                     <div className="p-2">
                                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                         Tất cả bài kiểm tra:
@@ -336,14 +345,11 @@ const ClassesPage: React.FC = () => {
                                 </button>
                               );
                             } else {
-                              // 2-3 quiz, vẫn hiện dropdown
                               return (
                                 <div className="relative dropdown-container">
                                   <button 
                                     className="btn-primary flex items-center"
-                                    onClick={() => {
-                                      setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                    }}
+                                    onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
                                     Tham gia ({quizCount})
                                     <svg 
@@ -359,7 +365,7 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   {/* Dropdown Menu */}
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                       <div className="p-2">
                                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                           Tất cả bài kiểm tra:
@@ -398,6 +404,15 @@ const ClassesPage: React.FC = () => {
                         })()}
                         
                         <button
+                          onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
+                          className="btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40"
+                          title="Chỉnh sửa lớp học"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
+                          </svg>
+                        </button>
+                        <button
                           onClick={() => handleDeleteClass(classRoom.id, classRoom.name)}
                           className="btn-secondary !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/40"
                           title="Xóa lớp học"
@@ -432,9 +447,7 @@ const ClassesPage: React.FC = () => {
                               <div className="relative dropdown-container flex-1">
                                 <button
                                   className="btn-primary flex items-center justify-center w-full"
-                                  onClick={() => {
-                                    setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                  }}
+                                  onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
                                   Tham gia ({quizCount})
                                   <svg
@@ -450,7 +463,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz (mobile) */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                     <div className="p-2">
                                       <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                         Tất cả bài kiểm tra:
@@ -496,9 +509,7 @@ const ClassesPage: React.FC = () => {
                                 <div className="relative dropdown-container flex-1">
                                   <button
                                     className="btn-primary flex items-center justify-center w-full"
-                                    onClick={() => {
-                                      setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                                    }}
+                                    onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
                                     Tham gia ({quizCount})
                                     <svg
@@ -513,7 +524,7 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
+                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
                                       <div className="p-2">
                                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                                           Tất cả bài kiểm tra:
@@ -551,6 +562,15 @@ const ClassesPage: React.FC = () => {
                         })()}
                         {/* Nút xóa lớp học - chỉ icon, cùng hàng */}
                         <button
+                          onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
+                          className="w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                          title="Chỉnh sửa lớp học"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
+                          </svg>
+                        </button>
+                        <button
                           onClick={() => handleDeleteClass(classRoom.id, classRoom.name)}
                           className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
                           title="Xóa lớp học"
@@ -562,19 +582,20 @@ const ClassesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Danh sách bài kiểm tra - chỉ hiển thị tối đa 3 bài đầu tiên */}
+                    {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
                     {quizCount > 0 && (
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                         <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                           Bài kiểm tra trong lớp:
-                          {quizCount > 3 && (
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-                              (Hiển thị 3/{quizCount} bài - xem tất cả tại nút "Vào lớp")
-                            </span>
-                          )}
                         </h4>
-                        <div className="space-y-2">
-                          {validQuizzes.slice(0, 3).map((quiz) => (
+                        <div
+                          className="space-y-2 max-h-72 overflow-y-auto pr-2 quiz-scrollbar-container"
+                          style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#d1d5db #f3f4f6', // gray-300 thumb, gray-100 track
+                          }}
+                        >
+                          {validQuizzes.map((quiz) => (
                             <div
                               key={quiz.id}
                               className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative"
@@ -596,6 +617,22 @@ const ClassesPage: React.FC = () => {
                                   >
                                     Làm bài
                                   </Link>
+                                  <button
+                                    onClick={() => navigate('/edit-quiz', { state: {
+                                      questions: quiz.questions,
+                                      fileName: quiz.title,
+                                      fileId: quiz.id,
+                                      quizTitle: quiz.title,
+                                      quizDescription: quiz.description,
+                                      isEdit: true
+                                    } })}
+                                    className="text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
+                                    title="Chỉnh sửa bài kiểm tra"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
+                                    </svg>
+                                  </button>
                                   <button
                                     onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
                                     className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
@@ -624,8 +661,24 @@ const ClassesPage: React.FC = () => {
                                     Làm bài
                                   </Link>
                                   <button
+                                    onClick={() => navigate('/edit-quiz', { state: {
+                                      questions: quiz.questions,
+                                      fileName: quiz.title,
+                                      fileId: quiz.id,
+                                      quizTitle: quiz.title,
+                                      quizDescription: quiz.description,
+                                      isEdit: true
+                                    } })}
+                                    className="w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                    title="Chỉnh sửa bài kiểm tra"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
+                                    </svg>
+                                  </button>
+                                  <button
                                     onClick={() => handleDeleteQuiz(classRoom.id, quiz.id, quiz.title)}
-                                    className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                                    className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
                                     title="Xóa bài kiểm tra"
                                   >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -701,7 +754,7 @@ const ClassesPage: React.FC = () => {
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <p>• Chọn lớp học để xem danh sách bài kiểm tra</p>
-              <p>• Click "Làm bài" để bắt đầu làm bài tập trắc nghiệm</p>
+              <p>• Click "Làm bài" để bắt đầu làm  bài tập trắc nghiệm</p>
               <p>• Theo dõi tiến độ học tập của bạn</p>
               <p>• Xóa lớp học hoặc bài kiểm tra nếu không cần thiết</p>
             </div>
