@@ -22,9 +22,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Footer */}
       <Footer />
-      
-      {/* Background Music Player */}
-      <BackgroundMusic />
     </div>
   );
 };
