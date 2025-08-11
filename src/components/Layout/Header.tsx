@@ -79,7 +79,7 @@ const Header: React.FC = () => {
               {/* Music Player Toggle Button */}
               <button
                 onClick={toggleMusicPlayer}
-                className={`p-2 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md ${
+                className={`p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center ${
                   showMusicPlayer
                     ? 'bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300'
                     : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600'
@@ -97,7 +97,7 @@ const Header: React.FC = () => {
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md"
+                className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center"
                 aria-label="Toggle theme"
               >
                 {isDarkMode ? (
@@ -131,7 +131,7 @@ const Header: React.FC = () => {
               {/* Mobile Music Player Button */}
               <button
                 onClick={toggleMusicPlayer}
-                className={`p-0.5 rounded-md transition-all duration-300 flex items-center justify-center ${
+                className={`p-2 rounded-lg transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9 ${
                   showMusicPlayer
                     ? 'bg-primary-200 dark:bg-primary-800 text-primary-700 dark:text-primary-300'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -139,7 +139,7 @@ const Header: React.FC = () => {
                 aria-label="Toggle Music Player"
               >
                 {React.createElement(FaMusic as React.ComponentType<any>, {
-                  className: `w-4 h-4 ${isPlaying ? 'animate-spin' : ''}`,
+                  className: `w-5 h-5 ${isPlaying ? 'animate-spin' : ''}`,
                   style: isPlaying ? { animationDuration: '2s' } : undefined
                 })}
               </button>
@@ -147,15 +147,15 @@ const Header: React.FC = () => {
               {/* Mobile Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="p-0.5 rounded-md bg-slate-100 dark:bg-slate-800 transition-all duration-300 flex items-center justify-center"
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9"
                 aria-label="Toggle theme"
               >
                 {isDarkMode ? (
-                  <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <svg className="w-4 h-4 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                   </svg>
                 )}
@@ -168,8 +168,8 @@ const Header: React.FC = () => {
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? 
-                  React.createElement(FaTimes as React.ComponentType<any>, { className: "w-4 h-4" }) : 
-                  React.createElement(FaBars as React.ComponentType<any>, { className: "w-4 h-4" })
+                  React.createElement(FaTimes as React.ComponentType<any>, { className: "w-5 h-5" }) : 
+                  React.createElement(FaBars as React.ComponentType<any>, { className: "w-5 h-5" })
                 }
               </button>
             </div>
