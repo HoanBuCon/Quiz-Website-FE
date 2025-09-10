@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClassRoom, Quiz } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 // Component trang chủ
 const HomePage: React.FC = () => {
@@ -9,7 +10,24 @@ const HomePage: React.FC = () => {
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalQuizzes, setTotalQuizzes] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
+
+  // Hàm xử lý di chuyển chuột để tính toán góc xoay
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const mouseX = e.clientX - centerX;
+    const mouseY = e.clientY - centerY;
+    
+    setMousePosition({ x: mouseX, y: mouseY });
+  };
+
+  const handleMouseLeave = () => {
+    setMousePosition({ x: 0, y: 0 });
+  };
 
   // Mock data cho các lớp học public
   useEffect(() => {
@@ -529,23 +547,48 @@ const HomePage: React.FC = () => {
         <div className="w-full lg:w-1/3 order-1 lg:order-2">
           <div className="card p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Thống kê
+              Kho tài liệu học tập
             </h3>
-            <div className="space-y-3 sm:space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng lớp học:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {totalClasses}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Số lượng bài kiểm tra:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{totalQuizzes}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Người dùng online:</span>
-                <span className="font-semibold text-green-600">69</span>
-              </div>
+            <h4 className="text-lg font-mono text-gray-900 dark:text-white mb-4 text-center">
+              <a href="https://lms.liemsdai.is-best.net/" target="_blank" rel="noopener noreferrer">
+                https://lms.liemsdai.is-best.net/
+              </a>
+            </h4>
+            <div className="flex items-center justify-center">
+                <div className="perspective-1000" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                  <a
+                    href="https://lms.liemsdai.is-best.net/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group"
+                    style={{ display: 'inline-block' }}
+                  >
+                    <img
+                      src={isDarkMode ? require('../assets/liemdai_dark.png') : require('../assets/liemdai_light.png')}
+                      alt={isDarkMode ? 'liemdai_dark' : 'liemdai_light'}
+                      className="max-w-full h-auto rounded-xl shadow-lg transition-all duration-300 ease-out cursor-pointer"
+                      style={{
+                        maxHeight: 280,
+                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1}deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0 ? '20px' : '0px'})`,
+                        border: '2px solid transparent',
+                        backgroundImage: isDarkMode
+                          ? 'linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)'
+                          : 'linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)',
+                        backgroundSize: '400% 400%',
+                        animation: 'neonBorder 3s ease-in-out infinite',
+                        backgroundClip: 'border-box',
+                        borderRadius: '12px',
+                      }}
+                    />
+                    {/* Tooltip */}
+                    <div
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs rounded px-3 py-2 shadow-lg transition-opacity duration-200 z-20 whitespace-nowrap ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-300'}`}
+                      style={{ minWidth: 160 }}
+                    >
+                      Click để chuyển đến trang
+                    </div>
+                  </a>
+                </div>
             </div>
           </div>
         </div>
