@@ -53,4 +53,16 @@ export const SessionsAPI = {
   byQuiz: (quizId: string, token: string) => apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
 };
 
+export const FilesAPI = {
+  listMine: (token: string) => apiRequest<any[]>(`/files`, { token }),
+  upload: (data: { name: string; type: 'docs'|'json'|'txt'; size: number; content?: string }, token: string) =>
+    apiRequest<any>(`/files`, { method: 'POST', token, body: JSON.stringify(data) }),
+  remove: (id: string, token: string) => apiRequest<void>(`/files/${id}`, { method: 'DELETE', token }),
+};
+
+export const AuthAPI = {
+  forgot: (email: string) => apiRequest<{ resetToken: string; resetLink: string }>(`/auth/forgot`, { method: 'POST', body: JSON.stringify({ email }) }),
+  reset: (token: string, newPassword: string) => apiRequest<void>(`/auth/reset`, { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+};
+
 export type { };

@@ -124,7 +124,7 @@ const RegisterPage: React.FC = () => {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Tạo tài khoản mới
+            Đăng ký
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Hoặc{' '}
@@ -154,7 +154,7 @@ const RegisterPage: React.FC = () => {
                 className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nguyễn Văn A"
+                placeholder="Sắc Mai Đích"
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>

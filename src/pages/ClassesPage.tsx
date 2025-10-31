@@ -67,6 +67,49 @@ const ClassesPage: React.FC = () => {
       setOpenDropdown(classId);
     }
   };
+
+  // Toggle public for class
+  const handleToggleClassPublic = async (classId: string, current: boolean) => {
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { ClassesAPI } = await import('../utils/api');
+      const updated = await ClassesAPI.update(classId, { isPublic: !current }, token);
+      setClasses(prev => prev.map(c => c.id === classId ? { ...c, updatedAt: new Date(), /* reflect */ } as any : c));
+      alert(!current ? 'Đã đặt công khai lớp học' : 'Đã đặt riêng tư lớp học');
+    } catch (e) {
+      console.error('toggle public failed', e);
+      alert('Không thể cập nhật công khai');
+    }
+  };
+
+  const handleShareClass = (classId: string) => {
+    const link = `${window.location.origin}/class/${classId}`;
+    navigator.clipboard?.writeText(link).catch(()=>{});
+    alert(`Link lớp học đã được copy:\n${link}\n\nClass ID: ${classId}`);
+  };
+
+  // Toggle publish for quiz
+  const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { QuizzesAPI } = await import('../utils/api');
+      await QuizzesAPI.update(quizId, { published: !current }, token);
+      alert(!current ? 'Đã xuất bản quiz' : 'Đã đặt quiz ở trạng thái nháp');
+    } catch (e) {
+      console.error('toggle publish failed', e);
+      alert('Không thể cập nhật trạng thái quiz');
+    }
+  };
+
+  const handleShareQuiz = (quizId: string) => {
+    const link = `${window.location.origin}/quiz/${quizId}`;
+    navigator.clipboard?.writeText(link).catch(()=>{});
+    alert(`Link quiz đã được copy:\n${link}\n\nQuiz ID: ${quizId}`);
+  };
   // Helper function để lấy danh sách quiz hợp lệ
   const getValidQuizzes = (classRoom: ClassRoom): Quiz[] => {
     if (!classRoom.quizzes) return [];
@@ -341,6 +384,25 @@ const ClassesPage: React.FC = () => {
                         })()}
                         
                         <button
+                          onClick={() => handleShareClass(classRoom.id)}
+                          className="btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
+                          title="Chia sẻ lớp học"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleToggleClassPublic(classRoom.id, (classRoom as any).isPublic)}
+                          className="btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
+                          title="Công khai/ Riêng tư lớp học"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.4 15a8 8 0 10-14.8 0" />
+                          </svg>
+                        </button>
+                        <button
                           onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
                           className="btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40"
                           title="Chỉnh sửa lớp học"
@@ -554,6 +616,24 @@ const ClassesPage: React.FC = () => {
                                   >
                                     Làm bài
                                   </Link>
+                                  <button
+                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    className="text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1"
+                                    title="Chia sẻ quiz"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M8 12h8M20 12v.01" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleQuizPublished(quiz.id, (quiz as any).published)}
+                                    className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
+                                    title="Công khai/nháp quiz"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </button>
                                   <button
                                     onClick={() => navigate('/edit-quiz', { state: {
                                       questions: quiz.questions,

@@ -107,7 +107,7 @@ const LoginPage: React.FC = () => {
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Đăng nhập tài khoản
+            Đăng nhập
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Hoặc{' '}
@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
               to="/register"
               className="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
             >
-              tạo tài khoản mới
+              đăng ký tài khoản mới
             </Link>
           </p>
         </div>
@@ -167,11 +167,17 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
+          <div className="flex items-center justify-between">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              Quên mật khẩu?
+            </Link>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className="group inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {loading ? (
                 <div className="flex items-center">
@@ -187,7 +193,7 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <Link
               to="/"
               className="text-sm text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"

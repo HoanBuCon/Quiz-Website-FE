@@ -27,5 +27,36 @@ router.post('/login', async (req, res) => {
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
+// Forgot password: return resetToken/resetLink (demo; normally email this)
+router.post('/forgot', async (req, res) => {
+  const prisma = req.prisma;
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ message: 'Email is required' });
+  const user = await prisma.user.findUnique({ where: { email } });
+  // Do not reveal whether user exists
+  if (!user) return res.json({ resetToken: '', resetLink: '' });
+  const resetToken = jwt.sign({ sub: user.id, email: user.email, type: 'reset' }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '15m' });
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
+  res.json({ resetToken, resetLink });
+});
+
+// Reset password using reset token
+router.post('/reset', async (req, res) => {
+  const prisma = req.prisma;
+  const { token, newPassword } = req.body || {};
+  if (!token || !newPassword) return res.status(400).json({ message: 'Invalid payload' });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'devsecret');
+    if (payload.type !== 'reset') return res.status(400).json({ message: 'Invalid token type' });
+    const userId = payload.sub;
+    const hash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+    res.status(204).end();
+  } catch (e) {
+    res.status(400).json({ message: 'Invalid or expired token' });
+  }
+});
+
 module.exports = router;
 
