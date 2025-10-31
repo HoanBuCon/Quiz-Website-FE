@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { QuizzesAPI, ClassesAPI } from '../utils/api';
+import { buildShortId } from '../utils/share';
 import { Quiz } from '../types';
 import { getToken } from '../utils/auth';
 
@@ -16,14 +17,14 @@ const ClassViewPage: React.FC = () => {
       try {
         const token = getToken();
         if (!token || !classId) { setLoading(false); return; }
-        // optional: fetch class name from public/mine
-        try {
-          const mine = await ClassesAPI.listMine(token);
-          const pub = await ClassesAPI.listPublic(token);
-          const cls = [...mine, ...pub].find((c: any) => c.id === classId);
-          if (cls) setTitle(cls.name);
-        } catch {}
-        const qzs = await QuizzesAPI.byClass(classId, token);
+        // fetch class by id or by short code
+        const mine = await ClassesAPI.listMine(token).catch(() => []);
+        const pub = await ClassesAPI.listPublic(token).catch(() => []);
+        const all = [...mine, ...pub];
+        const cls = all.find((c: any) => c.id === classId || buildShortId(c.id) === classId);
+        if (cls) setTitle(cls.name);
+        const effectiveClassId = cls ? cls.id : classId;
+        const qzs = await QuizzesAPI.byClass(effectiveClassId, token);
         setQuizzes(qzs);
       } catch (e) {
         // ignore

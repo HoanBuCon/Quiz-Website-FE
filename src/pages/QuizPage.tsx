@@ -2,6 +2,7 @@ import { FaRegDotCircle, FaRegEdit } from "react-icons/fa";
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Question, UserAnswer, Quiz } from '../types';
+import { buildShortId } from '../utils/share';
 
 // Component trang làm bài trắc nghiệm
 const QuizPage: React.FC = () => {
@@ -15,6 +16,7 @@ const QuizPage: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(0); // Sẽ set sau khi load quiz
   const [quizTitle, setQuizTitle] = useState('');
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
+  const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
 
   // Load quiz data from backend
   useEffect(() => {
@@ -39,12 +41,13 @@ const QuizPage: React.FC = () => {
         let found: any = null;
         for (const cls of [...mine, ...pub]) {
           const qzs = await QuizzesAPI.byClass(cls.id, token);
-          const q = qzs.find((qq: any) => qq.id === quizId);
+          const q = qzs.find((qq: any) => qq.id === quizId || buildShortId(qq.id) === quizId);
           if (q) { found = q; break; }
         }
         if (found) {
           setQuizTitle(found.title);
           setQuestions(found.questions || []);
+          setEffectiveQuizId(found.id);
         }
       } catch (error) {
         console.error('Error loading quiz:', error);
@@ -153,8 +156,9 @@ const QuizPage: React.FC = () => {
           return acc;
         }, {} as Record<string, string[]>);
         const { SessionsAPI } = await import('../utils/api');
-        await SessionsAPI.submit({ quizId: quizId!, answers: answersMap, timeSpent }, token);
-        navigate(`/results/${quizId}`);
+        const qid = effectiveQuizId || quizId!;
+        await SessionsAPI.submit({ quizId: qid, answers: answersMap, timeSpent }, token);
+        navigate(`/results/${qid}`);
       } catch (e) {
         console.error('Submit failed:', e);
         alert('Có lỗi xảy ra khi nộp bài.');

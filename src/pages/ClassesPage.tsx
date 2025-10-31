@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClassRoom, Quiz } from '../types';
+import { buildShortId, isShortIdCode } from '../utils/share';
 
 const ClassesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -222,33 +223,6 @@ const ClassesPage: React.FC = () => {
   const buildShareLink = (type: 'class' | 'quiz', id: string) =>
     `${window.location.origin}/${type === 'class' ? 'class' : 'quiz'}/${id}`;
 
-  const getOwnerCode = (): string => {
-    try {
-      const token = (window as any)?.localStorage ? null : null; // placeholder to avoid SSR
-    } catch {}
-    try {
-      // Try to decode JWT for email/username
-      const { getToken } = require('../utils/auth');
-      const t = getToken?.();
-      if (t) {
-        const payload = JSON.parse(atob(t.split('.')[1] || '')) || {};
-        const source: string = payload.username || payload.name || payload.email || payload.userId || '';
-        const letters = (source.match(/[A-Za-z]/g) || []).join('').toUpperCase();
-        if (letters.length >= 3) return letters.slice(0,3);
-        if (letters.length > 0) return (letters + 'XXX').slice(0,3);
-      }
-    } catch {}
-    return 'USR';
-  };
-
-  const buildShareCode = (type: 'class'|'quiz', id: string): string => {
-    const prefix = getOwnerCode();
-    const digitsFromId = (id.match(/\d+/g) || []).join('');
-    let numeric = (digitsFromId + Date.now().toString()).slice(-9);
-    if (numeric.length < 9) numeric = numeric.padStart(9, '0');
-    return `${prefix}${numeric}`;
-  };
-
   const copyToClipboard = async (text: string) => {
     try { await navigator.clipboard?.writeText(text); } catch {}
   };
@@ -260,7 +234,7 @@ const ClassesPage: React.FC = () => {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { ClassesAPI } = await import('../utils/api');
+      const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
 
       const extractId = (val: string, kind: 'class'|'quiz') => {
         const marker = `/${kind}/`;
@@ -272,7 +246,27 @@ const ClassesPage: React.FC = () => {
       let usedType: 'class'|'quiz'|null = null;
       let payload: { classId?: string; quizId?: string } = {};
 
-      if (importType === 'class' || (importType === 'auto' && /\/class\//.test(raw))) {
+      if (isShortIdCode(raw)) {
+        // Resolve short code by scanning public (and mine as fallback)
+        const mine = await ClassesAPI.listMine(token).catch(() => []);
+        const pub = await ClassesAPI.listPublic(token).catch(() => []);
+        const all = [...pub, ...mine];
+        let foundClassId: string | null = null;
+        for (const c of all) {
+          if (buildShortId(c.id) === raw) { foundClassId = c.id; break; }
+        }
+        if (foundClassId) {
+          payload.classId = foundClassId;
+          usedType = 'class';
+        } else {
+          // search quizzes under classes
+          for (const c of all) {
+            const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
+            const matched = qzs.find((q: any) => buildShortId(q.id) === raw);
+            if (matched) { payload.quizId = matched.id; usedType = 'quiz'; break; }
+          }
+        }
+      } else if (importType === 'class' || (importType === 'auto' && /\/class\//.test(raw))) {
         payload.classId = extractId(raw, 'class');
         usedType = 'class';
       } else if (importType === 'quiz' || (importType === 'auto' && /\/quiz\//.test(raw))) {
@@ -992,17 +986,10 @@ const ClassesPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Chia sẻ {shareData.type === 'class' ? 'lớp học' : 'quiz'}</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Mã chia sẻ</label>
-                <div className="flex gap-2">
-                  <input readOnly value={buildShareCode(shareData.type, shareData.id)} className="flex-1 input text-gray-900 dark:text-gray-900" />
-                  <button className="btn-secondary" onClick={() => copyToClipboard(buildShareCode(shareData.type, shareData.id))}>Copy</button>
-                </div>
-              </div>
-              <div>
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">ID</label>
                 <div className="flex gap-2">
-                  <input readOnly value={shareData.id} className="flex-1 input text-gray-900 dark:text-gray-900" />
-                  <button className="btn-secondary" onClick={() => copyToClipboard(shareData.id)}>Copy</button>
+                  <input readOnly value={buildShortId(shareData.id)} className="flex-1 input text-gray-900 dark:text-gray-900" />
+                  <button className="btn-secondary" onClick={() => copyToClipboard(buildShortId(shareData.id))}>Copy</button>
                 </div>
               </div>
               <div>
@@ -1040,7 +1027,7 @@ const ClassesPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">ID hoặc Link</label>
-                <input value={importInput} onChange={e => setImportInput(e.target.value)} placeholder="Ví dụ: https://.../class/abc123 hoặc abc123" className="input w-full" />
+                <input value={importInput} onChange={e => setImportInput(e.target.value)} placeholder="Ví dụ: https://.../class/abc123 hoặc abc123" className="input w-full text-black" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
