@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.env
+generated/prisma/query_engine-*.node
+coverage
+.cache
+dist
+
+

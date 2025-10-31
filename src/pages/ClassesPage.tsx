@@ -108,73 +108,82 @@ const ClassesPage: React.FC = () => {
     return validQuizzes;
   };
 
-  // Lấy dữ liệu từ localStorage
+  // Lấy dữ liệu từ backend (nếu đã đăng nhập) hoặc localStorage
   useEffect(() => {
-    try {
-      const savedClasses = localStorage.getItem('classrooms') || '[]';
-      const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-      
-      const classRooms = JSON.parse(savedClasses);
-      const quizzes = JSON.parse(savedQuizzes);
-
-      console.log('Raw classRooms data:', classRooms);
-      console.log('Available quizzes:', quizzes);
-
-      if (classRooms.length > 0) {
-        // Map quiz IDs to actual quiz objects for each classroom
-        const mappedClasses = classRooms.map((classRoom: ClassRoom) => {
-          console.log('Processing classroom:', classRoom);
-          
-          // Handle both old format (quizIds) and new format (quizzes)
-          let quizIdList: string[] = [];
-          
-          if (classRoom.quizIds) {
-            // Old format - using quizIds
-            quizIdList = classRoom.quizIds;
-            console.log('Using quizIds:', quizIdList);
-          } else if (classRoom.quizzes && Array.isArray(classRoom.quizzes)) {
-            // New format - check if quizzes contains IDs or objects
-            if (classRoom.quizzes.length > 0 && typeof classRoom.quizzes[0] === 'string') {
-              // Array of IDs
-              quizIdList = classRoom.quizzes as unknown as string[];
-              console.log('Using quizzes as IDs:', quizIdList);
-            } else {
-              // Array of quiz objects - extract IDs
-              quizIdList = (classRoom.quizzes as Quiz[]).map(q => q.id);
-              console.log('Extracted IDs from quiz objects:', quizIdList);
-            }
+    (async () => {
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (token) {
+          const { apiRequest } = await import('../utils/api');
+          // Lấy lớp học của tôi
+          const myClasses = await apiRequest<any[]>(`/classes?mine=true`, { token });
+          // Tải quizzes cho từng lớp
+          const withQuizzes: ClassRoom[] = [] as any;
+          for (const cls of myClasses) {
+            const quizzes = await apiRequest<any[]>(`/quizzes/by-class/${cls.id}`, { token });
+            withQuizzes.push({
+              id: cls.id,
+              name: cls.name,
+              description: cls.description,
+              quizzes: quizzes.map(q => ({
+                ...q,
+                createdAt: new Date(q.createdAt),
+                updatedAt: new Date(q.updatedAt),
+              })),
+              createdAt: new Date(cls.createdAt),
+              updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
+            } as unknown as ClassRoom);
           }
-
-          const classQuizzes = quizIdList.map(quizId => {
-            const quiz = quizzes.find((q: Quiz) => q.id === quizId);
-            if (quiz) {
-              return {
-                ...quiz,
-                createdAt: new Date(quiz.createdAt),
-                updatedAt: new Date(quiz.updatedAt || quiz.createdAt)
-              };
-            }
-            console.warn('Quiz not found for ID:', quizId);
-            return null;
-          }).filter((q): q is Quiz => q !== null);
-
-          console.log('Mapped quizzes for classroom:', classQuizzes);
-
-          return {
-            ...classRoom,
-            quizzes: classQuizzes,
-            createdAt: new Date(classRoom.createdAt)
-          };
-        });
-        
-        console.log('Final mapped classes:', mappedClasses);
-        setClasses(mappedClasses);
+          setClasses(withQuizzes);
+          setLoading(false); // Đảm bảo loading được tắt sau khi gọi API
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend fetch failed, fallback to local:', err);
+        setLoading(false); // Đảm bảo loading được tắt nếu có lỗi backend
       }
-    } catch (error) {
-      console.error('Error loading classes:', error);
-    } finally {
-      setLoading(false);
-    }
+      // Fallback localStorage
+      try {
+        const savedClasses = localStorage.getItem('classrooms') || '[]';
+        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
+        const classRooms = JSON.parse(savedClasses);
+        const quizzes = JSON.parse(savedQuizzes);
+        if (classRooms.length > 0) {
+          const mappedClasses = classRooms.map((classRoom: ClassRoom) => {
+            let quizIdList: string[] = [];
+            if (classRoom.quizIds) {
+              quizIdList = classRoom.quizIds;
+            } else if (classRoom.quizzes && Array.isArray(classRoom.quizzes)) {
+              quizIdList = typeof classRoom.quizzes[0] === 'string'
+                ? (classRoom.quizzes as unknown as string[])
+                : (classRoom.quizzes as Quiz[]).map(q => q.id);
+            }
+            const classQuizzes = quizIdList.map(quizId => {
+              const quiz = quizzes.find((q: Quiz) => q.id === quizId);
+              if (quiz) {
+                return {
+                  ...quiz,
+                  createdAt: new Date(quiz.createdAt),
+                  updatedAt: new Date(quiz.updatedAt || quiz.createdAt)
+                };
+              }
+              return null;
+            }).filter((q): q is Quiz => q !== null);
+            return {
+              ...classRoom,
+              quizzes: classQuizzes,
+              createdAt: new Date(classRoom.createdAt)
+            };
+          });
+          setClasses(mappedClasses);
+        }
+      } catch (error) {
+        console.error('Error loading classes (fallback):', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   // Handle click outside để đóng dropdown

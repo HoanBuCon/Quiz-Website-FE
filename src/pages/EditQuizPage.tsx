@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import QuizPreview from '../components/QuizPreview';
 import {
   DndContext,
@@ -318,8 +318,27 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // Nếu là chỉnh sửa quiz (isEdit), chỉ cập nhật quiz, không thêm vào lớp học nữa
-      if (state?.isEdit) {
+      // Nếu có token, ưu tiên lưu về backend
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+
+      // Nếu là chỉnh sửa quiz (isEdit)
+      if (state?.isEdit && token) {
+        const { apiRequest } = await import('../utils/api');
+        await apiRequest(`/quizzes/${state.fileId}`, {
+          method: 'PUT',
+          token,
+          body: JSON.stringify({
+            title: quizTitle || `Quiz từ file ${state.fileName}`,
+            description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+            published: true,
+            questions: questions,
+          })
+        });
+  toast.success('Cập nhật quiz thành công!');
+        navigate('/classes');
+        return;
+      } else if (state?.isEdit) {
         const savedQuizzes = localStorage.getItem('quizzes') || '[]';
         const quizzes = JSON.parse(savedQuizzes);
         const existingQuizIndex = quizzes.findIndex((q: Quiz) => q.id === state.fileId);
@@ -344,7 +363,55 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // Lưu quiz vào localStorage chỉ khi xuất bản
+      // Backend path: tạo/ghi quiz và lớp nếu có token
+      if (token) {
+        const { apiRequest } = await import('../utils/api');
+        // Resolve classId: create class if needed
+        let classId: string | undefined = undefined;
+        if (state.classInfo) {
+          if (state.classInfo.isNew) {
+            const created = await apiRequest<{ id: string }>(`/classes`, {
+              method: 'POST', token,
+              body: JSON.stringify({
+                name: state.classInfo.name || quizTitle || `Lớp học ${state.fileName}`,
+                description: state.classInfo.description || quizDescription || 'Lớp học được tạo từ quiz',
+                isPublic: false,
+              })
+            });
+            classId = created.id;
+          } else {
+            classId = state.classInfo.classId;
+          }
+        }
+        if (!classId) {
+          // Default: create class implicitly
+          const created = await apiRequest<{ id: string }>(`/classes`, {
+            method: 'POST', token,
+            body: JSON.stringify({
+              name: quizTitle || `Lớp học ${state.fileName}`,
+              description: quizDescription || 'Lớp học được tạo từ quiz',
+              isPublic: false,
+            })
+          });
+          classId = created.id;
+        }
+
+        await apiRequest(`/quizzes`, {
+          method: 'POST', token,
+          body: JSON.stringify({
+            classId,
+            title: quizTitle || `Quiz từ file ${state.fileName}`,
+            description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+            published: true,
+            questions: questions,
+          })
+        });
+  toast.success('Xuất bản thành công!');
+        navigate('/classes');
+        return;
+      }
+
+      // Fallback: Lưu quiz vào localStorage khi không có token
       const savedQuizzes = localStorage.getItem('quizzes') || '[]';
       const quizzes = JSON.parse(savedQuizzes);
       

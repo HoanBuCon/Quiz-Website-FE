@@ -14,6 +14,8 @@ import EditClassPage from './pages/EditClassPage';
 import DocumentsPage from './pages/DocumentsPage';
 import QuizPage from './pages/QuizPage';
 import ResultsPage from './pages/ResultsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 // ThemedToaster component để đổi màu theo theme
 function ThemedToaster() {
@@ -160,6 +162,9 @@ function App() {
             <Route path="/documents" element={<Layout><DocumentsPage /></Layout>} />
             <Route path="/quiz/:quizId" element={<Layout><QuizPage /></Layout>} />
             <Route path="/results/:quizId" element={<Layout><ResultsPage /></Layout>} />
+            {/* Auth routes - không có Layout */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             {/* Route sử dụng FixedLayout - KHÔNG SCROLL */}
             <Route path="/edit-class/:classId" element={<FixedLayout><EditClassPage /></FixedLayout>} />
           </Routes>
