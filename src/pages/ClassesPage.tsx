@@ -8,6 +8,15 @@ const ClassesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
+  // Share modal state
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareData, setShareData] = useState<{ type: 'class' | 'quiz'; id: string } | null>(null);
+
+  // Import modal state
+  const [importOpen, setImportOpen] = useState(false);
+  const [importInput, setImportInput] = useState('');
+  const [importType, setImportType] = useState<'auto' | 'class' | 'quiz'>('auto');
+
   // Hàm xóa lớp học
   const handleDeleteClass = async (classId: string, className: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Tất cả bài kiểm tra trong lớp học này cũng sẽ bị xóa.`)) {
@@ -68,15 +77,33 @@ const ClassesPage: React.FC = () => {
     }
   };
 
-  // Toggle public for class
+// Toggle public for class
   const handleToggleClassPublic = async (classId: string, current: boolean) => {
+    if (!window.confirm(`Bạn có chắc muốn đặt lớp học ở trạng thái ${current ? 'Riêng tư' : 'Công khai'}?`)) return;
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { ClassesAPI } = await import('../utils/api');
+      const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
       const updated = await ClassesAPI.update(classId, { isPublic: !current }, token);
-      setClasses(prev => prev.map(c => c.id === classId ? { ...c, updatedAt: new Date(), /* reflect */ } as any : c));
+
+      // If making class public, also publish all quizzes in the class
+      if (!current) {
+        const target = classes.find(c => c.id === classId);
+        const quizzes = (target?.quizzes as Quiz[]) || [];
+        await Promise.all(quizzes.map(q => QuizzesAPI.update((q as any).id, { published: true }, token).catch(() => null)));
+      }
+
+      setClasses(prev => prev.map(c =>
+        c.id === classId
+          ? {
+              ...c,
+              isPublic: updated?.isPublic ?? !current,
+              quizzes: !current && c.quizzes ? (c.quizzes as Quiz[]).map(q => ({ ...q, published: true } as any)) : c.quizzes,
+              updatedAt: updated?.updatedAt ? new Date(updated.updatedAt) : new Date(),
+            }
+          : c
+      ));
       alert(!current ? 'Đã đặt công khai lớp học' : 'Đã đặt riêng tư lớp học');
     } catch (e) {
       console.error('toggle public failed', e);
@@ -85,19 +112,33 @@ const ClassesPage: React.FC = () => {
   };
 
   const handleShareClass = (classId: string) => {
-    const link = `${window.location.origin}/class/${classId}`;
-    navigator.clipboard?.writeText(link).catch(()=>{});
-    alert(`Link lớp học đã được copy:\n${link}\n\nClass ID: ${classId}`);
+    setShareData({ type: 'class', id: classId });
+    setShareOpen(true);
   };
 
-  // Toggle publish for quiz
-  const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
+// Toggle publish for quiz
+  const handleToggleQuizPublished = async (classId: string, quizId: string, current: boolean) => {
+    if (!window.confirm(`Bạn có chắc muốn đặt quiz ở trạng thái ${current ? 'Nháp (riêng tư)' : 'Công khai'}?`)) return;
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { QuizzesAPI } = await import('../utils/api');
-      await QuizzesAPI.update(quizId, { published: !current }, token);
+      const { QuizzesAPI, ClassesAPI } = await import('../utils/api');
+      const updated = await QuizzesAPI.update(quizId, { published: !current }, token);
+
+      // If publishing a quiz, ensure the class is public (do not auto-publish other quizzes)
+      if (!current) {
+        const targetClass = classes.find(c => c.id === classId);
+        if (targetClass && !targetClass.isPublic) {
+          await ClassesAPI.update(classId, { isPublic: true }, token);
+        }
+      }
+
+      setClasses(prev => prev.map(cls => ({
+        ...cls,
+        isPublic: cls.id === classId ? true : cls.isPublic,
+        quizzes: (cls.quizzes as Quiz[])?.map(q => (q && (q as any).id === quizId ? { ...q, ...(updated || {}), updatedAt: new Date() } : q))
+      })));
       alert(!current ? 'Đã xuất bản quiz' : 'Đã đặt quiz ở trạng thái nháp');
     } catch (e) {
       console.error('toggle publish failed', e);
@@ -106,9 +147,8 @@ const ClassesPage: React.FC = () => {
   };
 
   const handleShareQuiz = (quizId: string) => {
-    const link = `${window.location.origin}/quiz/${quizId}`;
-    navigator.clipboard?.writeText(link).catch(()=>{});
-    alert(`Link quiz đã được copy:\n${link}\n\nQuiz ID: ${quizId}`);
+    setShareData({ type: 'quiz', id: quizId });
+    setShareOpen(true);
   };
   // Helper function để lấy danh sách quiz hợp lệ
   const getValidQuizzes = (classRoom: ClassRoom): Quiz[] => {
@@ -119,41 +159,47 @@ const ClassesPage: React.FC = () => {
     return validQuizzes;
   };
 
+// Fetch classes helper
+  const loadMyClasses = async () => {
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) {
+        setClasses([]);
+        setLoading(false);
+        return;
+      }
+      const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+      const myClasses = await ClassesAPI.listMine(token);
+      const withQuizzes: ClassRoom[] = [] as any;
+      for (const cls of myClasses) {
+        const quizzes = await QuizzesAPI.byClass(cls.id, token);
+        withQuizzes.push({
+          id: cls.id,
+          name: cls.name,
+          description: cls.description,
+          isPublic: cls.isPublic,
+          quizzes: quizzes.map((q: any) => ({
+            ...q,
+            createdAt: new Date(q.createdAt),
+            updatedAt: new Date(q.updatedAt),
+          })),
+          createdAt: new Date(cls.createdAt),
+          updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
+        } as unknown as ClassRoom);
+      }
+      setClasses(withQuizzes);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Lấy dữ liệu từ backend
   useEffect(() => {
     (async () => {
-      try {
-        const { getToken } = await import('../utils/auth');
-        const token = getToken();
-        if (!token) {
-          setClasses([]);
-          setLoading(false);
-          return;
-        }
-        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
-        const myClasses = await ClassesAPI.listMine(token);
-        const withQuizzes: ClassRoom[] = [] as any;
-        for (const cls of myClasses) {
-          const quizzes = await QuizzesAPI.byClass(cls.id, token);
-          withQuizzes.push({
-            id: cls.id,
-            name: cls.name,
-            description: cls.description,
-            quizzes: quizzes.map((q: any) => ({
-              ...q,
-              createdAt: new Date(q.createdAt),
-              updatedAt: new Date(q.updatedAt),
-            })),
-            createdAt: new Date(cls.createdAt),
-            updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
-          } as unknown as ClassRoom);
-        }
-        setClasses(withQuizzes);
-      } catch (err) {
-        console.error('Error fetching classes:', err);
-      } finally {
-        setLoading(false);
-      }
+      await loadMyClasses();
     })();
   }, []);
 
@@ -172,6 +218,92 @@ const ClassesPage: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const buildShareLink = (type: 'class' | 'quiz', id: string) =>
+    `${window.location.origin}/${type === 'class' ? 'class' : 'quiz'}/${id}`;
+
+  const getOwnerCode = (): string => {
+    try {
+      const token = (window as any)?.localStorage ? null : null; // placeholder to avoid SSR
+    } catch {}
+    try {
+      // Try to decode JWT for email/username
+      const { getToken } = require('../utils/auth');
+      const t = getToken?.();
+      if (t) {
+        const payload = JSON.parse(atob(t.split('.')[1] || '')) || {};
+        const source: string = payload.username || payload.name || payload.email || payload.userId || '';
+        const letters = (source.match(/[A-Za-z]/g) || []).join('').toUpperCase();
+        if (letters.length >= 3) return letters.slice(0,3);
+        if (letters.length > 0) return (letters + 'XXX').slice(0,3);
+      }
+    } catch {}
+    return 'USR';
+  };
+
+  const buildShareCode = (type: 'class'|'quiz', id: string): string => {
+    const prefix = getOwnerCode();
+    const digitsFromId = (id.match(/\d+/g) || []).join('');
+    let numeric = (digitsFromId + Date.now().toString()).slice(-9);
+    if (numeric.length < 9) numeric = numeric.padStart(9, '0');
+    return `${prefix}${numeric}`;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try { await navigator.clipboard?.writeText(text); } catch {}
+  };
+
+  const handleImport = async () => {
+    const raw = importInput.trim();
+    if (!raw) { alert('Vui lòng nhập ID hoặc Link'); return; }
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { ClassesAPI } = await import('../utils/api');
+
+      const extractId = (val: string, kind: 'class'|'quiz') => {
+        const marker = `/${kind}/`;
+        const idx = val.indexOf(marker);
+        if (idx >= 0) return val.substring(idx + marker.length).split(/[?#/]/)[0];
+        return val;
+      };
+
+      let usedType: 'class'|'quiz'|null = null;
+      let payload: { classId?: string; quizId?: string } = {};
+
+      if (importType === 'class' || (importType === 'auto' && /\/class\//.test(raw))) {
+        payload.classId = extractId(raw, 'class');
+        usedType = 'class';
+      } else if (importType === 'quiz' || (importType === 'auto' && /\/quiz\//.test(raw))) {
+        payload.quizId = extractId(raw, 'quiz');
+        usedType = 'quiz';
+      } else {
+        // Unknown format, try quiz then class
+        try {
+          await ClassesAPI.import({ quizId: raw }, token);
+          usedType = 'quiz';
+        } catch {
+          await ClassesAPI.import({ classId: raw }, token);
+          usedType = 'class';
+        }
+      }
+
+      if (usedType && (payload.classId || payload.quizId)) {
+        await ClassesAPI.import(payload, token);
+      }
+
+      alert('Đã nhập thành công');
+      setImportOpen(false);
+      setImportInput('');
+      setImportType('auto');
+      setLoading(true);
+      await loadMyClasses();
+    } catch (e: any) {
+      console.error('Import failed', e);
+      alert('Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại.');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -214,6 +346,16 @@ const ClassesPage: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
               Chọn lớp học để bắt đầu làm bài trắc nghiệm
             </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-2 mb-6">
+            <button
+              onClick={() => setImportOpen(true)}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 border border-sky-300 shadow-sm hover:shadow-md transition-all duration-300"
+              title="Nhập ID/Link lớp học hoặc quiz"
+            >
+              Nhập ID/Link
+            </button>
           </div>
 
           {loading ? (
@@ -383,24 +525,33 @@ const ClassesPage: React.FC = () => {
                           }
                         })()}
                         
-                        <button
+<button
                           onClick={() => handleShareClass(classRoom.id)}
                           className="btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
                           title="Chia sẻ lớp học"
                         >
+                          {/* Unified Share Icon */}
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
                           </svg>
                         </button>
-                        <button
-                          onClick={() => handleToggleClassPublic(classRoom.id, (classRoom as any).isPublic)}
+      <button
+                          onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
                           className="btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
                           title="Công khai/ Riêng tư lớp học"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.4 15a8 8 0 10-14.8 0" />
-                          </svg>
+                          {/* Public vs Private Icon */}
+                          {classRoom.isPublic ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 11h14v10H5z" />
+                            </svg>
+                          )}
                         </button>
                         <button
                           onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
@@ -438,7 +589,7 @@ const ClassesPage: React.FC = () => {
                           <span>{quizCount} bài kiểm tra</span>
                         </div>
                       </div>
-                      {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
+{/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
                       <div className="flex flex-row gap-2 mt-2">
                         {(() => {
                           if (quizCount > 3) {
@@ -559,7 +710,27 @@ const ClassesPage: React.FC = () => {
                             );
                           }
                         })()}
-                        {/* Nút xóa lớp học - chỉ icon, cùng hàng */}
+{/* Nút chia sẻ & công khai cho mobile */}
+                        <button
+                          onClick={() => handleShareClass(classRoom.id)}
+                          className="w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                          title="Chia sẻ lớp học"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
+                          className="w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                          title="Công khai / Riêng tư"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.4 15a8 8 0 10-14.8 0" />
+                          </svg>
+                        </button>
+                        {/* Nút chỉnh sửa & xóa lớp học - mobile */}
                         <button
                           onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
                           className="w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
@@ -616,23 +787,33 @@ const ClassesPage: React.FC = () => {
                                   >
                                     Làm bài
                                   </Link>
-                                  <button
+<button
                                     onClick={() => handleShareQuiz(quiz.id)}
                                     className="text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1"
-                                    title="Chia sẻ quiz"
+                                    title="Chia sẻ"
                                   >
+                                    {/* Unified Share Icon */}
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v.01M8 12h8M20 12v.01" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
                                     </svg>
                                   </button>
                                   <button
-                                    onClick={() => handleToggleQuizPublished(quiz.id, (quiz as any).published)}
+                                    onClick={() => handleToggleQuizPublished(classRoom.id, quiz.id, Boolean((quiz as any).published))}
                                     className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
-                                    title="Công khai/nháp quiz"
+                                    title="Công khai / Riêng tư"
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
+                                    {/* Public vs Private Icon */}
+                                    {(quiz as any).published ? (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 11h14v10H5z" />
+                                      </svg>
+                                    )}
                                   </button>
                                   <button
                                     onClick={() => navigate('/edit-quiz', { state: {
@@ -662,7 +843,7 @@ const ClassesPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
+{/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
                               <div className="sm:hidden">
                                 <p className="font-medium text-gray-900 dark:text-white mb-1">
                                   {quiz.title}
@@ -670,13 +851,39 @@ const ClassesPage: React.FC = () => {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                   {quiz.description}
                                 </p>
-                                <div className="flex flex-row gap-2">
+<div className="flex flex-row gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
                                     className="btn-secondary text-sm text-center w-full"
                                   >
                                     Làm bài
                                   </Link>
+                                  <button
+                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    className="w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                    title="Chia sẻ"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleQuizPublished(classRoom.id, quiz.id, Boolean((quiz as any).published))}
+                                    className="w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                    title="Công khai / Riêng tư"
+                                  >
+                                    {(quiz as any).published ? (
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 11h14v10H5z" />
+                                      </svg>
+                                    )}
+                                  </button>
                                   <button
                                     onClick={() => navigate('/edit-quiz', { state: {
                                       questions: quiz.questions,
@@ -778,6 +985,71 @@ const ClassesPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Share Modal */}
+      {shareOpen && shareData && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Chia sẻ {shareData.type === 'class' ? 'lớp học' : 'quiz'}</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Mã chia sẻ</label>
+                <div className="flex gap-2">
+                  <input readOnly value={buildShareCode(shareData.type, shareData.id)} className="flex-1 input text-gray-900 dark:text-gray-900" />
+                  <button className="btn-secondary" onClick={() => copyToClipboard(buildShareCode(shareData.type, shareData.id))}>Copy</button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">ID</label>
+                <div className="flex gap-2">
+                  <input readOnly value={shareData.id} className="flex-1 input text-gray-900 dark:text-gray-900" />
+                  <button className="btn-secondary" onClick={() => copyToClipboard(shareData.id)}>Copy</button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Link</label>
+                <div className="flex gap-2">
+                  <input readOnly value={buildShareLink(shareData.type, shareData.id)} className="flex-1 input text-gray-900 dark:text-gray-900" />
+                  <button className="btn-secondary" onClick={() => copyToClipboard(buildShareLink(shareData.type, shareData.id))}>Copy</button>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="btn-secondary" onClick={() => { setShareOpen(false); setShareData(null); }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {importOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Nhập ID/Link lớp học hoặc quiz</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Kiểu</label>
+                  <select
+                    value={importType}
+                    onChange={e => setImportType(e.target.value as any)}
+                    className="select w-full text-black"
+                  >
+                  <option value="auto">Tự động (dựa theo link)</option>
+                  <option value="class">Lớp học</option>
+                  <option value="quiz">Quiz</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">ID hoặc Link</label>
+                <input value={importInput} onChange={e => setImportInput(e.target.value)} placeholder="Ví dụ: https://.../class/abc123 hoặc abc123" className="input w-full" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="btn-secondary" onClick={() => { setImportOpen(false); setImportInput(''); setImportType('auto'); }}>Hủy</button>
+              <button className="btn-primary" onClick={handleImport}>Nhập</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

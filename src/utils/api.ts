@@ -37,6 +37,8 @@ export const ClassesAPI = {
   update: (id: string, data: { name?: string; description?: string; isPublic?: boolean }, token: string) =>
     apiRequest<any>(`/classes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   remove: (id: string, token: string) => apiRequest<void>(`/classes/${id}`, { method: 'DELETE', token }),
+  import: (payload: { classId?: string; quizId?: string }, token: string) =>
+    apiRequest<any>(`/classes/import`, { method: 'POST', token, body: JSON.stringify(payload) }),
 };
 
 export const QuizzesAPI = {

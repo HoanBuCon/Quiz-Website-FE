@@ -41,5 +41,60 @@ router.delete('/:id', authRequired, async (req, res) => {
   res.status(204).end();
 });
 
+// Import a public class or a quiz by id (clone into current user's space)
+router.post('/import', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const { classId, quizId } = req.body || {};
+  if (!classId && !quizId) return res.status(400).json({ message: 'classId or quizId required' });
+
+  // Helper to clone quiz with questions into target class
+  const cloneQuiz = async (sourceQuizId, targetClassId, ownerId) => {
+    const q = await prisma.quiz.findUnique({ where: { id: sourceQuizId }, include: { questions: true, class: true } });
+    if (!q) throw new Error('Quiz not found');
+    if (!q.class.isPublic && q.ownerId !== ownerId) throw new Error('Forbidden');
+    const created = await prisma.quiz.create({
+      data: {
+        title: q.title,
+        description: q.description,
+        published: false,
+        classId: targetClassId,
+        ownerId,
+        questions: {
+          create: q.questions.map(qq => ({
+            question: qq.question,
+            type: qq.type,
+            options: qq.options,
+            correctAnswers: qq.correctAnswers,
+            explanation: qq.explanation,
+            questionImage: qq.questionImage,
+            optionImages: qq.optionImages,
+          }))
+        }
+      }, include: { questions: true }
+    });
+    return created;
+  };
+
+  if (classId) {
+    const source = await prisma.class.findUnique({ where: { id: classId }, include: { quizzes: { include: { questions: true } } } });
+    if (!source) return res.status(404).json({ message: 'Class not found' });
+    if (!source.isPublic && source.ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+    const newClass = await prisma.class.create({ data: { name: source.name, description: source.description, isPublic: false, ownerId: req.user.id } });
+    for (const q of source.quizzes) {
+      await cloneQuiz(q.id, newClass.id, req.user.id);
+    }
+    return res.status(201).json({ classId: newClass.id });
+  }
+
+  if (quizId) {
+    const q = await prisma.quiz.findUnique({ where: { id: quizId }, include: { class: true, questions: true } });
+    if (!q) return res.status(404).json({ message: 'Quiz not found' });
+    if (!q.class.isPublic && q.ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+    const newClass = await prisma.class.create({ data: { name: `Lớp: ${q.class.name}`, description: q.class.description, isPublic: false, ownerId: req.user.id } });
+    const newQuiz = await cloneQuiz(q.id, newClass.id, req.user.id);
+    return res.status(201).json({ classId: newClass.id, quizId: newQuiz.id });
+  }
+});
+
 module.exports = router;
 
