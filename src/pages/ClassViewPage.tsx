@@ -11,6 +11,7 @@ const ClassViewPage: React.FC = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('Lớp học');
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,7 +26,11 @@ const ClassViewPage: React.FC = () => {
         if (cls) setTitle(cls.name);
         const effectiveClassId = cls ? cls.id : classId;
         const qzs = await QuizzesAPI.byClass(effectiveClassId, token);
-        setQuizzes(qzs);
+        const mineIds = new Set(mine.map((m: any) => m.id));
+        const owner = mineIds.has(effectiveClassId);
+        setIsOwner(owner);
+        const visible = owner ? qzs : qzs.filter((q: any) => q.published);
+        setQuizzes(visible);
       } catch (e) {
         // ignore
       } finally {
@@ -48,6 +53,9 @@ const ClassViewPage: React.FC = () => {
               <div>
                 <div className="font-semibold text-gray-900 dark:text-white">{q.title}</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">{q.description}</div>
+                {!isOwner && !(q as any).published && (
+                  <div className="text-xs text-amber-600 mt-1">Nháp (chỉ chủ sở hữu xem được)</div>
+                )}
               </div>
               <button onClick={() => navigate(`/quiz/${q.id}`)} className="btn-secondary">Làm bài</button>
             </div>

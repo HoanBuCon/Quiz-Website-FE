@@ -48,12 +48,17 @@ const QuizPage: React.FC = () => {
           setQuizTitle(found.title);
           setQuestions(found.questions || []);
           setEffectiveQuizId(found.id);
+          // If not owner (found via public classes only) and quiz is not published, block access
+          const inMine = mine.some((c: any) => c.id === found.classId);
+          if (!inMine && !found.published) {
+            throw new Error('Quiz chưa xuất bản');
+          }
         }
       } catch (error) {
         console.error('Error loading quiz:', error);
         setQuestions([{
           id: 'error',
-          question: 'Có lỗi khi tải bài kiểm tra',
+          question: 'Quiz không khả dụng hoặc chưa xuất bản',
           type: 'single',
           options: ['Quay lại'],
           correctAnswers: ['Quay lại']

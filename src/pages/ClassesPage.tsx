@@ -88,19 +88,17 @@ const ClassesPage: React.FC = () => {
       const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
       const updated = await ClassesAPI.update(classId, { isPublic: !current }, token);
 
-      // If making class public, also publish all quizzes in the class
-      if (!current) {
-        const target = classes.find(c => c.id === classId);
-        const quizzes = (target?.quizzes as Quiz[]) || [];
-        await Promise.all(quizzes.map(q => QuizzesAPI.update((q as any).id, { published: true }, token).catch(() => null)));
-      }
+      // When class public/private toggled, sync all quizzes' published accordingly
+      const target = classes.find(c => c.id === classId);
+      const quizzes = (target?.quizzes as Quiz[]) || [];
+      await Promise.all(quizzes.map(q => QuizzesAPI.update((q as any).id, { published: !current }, token).catch(() => null)));
 
       setClasses(prev => prev.map(c =>
         c.id === classId
           ? {
               ...c,
               isPublic: updated?.isPublic ?? !current,
-              quizzes: !current && c.quizzes ? (c.quizzes as Quiz[]).map(q => ({ ...q, published: true } as any)) : c.quizzes,
+              quizzes: c.quizzes ? (c.quizzes as Quiz[]).map(q => ({ ...q, published: !current } as any)) : c.quizzes,
               updatedAt: updated?.updatedAt ? new Date(updated.updatedAt) : new Date(),
             }
           : c
@@ -117,27 +115,23 @@ const ClassesPage: React.FC = () => {
     setShareOpen(true);
   };
 
-// Toggle publish for quiz
-  const handleToggleQuizPublished = async (classId: string, quizId: string, current: boolean) => {
+  const handleShareQuiz = (quizId: string) => {
+    setShareData({ type: 'quiz', id: quizId });
+    setShareOpen(true);
+  };
+
+// Toggle publish for quiz (does NOT affect class public/private)
+  const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
     if (!window.confirm(`Bạn có chắc muốn đặt quiz ở trạng thái ${current ? 'Nháp (riêng tư)' : 'Công khai'}?`)) return;
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { QuizzesAPI, ClassesAPI } = await import('../utils/api');
+      const { QuizzesAPI } = await import('../utils/api');
       const updated = await QuizzesAPI.update(quizId, { published: !current }, token);
-
-      // If publishing a quiz, ensure the class is public (do not auto-publish other quizzes)
-      if (!current) {
-        const targetClass = classes.find(c => c.id === classId);
-        if (targetClass && !targetClass.isPublic) {
-          await ClassesAPI.update(classId, { isPublic: true }, token);
-        }
-      }
 
       setClasses(prev => prev.map(cls => ({
         ...cls,
-        isPublic: cls.id === classId ? true : cls.isPublic,
         quizzes: (cls.quizzes as Quiz[])?.map(q => (q && (q as any).id === quizId ? { ...q, ...(updated || {}), updatedAt: new Date() } : q))
       })));
       alert(!current ? 'Đã xuất bản quiz' : 'Đã đặt quiz ở trạng thái nháp');
@@ -147,16 +141,11 @@ const ClassesPage: React.FC = () => {
     }
   };
 
-  const handleShareQuiz = (quizId: string) => {
-    setShareData({ type: 'quiz', id: quizId });
-    setShareOpen(true);
-  };
-  // Helper function để lấy danh sách quiz hợp lệ
+  // Helper: get valid quizzes in a class
   const getValidQuizzes = (classRoom: ClassRoom): Quiz[] => {
     if (!classRoom.quizzes) return [];
     const quizzes = classRoom.quizzes as Quiz[];
-    const validQuizzes = quizzes.filter(quiz => quiz && quiz.id && quiz.title);
-    console.log(`Class "${classRoom.name}" - Valid quizzes:`, validQuizzes.length, validQuizzes);
+    const validQuizzes = quizzes.filter(quiz => quiz && (quiz as any).id && (quiz as any).title);
     return validQuizzes;
   };
 
@@ -792,7 +781,7 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   <button
-                                    onClick={() => handleToggleQuizPublished(classRoom.id, quiz.id, Boolean((quiz as any).published))}
+                                    onClick={() => handleToggleQuizPublished(quiz.id, Boolean((quiz as any).published))}
                                     className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
                                     title="Công khai / Riêng tư"
                                   >
@@ -862,7 +851,7 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   <button
-                                    onClick={() => handleToggleQuizPublished(classRoom.id, quiz.id, Boolean((quiz as any).published))}
+                                    onClick={() => handleToggleQuizPublished(quiz.id, Boolean((quiz as any).published))}
                                     className="w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110"
                                     title="Công khai / Riêng tư"
                                   >
