@@ -33,7 +33,7 @@ export const ClassesAPI = {
   listMine: (token: string) => apiRequest<any[]>(`/classes?mine=true`, { token }),
   listPublic: (token: string) => apiRequest<any[]>(`/classes`, { token }),
   create: (data: { name: string; description?: string; isPublic?: boolean }, token: string) =>
-    apiRequest<any>(`/classes`, { method: 'POST', token, body: JSON.stringify(data) }),
+    apiRequest<any>(`/classes`, { method: 'POST', token, body: JSON.stringify({ isPublic: false, ...data }) }),
   update: (id: string, data: { name?: string; description?: string; isPublic?: boolean }, token: string) =>
     apiRequest<any>(`/classes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   remove: (id: string, token: string) => apiRequest<void>(`/classes/${id}`, { method: 'DELETE', token }),
@@ -43,7 +43,7 @@ export const ClassesAPI = {
 
 export const QuizzesAPI = {
   byClass: (classId: string, token: string) => apiRequest<any[]>(`/quizzes/by-class/${classId}`, { token }),
-  create: (data: any, token: string) => apiRequest<any>(`/quizzes`, { method: 'POST', token, body: JSON.stringify(data) }),
+  create: (data: any, token: string) => apiRequest<any>(`/quizzes`, { method: 'POST', token, body: JSON.stringify({ published: false, ...data }) }),
   update: (id: string, data: any, token: string) => apiRequest<any>(`/quizzes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   remove: (id: string, token: string) => apiRequest<void>(`/quizzes/${id}`, { method: 'DELETE', token }),
 };

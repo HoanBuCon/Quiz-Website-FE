@@ -97,7 +97,7 @@ const HomePage: React.FC = () => {
               LiemDai (Đại Liêm) Website🐧
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
-              Khám phá các lớp học trắc nghiệm công khai và bắt đầu học tập ngay hôm nay!
+              Website làm bài tập trắc nghiệm cực chất!
             </p>
           </div>
 

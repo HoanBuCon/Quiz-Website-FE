@@ -328,7 +328,7 @@ const EditQuizPage: React.FC = () => {
         await QuizzesAPI.update(state.fileId, {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
-          published: true,
+          // giữ nguyên trạng thái published hiện tại (không thay đổi khi chỉnh sửa)
           questions: questions,
         }, token);
         toast.success('Cập nhật quiz thành công!');
@@ -370,7 +370,7 @@ const EditQuizPage: React.FC = () => {
           classId,
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
-          published: true,
+          published: false, // mặc định Private khi tạo mới
           questions: questions,
         }, token);
         toast.success('Xuất bản thành công!');

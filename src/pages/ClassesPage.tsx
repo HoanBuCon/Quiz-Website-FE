@@ -8,6 +8,9 @@ const ClassesPage: React.FC = () => {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  // Statistics
+  const [statsCompleted, setStatsCompleted] = useState(0);
+  const [statsAverage, setStatsAverage] = useState<number>(0);
 
   // Share modal state
   const [shareOpen, setShareOpen] = useState(false);
@@ -194,6 +197,28 @@ const ClassesPage: React.FC = () => {
         } as unknown as ClassRoom);
       }
       setClasses(withQuizzes);
+
+      // Compute statistics from sessions
+      try {
+        const { SessionsAPI } = await import('../utils/api');
+        let totalDone = 0;
+        let totalScore = 0;
+        for (const cls of withQuizzes) {
+          const quizzes = (cls.quizzes as Quiz[]) || [];
+          for (const q of quizzes) {
+            const sessions = await SessionsAPI.byQuiz((q as any).id, token).catch(() => []);
+            // Assume backend returns only current user's sessions
+            totalDone += sessions.length || 0;
+            for (const s of sessions) {
+              if (typeof s.score === 'number') totalScore += s.score;
+            }
+          }
+        }
+        setStatsCompleted(totalDone);
+        setStatsAverage(totalDone > 0 ? Math.round((totalScore / totalDone) * 10) / 10 : 0);
+      } catch (e) {
+        // ignore stats errors
+      }
     } catch (err) {
       console.error('Error fetching classes:', err);
     } finally {
@@ -249,15 +274,69 @@ const ClassesPage: React.FC = () => {
 
       let usedType: 'class'|'quiz'|null = null;
       let payload: { classId?: string; quizId?: string } = {};
+      let didImport = false;
 
-      if (isShortIdCode(raw)) {
+      // Fallback: clone from public by frontend if backend import route is unavailable
+      const doClientClone = async (kind: 'class'|'quiz', id: string) => {
+        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        // Load all public classes to find source
+        const mine = await ClassesAPI.listMine(token).catch(() => []);
+        const pub = await ClassesAPI.listPublic(token).catch(() => []);
+        const all = [...pub, ...mine];
+
+        if (kind === 'class') {
+          const src = all.find((c: any) => c.id === id);
+          // Fetch quizzes of source class even if class meta not found in lists
+          const qzs = await QuizzesAPI.byClass(src ? src.id : id, token).catch(() => []);
+          if (!src && (!qzs || qzs.length === 0)) throw new Error('Không tìm thấy lớp học nguồn');
+          // Create new class under current user (private)
+          const { ClassesAPI: CAPI } = await import('../utils/api');
+          const created = await CAPI.create({ name: (src?.name) || 'Lớp đã nhập', description: (src?.description) || '', isPublic: false }, token);
+          // Clone quizzes (private)
+          for (const q of qzs) {
+            await QuizzesAPI.create({
+              classId: created.id,
+              title: q.title,
+              description: q.description || '',
+              questions: q.questions || [],
+              published: false,
+            }, token).catch(() => null);
+          }
+          didImport = true;
+        } else {
+          // kind === 'quiz'
+          // Find the source class that contains this quiz
+          let host: any | null = null;
+          let quizData: any | null = null;
+          for (const c of all) {
+            const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
+            const found = qzs.find((qq: any) => qq.id === id);
+            if (found) { host = c; quizData = found; break; }
+          }
+          if (!host || !quizData) throw new Error('Không tìm thấy quiz nguồn');
+          // Create new class under current user (private)
+          const created = await ClassesAPI.create({ name: host.name, description: host.description || '', isPublic: false }, token);
+          // Clone only this quiz (private)
+          await QuizzesAPI.create({
+            classId: created.id,
+            title: quizData.title,
+            description: quizData.description || '',
+            questions: quizData.questions || [],
+            published: false,
+          }, token);
+          didImport = true;
+        }
+      };
+
+      const rawUpper = raw.toUpperCase();
+      if (isShortIdCode(rawUpper)) {
         // Resolve short code by scanning public (and mine as fallback)
         const mine = await ClassesAPI.listMine(token).catch(() => []);
         const pub = await ClassesAPI.listPublic(token).catch(() => []);
         const all = [...pub, ...mine];
         let foundClassId: string | null = null;
         for (const c of all) {
-          if (buildShortId(c.id) === raw) { foundClassId = c.id; break; }
+          if (buildShortId(c.id).toUpperCase() === rawUpper) { foundClassId = c.id; break; }
         }
         if (foundClassId) {
           payload.classId = foundClassId;
@@ -266,30 +345,73 @@ const ClassesPage: React.FC = () => {
           // search quizzes under classes
           for (const c of all) {
             const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
-            const matched = qzs.find((q: any) => buildShortId(q.id) === raw);
+            const matched = qzs.find((q: any) => buildShortId(q.id).toUpperCase() === rawUpper);
             if (matched) { payload.quizId = matched.id; usedType = 'quiz'; break; }
           }
         }
+        if (!usedType) throw new Error('Không tìm thấy nội dung với mã này');
       } else if (importType === 'class' || (importType === 'auto' && /\/class\//.test(raw))) {
-        payload.classId = extractId(raw, 'class');
-        usedType = 'class';
+        const idPart = extractId(raw, 'class');
+        if (isShortIdCode(idPart.toUpperCase())) {
+          // treat as short code embedded in link
+          const mine = await ClassesAPI.listMine(token).catch(() => []);
+          const pub = await ClassesAPI.listPublic(token).catch(() => []);
+          const all = [...pub, ...mine];
+          const code = idPart.toUpperCase();
+          let found: string | null = null;
+          for (const c of all) { if (buildShortId(c.id).toUpperCase() === code) { found = c.id; break; } }
+          if (found) { payload.classId = found; usedType = 'class'; }
+          else throw new Error('Không tìm thấy lớp học với mã này');
+        } else {
+          payload.classId = idPart;
+          usedType = 'class';
+        }
       } else if (importType === 'quiz' || (importType === 'auto' && /\/quiz\//.test(raw))) {
-        payload.quizId = extractId(raw, 'quiz');
-        usedType = 'quiz';
+        const idPart = extractId(raw, 'quiz');
+        if (isShortIdCode(idPart.toUpperCase())) {
+          const mine = await ClassesAPI.listMine(token).catch(() => []);
+          const pub = await ClassesAPI.listPublic(token).catch(() => []);
+          const all = [...pub, ...mine];
+          const code = idPart.toUpperCase();
+          let found: string | null = null;
+          outer: for (const c of all) {
+            const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
+            for (const q of qzs) { if (buildShortId(q.id).toUpperCase() === code) { found = q.id; break outer; } }
+          }
+          if (found) { payload.quizId = found; usedType = 'quiz'; }
+          else throw new Error('Không tìm thấy quiz với mã này');
+        } else {
+          payload.quizId = idPart;
+          usedType = 'quiz';
+        }
       } else {
-        // Unknown format, try quiz then class
+        // Unknown format, try quiz then class (one-shot)
         try {
           await ClassesAPI.import({ quizId: raw }, token);
-          usedType = 'quiz';
+          didImport = true;
         } catch {
           await ClassesAPI.import({ classId: raw }, token);
-          usedType = 'class';
+          didImport = true;
         }
       }
 
-      if (usedType && (payload.classId || payload.quizId)) {
-        await ClassesAPI.import(payload, token);
+      if (!didImport && usedType && (payload.classId || payload.quizId)) {
+        try {
+          await ClassesAPI.import(payload, token);
+          didImport = true;
+        } catch (err: any) {
+          // Backend route missing -> fallback to client clone
+          if (usedType === 'class' && payload.classId) {
+            await doClientClone('class', payload.classId);
+          } else if (usedType === 'quiz' && payload.quizId) {
+            await doClientClone('quiz', payload.quizId);
+          } else {
+            throw err;
+          }
+        }
       }
+
+      if (!didImport) throw new Error('Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại.');
 
       alert('Đã nhập thành công');
       setImportOpen(false);
@@ -299,7 +421,7 @@ const ClassesPage: React.FC = () => {
       await loadMyClasses();
     } catch (e: any) {
       console.error('Import failed', e);
-      alert('Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại.');
+      alert(e?.message || 'Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại.');
     }
   };
 
@@ -324,11 +446,11 @@ const ClassesPage: React.FC = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 dark:text-gray-400">Đã hoàn thành:</span>
-              <span className="font-semibold text-green-600">0</span>
+              <span className="font-semibold text-green-600">{statsCompleted}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Điểm trung bình:</span>
-              <span className="font-semibold text-blue-600">0</span>
+              <span className="font-semibold text-blue-600">{statsAverage}</span>
             </div>
           </div>
         </div>
@@ -523,7 +645,7 @@ const ClassesPage: React.FC = () => {
                           }
                         })()}
                         
-<button
+                        <button
                           onClick={() => handleShareClass(classRoom.id)}
                           className="btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
                           title="Chia sẻ lớp học"
@@ -533,7 +655,7 @@ const ClassesPage: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
                           </svg>
                         </button>
-      <button
+                        <button
                           onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
                           className="btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
                           title="Công khai/ Riêng tư lớp học"
@@ -587,7 +709,7 @@ const ClassesPage: React.FC = () => {
                           <span>{quizCount} bài kiểm tra</span>
                         </div>
                       </div>
-{/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
+                      {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
                       <div className="flex flex-row gap-2 mt-2">
                         {(() => {
                           if (quizCount > 3) {
@@ -708,7 +830,7 @@ const ClassesPage: React.FC = () => {
                             );
                           }
                         })()}
-{/* Nút chia sẻ & công khai cho mobile */}
+                        {/* Nút chia sẻ & công khai cho mobile */}
                         <button
                           onClick={() => handleShareClass(classRoom.id)}
                           className="w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
@@ -785,7 +907,7 @@ const ClassesPage: React.FC = () => {
                                   >
                                     Làm bài
                                   </Link>
-<button
+                                  <button
                                     onClick={() => handleShareQuiz(quiz.id)}
                                     className="text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1"
                                     title="Chia sẻ"
@@ -841,7 +963,7 @@ const ClassesPage: React.FC = () => {
                                 </div>
                               </div>
 
-{/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
+                              {/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
                               <div className="sm:hidden">
                                 <p className="font-medium text-gray-900 dark:text-white mb-1">
                                   {quiz.title}
@@ -849,7 +971,7 @@ const ClassesPage: React.FC = () => {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                   {quiz.description}
                                 </p>
-<div className="flex flex-row gap-2">
+                                <div className="flex flex-row gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
                                     className="btn-secondary text-sm text-center w-full"
@@ -960,11 +1082,11 @@ const ClassesPage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Đã hoàn thành:</span>
-                <span className="font-semibold text-green-600">0</span>
+                <span className="font-semibold text-green-600">{statsCompleted}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Điểm trung bình:</span>
-                <span className="font-semibold text-blue-600">0</span>
+                <span className="font-semibold text-blue-600">{statsAverage}</span>
               </div>
             </div>
           </div>
@@ -975,10 +1097,34 @@ const ClassesPage: React.FC = () => {
               Hướng dẫn
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-              <p>• Chọn lớp học để xem danh sách bài kiểm tra</p>
-              <p>• Click "Làm bài" để bắt đầu làm  bài tập trắc nghiệm</p>
-              <p>• Theo dõi tiến độ học tập của bạn</p>
-              <p>• Xóa lớp học hoặc bài kiểm tra nếu không cần thiết</p>
+              <div className="flex items-center gap-4">
+                <svg className="w-6 h-6 text-purple-700 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                </svg>
+                <span>Tạo ID và Link truy cập lớp học và bài tập trắc nghiệm người khác tham gia.</span>
+              </div>
+
+              <div className="flex items-center gap-4 mt-1">
+                <svg className="w-6 h-6 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Đặt trạng thái Công khai hoặc Riêng tư cho lớp học và bài tập trắc nghiệm.</span>
+              </div>
+
+              <div className="flex items-center gap-4 mt-1">
+                <svg className="w-6 h-6 text-blue-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
+                </svg>
+                <span>Chỉnh sửa thông tin và nội dung lớp học và bài tập trắc nghiệm.</span>
+              </div>
+
+              <div className="flex items-center gap-4 mt-1">
+                <svg className="w-6 h-6 text-red-700 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>Xóa lớp học và bài tập trắc nghiệm.</span>
+              </div>
             </div>
           </div>
         </div>
