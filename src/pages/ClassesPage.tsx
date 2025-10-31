@@ -120,20 +120,35 @@ const ClassesPage: React.FC = () => {
     setShareOpen(true);
   };
 
-// Toggle publish for quiz (does NOT affect class public/private)
+// Toggle publish for quiz: if publishing and class is private -> make class public, but only this quiz is published
   const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
     if (!window.confirm(`Bạn có chắc muốn đặt quiz ở trạng thái ${current ? 'Nháp (riêng tư)' : 'Công khai'}?`)) return;
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { QuizzesAPI } = await import('../utils/api');
+      const { QuizzesAPI, ClassesAPI } = await import('../utils/api');
+
+      // Find host class of this quiz
+      const host = classes.find(c => (c.quizzes as Quiz[])?.some(q => (q as any).id === quizId));
+
+      // Update quiz published status
       const updated = await QuizzesAPI.update(quizId, { published: !current }, token);
 
-      setClasses(prev => prev.map(cls => ({
-        ...cls,
-        quizzes: (cls.quizzes as Quiz[])?.map(q => (q && (q as any).id === quizId ? { ...q, ...(updated || {}), updatedAt: new Date() } : q))
-      })));
+      // If publishing and class is currently private, make class public (but do NOT touch other quizzes)
+      if (!current && host && !host.isPublic) {
+        await ClassesAPI.update(host.id, { isPublic: true }, token);
+      }
+
+      setClasses(prev => prev.map(cls => {
+        const isHost = host && cls.id === host.id;
+        return {
+          ...cls,
+          ...(isHost && !current && !cls.isPublic ? { isPublic: true } : {}),
+          quizzes: (cls.quizzes as Quiz[])?.map(q => (q && (q as any).id === quizId ? { ...q, ...(updated || {}), updatedAt: new Date() } : q))
+        } as any;
+      }));
+
       alert(!current ? 'Đã xuất bản quiz' : 'Đã đặt quiz ở trạng thái nháp');
     } catch (e) {
       console.error('toggle publish failed', e);
