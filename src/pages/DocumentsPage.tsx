@@ -53,30 +53,34 @@ const DocumentsPage: React.FC = () => {
       setDocuments(docs);
     }
     
-    // Lấy số lượng lớp học từ localStorage
-    const savedClasses = localStorage.getItem('classrooms');
-    if (savedClasses) {
-      const classes = JSON.parse(savedClasses);
-      setTotalClasses(classes.length);
-      setExistingClasses(classes);
-      
-      // Tính tổng số quiz với support cho cả hai format
-      const total = classes.reduce((sum: number, classroom: any) => {
-        let quizCount = 0;
-        
-        // Handle both old format (quizIds) and new format (quizzes)
-        if (classroom.quizIds && Array.isArray(classroom.quizIds)) {
-          quizCount = classroom.quizIds.length;
-        } else if (classroom.quizzes && Array.isArray(classroom.quizzes)) {
-          quizCount = classroom.quizzes.length;
+    // Lấy số lượng lớp học/quizzes từ backend
+    (async () => {
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          setTotalClasses(0);
+          setTotalQuizzes(0);
+          setExistingClasses([]);
+          setLoading(false);
+          return;
         }
-        
-        return sum + quizCount;
-      }, 0);
-      setTotalQuizzes(total);
-    }
-    
-    setLoading(false);
+        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const mine = await ClassesAPI.listMine(token);
+        setExistingClasses(mine);
+        setTotalClasses(mine.length);
+        let quizCount = 0;
+        for (const cls of mine) {
+          const qzs = await QuizzesAPI.byClass(cls.id, token);
+          quizCount += qzs.length;
+        }
+        setTotalQuizzes(quizCount);
+      } catch (e) {
+        console.error('Failed to load backend stats:', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   // Xử lý khi file được chọn

@@ -28,4 +28,29 @@ export async function apiRequest<T>(
   return (await res.json()) as T;
 }
 
+// High-level API helpers
+export const ClassesAPI = {
+  listMine: (token: string) => apiRequest<any[]>(`/classes?mine=true`, { token }),
+  listPublic: (token: string) => apiRequest<any[]>(`/classes`, { token }),
+  create: (data: { name: string; description?: string; isPublic?: boolean }, token: string) =>
+    apiRequest<any>(`/classes`, { method: 'POST', token, body: JSON.stringify(data) }),
+  update: (id: string, data: { name?: string; description?: string; isPublic?: boolean }, token: string) =>
+    apiRequest<any>(`/classes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  remove: (id: string, token: string) => apiRequest<void>(`/classes/${id}`, { method: 'DELETE', token }),
+};
 
+export const QuizzesAPI = {
+  byClass: (classId: string, token: string) => apiRequest<any[]>(`/quizzes/by-class/${classId}`, { token }),
+  create: (data: any, token: string) => apiRequest<any>(`/quizzes`, { method: 'POST', token, body: JSON.stringify(data) }),
+  update: (id: string, data: any, token: string) => apiRequest<any>(`/quizzes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
+  remove: (id: string, token: string) => apiRequest<void>(`/quizzes/${id}`, { method: 'DELETE', token }),
+};
+
+export const SessionsAPI = {
+  start: (quizId: string, token: string) => apiRequest<any>(`/sessions/start`, { method: 'POST', token, body: JSON.stringify({ quizId }) }),
+  submit: (payload: { quizId: string; answers: Record<string, string[]>; timeSpent: number }, token: string) =>
+    apiRequest<any>(`/sessions/submit`, { method: 'POST', token, body: JSON.stringify(payload) }),
+  byQuiz: (quizId: string, token: string) => apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
+};
+
+export type { };

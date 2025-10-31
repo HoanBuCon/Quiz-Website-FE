@@ -26,11 +26,20 @@ const CreateClassPage: React.FC = () => {
     }
   };
 
-  // Load danh sách lớp học có sẵn
+  // Load danh sách lớp học có sẵn (backend)
   useEffect(() => {
-    const savedClasses = localStorage.getItem('classrooms') || '[]';
-    const classes = JSON.parse(savedClasses);
-    setExistingClasses(classes);
+    (async () => {
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) return;
+        const { ClassesAPI } = await import('../utils/api');
+        const mine = await ClassesAPI.listMine(token);
+        setExistingClasses(mine);
+      } catch (e) {
+        console.error('Failed to load classes:', e);
+      }
+    })();
   }, []);
 
   // Xử lý khi file được chọn

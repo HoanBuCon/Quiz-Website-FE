@@ -9,34 +9,18 @@ const ClassesPage: React.FC = () => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Hàm xóa lớp học
-  const handleDeleteClass = (classId: string, className: string) => {
+  const handleDeleteClass = async (classId: string, className: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Tất cả bài kiểm tra trong lớp học này cũng sẽ bị xóa.`)) {
       try {
-        // Lấy danh sách lớp học hiện tại
-        const savedClasses = localStorage.getItem('classrooms') || '[]';
-        const classRooms = JSON.parse(savedClasses);
-        
-        // Tìm lớp học cần xóa để lấy danh sách quiz IDs
-        const classToDelete = classRooms.find((cls: ClassRoom) => cls.id === classId);
-        
-        // Xóa lớp học khỏi localStorage
-        const updatedClasses = classRooms.filter((cls: ClassRoom) => cls.id !== classId);
-        localStorage.setItem('classrooms', JSON.stringify(updatedClasses));
-        
-        // Xóa các quiz liên quan
-        if (classToDelete && classToDelete.quizIds) {
-          const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-          const quizzes = JSON.parse(savedQuizzes);
-          const updatedQuizzes = quizzes.filter((quiz: Quiz) => !classToDelete.quizIds.includes(quiz.id));
-          localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
-          
-          // NOTE: Documents are kept independent and not deleted when classes are removed
-          // Users can manually delete documents from the Documents page if needed
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          alert('Vui lòng đăng nhập để thực hiện thao tác.');
+          return;
         }
-        
-        // Cập nhật state
+        const { ClassesAPI } = await import('../utils/api');
+        await ClassesAPI.remove(classId, token);
         setClasses(prev => prev.filter(cls => cls.id !== classId));
-        
         alert(`Đã xóa lớp học "${className}" thành công!`);
       } catch (error) {
         console.error('Error deleting class:', error);
@@ -46,33 +30,18 @@ const ClassesPage: React.FC = () => {
   };
 
   // Hàm xóa quiz khỏi lớp học
-  const handleDeleteQuiz = (classId: string, quizId: string, quizTitle: string) => {
+  const handleDeleteQuiz = async (classId: string, quizId: string, quizTitle: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa bài kiểm tra "${quizTitle}"?`)) {
       try {
-        // Cập nhật lớp học - xóa quiz ID khỏi danh sách
-        const savedClasses = localStorage.getItem('classrooms') || '[]';
-        const classRooms = JSON.parse(savedClasses);
-        const updatedClasses = classRooms.map((cls: ClassRoom) => {
-          if (cls.id === classId) {
-            return {
-              ...cls,
-              quizIds: cls.quizIds?.filter(id => id !== quizId) || []
-            };
-          }
-          return cls;
-        });
-        localStorage.setItem('classrooms', JSON.stringify(updatedClasses));
-        
-        // Xóa quiz khỏi danh sách quiz
-        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-        const quizzes = JSON.parse(savedQuizzes);
-        const updatedQuizzes = quizzes.filter((quiz: Quiz) => quiz.id !== quizId);
-        localStorage.setItem('quizzes', JSON.stringify(updatedQuizzes));
-        
-        // NOTE: Documents are kept independent and not deleted when individual quizzes are removed
-        // Users can manually delete documents from the Documents page if needed
-        
-        // Cập nhật state
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          alert('Vui lòng đăng nhập để thực hiện thao tác.');
+          return;
+        }
+        const { QuizzesAPI } = await import('../utils/api');
+        await QuizzesAPI.remove(quizId, token);
+        // Cập nhật state cục bộ
         setClasses(prev => prev.map(cls => {
           if (cls.id === classId) {
             return {
@@ -82,7 +51,6 @@ const ClassesPage: React.FC = () => {
           }
           return cls;
         }));
-        
         alert(`Đã xóa bài kiểm tra "${quizTitle}" thành công!`);
       } catch (error) {
         console.error('Error deleting quiz:', error);
@@ -108,78 +76,38 @@ const ClassesPage: React.FC = () => {
     return validQuizzes;
   };
 
-  // Lấy dữ liệu từ backend (nếu đã đăng nhập) hoặc localStorage
+  // Lấy dữ liệu từ backend
   useEffect(() => {
     (async () => {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
-        if (token) {
-          const { apiRequest } = await import('../utils/api');
-          // Lấy lớp học của tôi
-          const myClasses = await apiRequest<any[]>(`/classes?mine=true`, { token });
-          // Tải quizzes cho từng lớp
-          const withQuizzes: ClassRoom[] = [] as any;
-          for (const cls of myClasses) {
-            const quizzes = await apiRequest<any[]>(`/quizzes/by-class/${cls.id}`, { token });
-            withQuizzes.push({
-              id: cls.id,
-              name: cls.name,
-              description: cls.description,
-              quizzes: quizzes.map(q => ({
-                ...q,
-                createdAt: new Date(q.createdAt),
-                updatedAt: new Date(q.updatedAt),
-              })),
-              createdAt: new Date(cls.createdAt),
-              updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
-            } as unknown as ClassRoom);
-          }
-          setClasses(withQuizzes);
-          setLoading(false); // Đảm bảo loading được tắt sau khi gọi API
+        if (!token) {
+          setClasses([]);
+          setLoading(false);
           return;
         }
-      } catch (err) {
-        console.warn('Backend fetch failed, fallback to local:', err);
-        setLoading(false); // Đảm bảo loading được tắt nếu có lỗi backend
-      }
-      // Fallback localStorage
-      try {
-        const savedClasses = localStorage.getItem('classrooms') || '[]';
-        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-        const classRooms = JSON.parse(savedClasses);
-        const quizzes = JSON.parse(savedQuizzes);
-        if (classRooms.length > 0) {
-          const mappedClasses = classRooms.map((classRoom: ClassRoom) => {
-            let quizIdList: string[] = [];
-            if (classRoom.quizIds) {
-              quizIdList = classRoom.quizIds;
-            } else if (classRoom.quizzes && Array.isArray(classRoom.quizzes)) {
-              quizIdList = typeof classRoom.quizzes[0] === 'string'
-                ? (classRoom.quizzes as unknown as string[])
-                : (classRoom.quizzes as Quiz[]).map(q => q.id);
-            }
-            const classQuizzes = quizIdList.map(quizId => {
-              const quiz = quizzes.find((q: Quiz) => q.id === quizId);
-              if (quiz) {
-                return {
-                  ...quiz,
-                  createdAt: new Date(quiz.createdAt),
-                  updatedAt: new Date(quiz.updatedAt || quiz.createdAt)
-                };
-              }
-              return null;
-            }).filter((q): q is Quiz => q !== null);
-            return {
-              ...classRoom,
-              quizzes: classQuizzes,
-              createdAt: new Date(classRoom.createdAt)
-            };
-          });
-          setClasses(mappedClasses);
+        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const myClasses = await ClassesAPI.listMine(token);
+        const withQuizzes: ClassRoom[] = [] as any;
+        for (const cls of myClasses) {
+          const quizzes = await QuizzesAPI.byClass(cls.id, token);
+          withQuizzes.push({
+            id: cls.id,
+            name: cls.name,
+            description: cls.description,
+            quizzes: quizzes.map((q: any) => ({
+              ...q,
+              createdAt: new Date(q.createdAt),
+              updatedAt: new Date(q.updatedAt),
+            })),
+            createdAt: new Date(cls.createdAt),
+            updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
+          } as unknown as ClassRoom);
         }
-      } catch (error) {
-        console.error('Error loading classes (fallback):', error);
+        setClasses(withQuizzes);
+      } catch (err) {
+        console.error('Error fetching classes:', err);
       } finally {
         setLoading(false);
       }
