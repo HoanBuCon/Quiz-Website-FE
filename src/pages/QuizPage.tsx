@@ -197,7 +197,7 @@ const QuizPage: React.FC = () => {
           {/* Question */}
           <div className="card p-4 sm:p-6">
             {/* Question number */}
-            <div className="flex flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
+            <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Câu {currentQuestionIndex + 1}/{questions.length} (ID: {currentQuestion.id})
@@ -216,7 +216,7 @@ const QuizPage: React.FC = () => {
                       : [...prev, currentQuestion.id]
                   );
                 }}
-                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit h-7 sm:h-8 flex items-center shrink-0 ${
+                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit min-h-[1.75rem] max-h-[1.75rem] sm:min-h-[2rem] sm:max-h-[2rem] flex items-center shrink-0 ${
                   markedQuestions.includes(currentQuestion.id)
                     ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
