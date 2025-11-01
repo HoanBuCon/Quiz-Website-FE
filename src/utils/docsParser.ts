@@ -4,10 +4,11 @@ import { parseWordFile, validateWordFormat } from './wordParser';
 export interface ParsedQuestion {
   id: string;
   question: string;
-  type: 'single' | 'multiple' | 'text';
-  options?: string[];
-  correctAnswers: string[];
+  type: 'single' | 'multiple' | 'text' | 'drag' | 'composite';
+  options?: string[] | { targets: any[]; items: any[] };
+  correctAnswers: string[] | Record<string, string>;
   explanation?: string;
+  subQuestions?: ParsedQuestion[]; // Hỗ trợ câu hỏi mẹ
 }
 
 export interface ParseResult {

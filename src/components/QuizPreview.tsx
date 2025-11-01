@@ -27,12 +27,14 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
       } else {
         // Câu hỏi trắc nghiệm
-        q.options?.forEach((option, optIndex) => {
-          const isCorrect = q.correctAnswers.includes(option);
-          const prefix = isCorrect ? '*' : '';
-          const letter = String.fromCharCode(65 + optIndex); // A, B, C, D...
-          content += `${prefix}${letter}. ${option}\n`;
-        });
+        if (Array.isArray(q.options)) {
+          q.options.forEach((option, optIndex) => {
+            const isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(option);
+            const prefix = isCorrect ? '*' : '';
+            const letter = String.fromCharCode(65 + optIndex); // A, B, C, D...
+            content += `${prefix}${letter}. ${option}\n`;
+          });
+        }
       }
       
       if (index < questions.length - 1) {

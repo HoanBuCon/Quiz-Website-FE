@@ -60,7 +60,10 @@ model Question {
   questionImage  String?
   optionImages   Json?
   quizId         String
+  parentId       String?
   quiz           Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  parent         Question?    @relation("QuestionChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Question[]   @relation("QuestionChildren")
 }
 
 model QuizSession {
@@ -124,6 +127,8 @@ enum QuestionType {
   single
   multiple
   text
+  drag     // Kéo thả vào nhóm/ô đích
+  composite // Câu hỏi mẹ có câu hỏi con
 }
 
 enum FileType {
