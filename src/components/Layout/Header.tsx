@@ -1,15 +1,45 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useMusic } from '../../context/MusicContext';
-import { FaMusic, FaBars, FaTimes } from 'react-icons/fa';
+import { FaMusic, FaBars, FaTimes, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { getToken, clearToken } from '../../utils/auth';
+import { toast } from 'react-hot-toast';
 
 // Component Header chính của website
 const Header: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const { showMusicPlayer, toggleMusicPlayer, isPlaying } = useMusic();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
+
+  // Update auth state when token changes
+  useEffect(() => {
+    const checkAuth = () => setIsLoggedIn(!!getToken());
+    
+    const handleAuthChange = () => checkAuth();
+    
+    // Listen to custom auth change events and storage changes
+    window.addEventListener('authChange', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
+  // Hàm đăng xuất
+  const handleLogout = () => {
+    clearToken();
+    setIsLoggedIn(false);
+    toast.success('Đã đăng xuất thành công!');
+    // Trigger Header update
+    window.dispatchEvent(new Event('authChange'));
+    navigate('/');
+  };
 
   // Danh sách các trang navigation
   const navItems = [
@@ -124,6 +154,41 @@ const Header: React.FC = () => {
                   </svg>
                 )}
               </button>
+
+              {/* Auth Buttons */}
+              {isLoggedIn ? (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/classes"
+                    className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
+                  >
+                    <FaUser className="w-4 h-4" />
+                    <span>Tài khoản</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/20 hover:from-red-200 hover:to-red-300 dark:hover:from-red-800/40 dark:hover:to-red-700/40 transition-all duration-300 shadow-sm hover:shadow-md text-red-700 dark:text-red-400"
+                    title="Đăng xuất"
+                  >
+                    <FaSignOutAlt className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/login"
+                    className="px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                  >
+                    Đăng ký
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Mobile menu button and controls */}
@@ -197,6 +262,49 @@ const Header: React.FC = () => {
                 {item.label}
               </Link>
             ))}
+            
+            {/* Mobile Auth Links */}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4">
+              {isLoggedIn ? (
+                <div className="space-y-2">
+                  <Link
+                    to="/classes"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+                  >
+                    <FaUser className="inline w-4 h-4 mr-2" />
+                    Tài khoản
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                  >
+                    <FaSignOutAlt className="inline w-4 h-4 mr-2" />
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+                  >
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 rounded-lg text-base font-medium bg-primary-600 text-white hover:bg-primary-700 transition-all duration-200 text-center"
+                  >
+                    Đăng ký
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

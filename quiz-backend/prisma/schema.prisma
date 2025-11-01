@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  passwordHash   String
+  name           String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  classes        Class[]
+  quizzes        Quiz[]
+  sessions       QuizSession[]
+  sharedItems    ShareItem[]
+  sharedAccesses SharedAccess[]
+  files          UploadedFile[]
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  quizzes     Quiz[]
+}
+
+model Quiz {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  published   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  ownerId     String
+  classId     String
+  questions   Question[]
+  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sessions    QuizSession[]
+}
+
+model Question {
+  id             String       @id @default(cuid())
+  question       String
+  type           QuestionType
+  options        Json?
+  correctAnswers Json
+  explanation    String?
+  questionImage  String?
+  optionImages   Json?
+  quizId         String
+  quiz           Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model QuizSession {
+  id             String   @id @default(cuid())
+  score          Int
+  totalQuestions Int
+  timeSpent      Int
+  answers        Json
+  startedAt      DateTime @default(now())
+  completedAt    DateTime @default(now())
+  quizId         String
+  userId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UploadedFile {
+  id         String   @id @default(cuid())
+  name       String
+  type       FileType
+  size       Int
+  content    String?
+  uploadedAt DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PublicItem {
+  id         String     @id @default(cuid())
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+
+  @@unique([targetType, targetId])
+}
+
+model ShareItem {
+  id         String     @id @default(cuid())
+  ownerId    String
+  targetType TargetType
+  targetId   String
+  code       String?
+  createdAt  DateTime   @default(now())
+  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([targetType, targetId])
+}
+
+model SharedAccess {
+  id         String     @id @default(cuid())
+  userId     String
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+}
+
+enum QuestionType {
+  single
+  multiple
+  text
+}
+
+enum FileType {
+  docs
+  json
+  txt
+}
+
+enum TargetType {
+  class
+  quiz
+}

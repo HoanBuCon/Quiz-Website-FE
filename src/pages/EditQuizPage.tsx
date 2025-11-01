@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import QuizPreview from '../components/QuizPreview';
 import {
   DndContext,
@@ -318,184 +318,67 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // Nếu là chỉnh sửa quiz (isEdit), chỉ cập nhật quiz, không thêm vào lớp học nữa
-      if (state?.isEdit) {
-        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-        const quizzes = JSON.parse(savedQuizzes);
-        const existingQuizIndex = quizzes.findIndex((q: Quiz) => q.id === state.fileId);
-        const newQuiz = {
-          id: state.fileId,
+      // Nếu có token, ưu tiên lưu về backend
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+
+      // Nếu là chỉnh sửa quiz (isEdit)
+      if (state?.isEdit && token) {
+        const { QuizzesAPI } = await import('../utils/api');
+        await QuizzesAPI.update(state.fileId, {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+          // giữ nguyên trạng thái published hiện tại (không thay đổi khi chỉnh sửa)
           questions: questions,
-          fileName: state.fileName,
-          createdAt: existingQuizIndex >= 0 ? quizzes[existingQuizIndex].createdAt : new Date(),
-          updatedAt: new Date(),
-          published: true
-        };
-        if (existingQuizIndex >= 0) {
-          quizzes[existingQuizIndex] = newQuiz;
-        } else {
-          quizzes.push(newQuiz);
-        }
-        localStorage.setItem('quizzes', JSON.stringify(quizzes));
+        }, token);
         toast.success('Cập nhật quiz thành công!');
+        navigate('/classes');
+        return;
+      } else if (state?.isEdit) {
+        alert('Vui lòng đăng nhập để chỉnh sửa quiz.');
+        return;
+      }
+
+      // Backend path: tạo/ghi quiz và lớp nếu có token
+      if (token) {
+        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        // Resolve classId: create class if needed
+        let classId: string | undefined = undefined;
+        if (state.classInfo) {
+          if (state.classInfo.isNew) {
+            const created = await ClassesAPI.create({
+              name: state.classInfo.name || quizTitle || `Lớp học ${state.fileName}`,
+              description: state.classInfo.description || quizDescription || 'Lớp học được tạo từ quiz',
+              isPublic: false,
+            }, token);
+            classId = created.id;
+          } else {
+            classId = state.classInfo.classId;
+          }
+        }
+        if (!classId) {
+          // Default: create class implicitly
+          const created = await ClassesAPI.create({
+            name: quizTitle || `Lớp học ${state.fileName}`,
+            description: quizDescription || 'Lớp học được tạo từ quiz',
+            isPublic: false,
+          }, token);
+          classId = created.id;
+        }
+
+        await QuizzesAPI.create({
+          classId,
+          title: quizTitle || `Quiz từ file ${state.fileName}`,
+          description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
+          published: false, // mặc định Private khi tạo mới
+          questions: questions,
+        }, token);
+        toast.success('Xuất bản thành công!');
         navigate('/classes');
         return;
       }
 
-      // Lưu quiz vào localStorage chỉ khi xuất bản
-      const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-      const quizzes = JSON.parse(savedQuizzes);
-      
-      // Kiểm tra xem quiz đã tồn tại chưa - nếu chưa thì tạo mới
-      const existingQuizIndex = quizzes.findIndex((q: Quiz) => q.id === state.fileId);
-      
-      // Tạo quiz mới với dữ liệu đã được cập nhật
-      const newQuiz = {
-        id: state.fileId,
-        title: quizTitle || `Quiz từ file ${state.fileName}`,
-        description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
-        questions: questions, // Sử dụng questions state hiện tại (đã được cập nhật)
-        fileName: state.fileName,
-        createdAt: existingQuizIndex >= 0 ? quizzes[existingQuizIndex].createdAt : new Date(),
-        updatedAt: new Date(),
-        published: true
-      };
-      
-      if (existingQuizIndex >= 0) {
-        // Cập nhật quiz có sẵn
-        quizzes[existingQuizIndex] = newQuiz;
-      } else {
-        // Thêm quiz mới
-        quizzes.push(newQuiz);
-      }
-      
-      localStorage.setItem('quizzes', JSON.stringify(quizzes));
-      
-      // Cập nhật lại file trong Documents với nội dung đã chỉnh sửa
-      const savedFiles = localStorage.getItem('uploadedFiles') || '[]';
-      const files = JSON.parse(savedFiles);
-      const fileIndex = files.findIndex((f: any) => f.id === state.fileId);
-      
-      if (fileIndex >= 0) {
-        // Cập nhật nội dung file với định dạng mới
-        const updatedFileContent = previewContent || generatePreviewContent(questions);
-        files[fileIndex] = {
-          ...files[fileIndex],
-          content: updatedFileContent,
-          updatedAt: new Date(),
-          lastModified: new Date().getTime()
-        };
-        localStorage.setItem('uploadedFiles', JSON.stringify(files));
-        console.log('Updated file content in Documents:', files[fileIndex]);
-      }
-      
-      // Xử lý lớp học - cả hai luồng từ CreateClassPage và DocumentsPage
-      const savedClasses = localStorage.getItem('classrooms') || '[]';
-      const classes = JSON.parse(savedClasses);
-      
-      if (state.classInfo) {
-        // Luồng từ DocumentsPage
-        console.log('ClassInfo received from DocumentsPage:', state.classInfo);
-        
-        if (state.classInfo.isNew) {
-          // Tạo lớp học mới từ DocumentsPage
-          const newClass = {
-            id: `class-${Date.now()}-${Math.random()}`,
-            name: state.classInfo.name || quizTitle || `Lớp học ${state.fileName}`,
-            description: state.classInfo.description || quizDescription || 'Lớp học được tạo từ quiz',
-            quizIds: [state.fileId],
-            quizzes: [state.fileId],
-            students: [],
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          classes.push(newClass);
-          console.log('Created new class from DocumentsPage:', newClass);
-        } else {
-          // Thêm quiz vào lớp học có sẵn từ DocumentsPage
-          const existingClassIndex = classes.findIndex((c: any) => c.id === state.classInfo?.classId);
-          if (existingClassIndex >= 0) {
-            if (!classes[existingClassIndex].quizIds) classes[existingClassIndex].quizIds = [];
-            if (!classes[existingClassIndex].quizzes) classes[existingClassIndex].quizzes = [];
-            classes[existingClassIndex].quizIds.push(state.fileId);
-            classes[existingClassIndex].quizzes.push(state.fileId);
-            classes[existingClassIndex].updatedAt = new Date();
-            console.log('Added quiz to existing class from DocumentsPage:', classes[existingClassIndex]);
-          } else {
-            console.error('Existing class not found:', state.classInfo.classId);
-            // Fallback: tạo lớp mới
-            const newClass = {
-              id: `class-${Date.now()}-${Math.random()}`,
-              name: quizTitle || `Lớp học ${state.fileName}`,
-              description: quizDescription || 'Lớp học được tạo từ quiz (fallback)',
-              quizIds: [state.fileId],
-              quizzes: [state.fileId],
-              students: [],
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            classes.push(newClass);
-            console.log('Created fallback class from DocumentsPage:', newClass);
-          }
-        }
-      } else if (state.classId) {
-        // Luồng từ CreateClassPage - có classId sẵn
-        console.log('ClassId received from CreateClassPage:', state.classId);
-        
-        const existingClassIndex = classes.findIndex((c: any) => c.id === state.classId);
-        if (existingClassIndex >= 0) {
-          if (!classes[existingClassIndex].quizIds) classes[existingClassIndex].quizIds = [];
-          if (!classes[existingClassIndex].quizzes) classes[existingClassIndex].quizzes = [];
-          classes[existingClassIndex].quizIds.push(state.fileId);
-          classes[existingClassIndex].quizzes.push(state.fileId);
-          classes[existingClassIndex].updatedAt = new Date();
-          console.log('Added quiz to existing class from CreateClassPage:', classes[existingClassIndex]);
-        } else {
-          console.error('Class from CreateClassPage not found:', state.classId);
-          // Fallback: tạo lớp mới
-          const newClass = {
-            id: `class-${Date.now()}-${Math.random()}`,
-            name: quizTitle || `Lớp học ${state.fileName}`,
-            description: quizDescription || 'Lớp học được tạo từ quiz (CreateClassPage fallback)',
-            quizIds: [state.fileId],
-            quizzes: [state.fileId],
-            students: [],
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          classes.push(newClass);
-          console.log('Created CreateClassPage fallback class:', newClass);
-        }
-      } else {
-        // Luồng từ CreateClassPage với thông tin lớp học mới 
-        console.log('CreateClassPage new class creation flow');
-        const newClass = {
-          id: `class-${Date.now()}-${Math.random()}`,
-          name: quizTitle || `Lớp học ${state.fileName}`,
-          description: quizDescription || 'Lớp học được tạo từ quiz',
-          quizIds: [state.fileId],
-          quizzes: [state.fileId],
-          students: [],
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        classes.push(newClass);
-        console.log('Created new class from CreateClassPage (default):', newClass);
-      }
-      
-      localStorage.setItem('classrooms', JSON.stringify(classes));
-      
-      console.log('Quiz saved with questions:', questions); // Debug log
-      console.log('Class created with quiz:', state.fileId); // Debug log
-      
-      toast.success('Xuất bản thành công!');
-      navigate('/classes');
+      alert('Vui lòng đăng nhập để xuất bản quiz.');
     } catch (error) {
       console.error('Error publishing quiz:', error);
       toast.error('Có lỗi xảy ra khi xuất bản');

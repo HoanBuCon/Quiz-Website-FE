@@ -1,0 +1,66 @@
+services:
+  quiz_db:
+    image: postgres:15
+    container_name: quiz_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: HoanBuCon
+      POSTGRES_PASSWORD: hoanbucon1235
+      POSTGRES_DB: quiz_app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U HoanBuCon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5433:5432"  # Giữ 5433 để tránh trùng cổng local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: quiz-backend/Dockerfile
+    container_name: quiz_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://HoanBuCon:hoanbucon1235@quiz_db:5432/quiz_app?schema=public
+      JWT_SECRET: please-change-me
+      CORS_ORIGIN: http://localhost:3000,http://localhost:8080,http://localhost:8082
+      PORT: 4000
+    depends_on:
+      quiz_db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - REACT_APP_API_BASE_URL=http://localhost:4000
+    container_name: quiz_frontend
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    depends_on:
+      - backend
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: quiz_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: hoanbucon@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: hoanbucon1235
+    ports:
+      - "8085:80" # đổi sang 8085 để tránh trùng với cổng 8080 cũ
+    depends_on:
+      - quiz_db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  pgdata:
+  pgadmin_data:

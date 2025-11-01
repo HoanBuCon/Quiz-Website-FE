@@ -43,40 +43,44 @@ const DocumentsPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Lấy documents từ localStorage
-    const savedDocs = localStorage.getItem('documents');
-    if (savedDocs) {
-      const docs = JSON.parse(savedDocs).map((doc: any) => ({
-        ...doc,
-        uploadedAt: new Date(doc.uploadedAt)
-      }));
-      setDocuments(docs);
-    }
-    
-    // Lấy số lượng lớp học từ localStorage
-    const savedClasses = localStorage.getItem('classrooms');
-    if (savedClasses) {
-      const classes = JSON.parse(savedClasses);
-      setTotalClasses(classes.length);
-      setExistingClasses(classes);
-      
-      // Tính tổng số quiz với support cho cả hai format
-      const total = classes.reduce((sum: number, classroom: any) => {
-        let quizCount = 0;
+    // Load both documents and stats together
+    (async () => {
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
         
-        // Handle both old format (quizIds) and new format (quizzes)
-        if (classroom.quizIds && Array.isArray(classroom.quizIds)) {
-          quizCount = classroom.quizIds.length;
-        } else if (classroom.quizzes && Array.isArray(classroom.quizzes)) {
-          quizCount = classroom.quizzes.length;
+        if (!token) {
+          setDocuments([]);
+          setTotalClasses(0);
+          setTotalQuizzes(0);
+          setExistingClasses([]);
+          setLoading(false);
+          return;
         }
+
+        const { FilesAPI, ClassesAPI, QuizzesAPI } = await import('../utils/api');
         
-        return sum + quizCount;
-      }, 0);
-      setTotalQuizzes(total);
-    }
-    
-    setLoading(false);
+        // Load documents
+        const files = await FilesAPI.listMine(token);
+        setDocuments(files.map((f: any) => ({ ...f, uploadedAt: new Date(f.uploadedAt) })));
+        
+        // Load classes and quizzes stats
+        const mine = await ClassesAPI.listMine(token);
+        setExistingClasses(mine);
+        setTotalClasses(mine.length);
+        
+        let quizCount = 0;
+        for (const cls of mine) {
+          const qzs = await QuizzesAPI.byClass(cls.id, token);
+          quizCount += qzs.length;
+        }
+        setTotalQuizzes(quizCount);
+      } catch (e) {
+        console.error('Failed to load data:', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   // Xử lý khi file được chọn
@@ -150,29 +154,26 @@ const DocumentsPage: React.FC = () => {
           content: content
         };
         
-        // Lưu vào localStorage
-        const savedDocs = localStorage.getItem('documents') || '[]';
-        let docs = JSON.parse(savedDocs);
-        
-        if (shouldOverwrite) {
-          // Xóa file cũ và thêm file mới
-          docs = docs.filter((doc: UploadedFile) => doc.name !== file.name);
-          docs.push(newDocument);
-          
-          // Cập nhật state - xóa file cũ và thêm file mới
-          setDocuments(prev => {
-            const filtered = prev.filter(doc => doc.name !== file.name);
-            return [...filtered, newDocument];
-          });
-        } else {
-          // Thêm file mới
-          docs.push(newDocument);
-          
-          // Cập nhật state
-          setDocuments(prev => [...prev, newDocument]);
+        // Lưu lên backend
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          alert('Vui lòng đăng nhập để tải tài liệu.');
+          continue;
         }
+        const { FilesAPI } = await import('../utils/api');
+        const uploaded = await FilesAPI.upload({
+          name: finalFileName,
+          type: fileType,
+          size: file.size,
+          content: content
+        }, token);
         
-        localStorage.setItem('documents', JSON.stringify(docs));
+        setDocuments(prev => {
+          // Nếu overwrite theo tên, thay bằng file mới
+          const filtered = shouldOverwrite ? prev.filter(doc => doc.name !== file.name) : prev;
+          return [{ ...uploaded, uploadedAt: new Date(uploaded.uploadedAt) }, ...filtered];
+        });
         
       } catch (error) {
         console.error('Lỗi khi xử lý file:', error);
@@ -426,12 +427,23 @@ const DocumentsPage: React.FC = () => {
   };
 
   // Xóa file
-  const handleDeleteFile = (fileId: string, fileName: string) => {
+  const handleDeleteFile = async (fileId: string, fileName: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa tài liệu "${fileName}"?`)) {
-      const newDocs = documents.filter(doc => doc.id !== fileId);
-      setDocuments(newDocs);
-      localStorage.setItem('documents', JSON.stringify(newDocs));
-      alert(`Đã xóa tài liệu "${fileName}" thành công!`);
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          alert('Vui lòng đăng nhập.');
+          return;
+        }
+        const { FilesAPI } = await import('../utils/api');
+        await FilesAPI.remove(fileId, token);
+        setDocuments(prev => prev.filter(doc => doc.id !== fileId));
+        alert(`Đã xóa tài liệu "${fileName}" thành công!`);
+      } catch (e) {
+        console.error('Delete file failed:', e);
+        alert('Xóa tài liệu thất bại.');
+      }
     }
   };
 

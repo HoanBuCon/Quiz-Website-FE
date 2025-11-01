@@ -2,6 +2,7 @@ import { FaRegDotCircle, FaRegEdit } from "react-icons/fa";
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Question, UserAnswer, Quiz } from '../types';
+import { buildShortId } from '../utils/share';
 
 // Component trang làm bài trắc nghiệm
 const QuizPage: React.FC = () => {
@@ -15,8 +16,9 @@ const QuizPage: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(0); // Sẽ set sau khi load quiz
   const [quizTitle, setQuizTitle] = useState('');
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
+  const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
 
-  // Load quiz data from localStorage
+  // Load quiz data from backend
   useEffect(() => {
     const loadQuiz = async () => {
       if (!quizId) {
@@ -26,193 +28,31 @@ const QuizPage: React.FC = () => {
       }
 
       try {
-        // Tìm trong localStorage trước
-        const savedQuizzes = localStorage.getItem('quizzes') || '[]';
-        const quizzes: Quiz[] = JSON.parse(savedQuizzes);
-        let quiz = quizzes.find(q => q.id === quizId);
-
-        // Nếu không tìm thấy trong localStorage, tìm trong mock data
-        if (!quiz) {
-          const mockQuizzes = [
-            {
-              id: 'quiz-oop-1',
-              title: 'Kiểm tra OOP cơ bản',
-              description: 'Bài kiểm tra về các khái niệm cơ bản của lập trình hướng đối tượng',
-              questions: [
-                {
-                  id: 'q1',
-                  question: 'OOP là viết tắt của gì?',
-                  type: 'single' as const,
-                  options: ['Object Oriented Programming', 'Object Order Programming', 'Only Object Programming', 'Open Object Programming'],
-                  correctAnswers: ['Object Oriented Programming'],
-                  explanation: 'OOP là Object Oriented Programming - Lập trình hướng đối tượng'
-                },
-                {
-                  id: 'q2',
-                  question: 'Encapsulation trong OOP có nghĩa là gì?',
-                  type: 'single' as const,
-                  options: ['Đóng gói dữ liệu và phương thức', 'Kế thừa từ lớp cha', 'Đa hình của đối tượng', 'Trừu tượng hóa dữ liệu'],
-                  correctAnswers: ['Đóng gói dữ liệu và phương thức'],
-                  explanation: 'Encapsulation là việc đóng gói dữ liệu và các phương thức thao tác trên dữ liệu đó trong một đơn vị'
-                },
-                {
-                  id: 'q3',
-                  question: 'Inheritance cho phép làm gì?',
-                  type: 'single' as const,
-                  options: ['Tạo lớp mới từ lớp đã có', 'Ẩn thông tin của đối tượng', 'Tạo nhiều đối tượng', 'Xóa đối tượng khỏi bộ nhớ'],
-                  correctAnswers: ['Tạo lớp mới từ lớp đã có'],
-                  explanation: 'Inheritance (kế thừa) cho phép tạo lớp mới dựa trên lớp đã có, kế thừa các thuộc tính và phương thức'
-                },
-                {
-                  id: 'q4',
-                  question: 'Polymorphism là gì?',
-                  type: 'single' as const,
-                  options: ['Khả năng đa hình của đối tượng', 'Ẩn dữ liệu private', 'Tạo constructor', 'Quản lý bộ nhớ'],
-                  correctAnswers: ['Khả năng đa hình của đối tượng'],
-                  explanation: 'Polymorphism cho phép cùng một interface có thể được sử dụng cho các kiểu dữ liệu khác nhau'
-                },
-                {
-                  id: 'q5',
-                  question: 'Constructor trong OOP có chức năng gì?',
-                  type: 'single' as const,
-                  options: ['Khởi tạo đối tượng', 'Hủy đối tượng', 'So sánh đối tượng', 'Copy đối tượng'],
-                  correctAnswers: ['Khởi tạo đối tượng'],
-                  explanation: 'Constructor là phương thức đặc biệt được gọi khi tạo đối tượng mới'
-                },
-                {
-                  id: 'q6',
-                  question: 'Access modifier nào cho phép truy cập từ bên ngoài class?',
-                  type: 'single' as const,
-                  options: ['public', 'private', 'protected', 'internal'],
-                  correctAnswers: ['public'],
-                  explanation: 'public cho phép truy cập từ bất kỳ đâu, kể cả bên ngoài class'
-                },
-                {
-                  id: 'q7',
-                  question: 'Method overriding là gì?',
-                  type: 'single' as const,
-                  options: ['Ghi đè phương thức của lớp cha', 'Tạo phương thức mới', 'Xóa phương thức', 'Copy phương thức'],
-                  correctAnswers: ['Ghi đè phương thức của lớp cha'],
-                  explanation: 'Method overriding cho phép lớp con định nghĩa lại phương thức đã có trong lớp cha'
-                },
-                {
-                  id: 'q8',
-                  question: 'Abstract class khác gì với interface?',
-                  type: 'single' as const,
-                  options: ['Abstract class có thể có implementation', 'Interface có thể có constructor', 'Abstract class không có method', 'Không có sự khác biệt'],
-                  correctAnswers: ['Abstract class có thể có implementation'],
-                  explanation: 'Abstract class có thể chứa cả phương thức đã implement và chưa implement, interface chỉ định nghĩa signature'
-                },
-                {
-                  id: 'q9',
-                  question: 'Static method có đặc điểm gì?',
-                  type: 'single' as const,
-                  options: ['Thuộc về class, không thuộc về instance', 'Thuộc về instance cụ thể', 'Không thể gọi được', 'Chỉ dùng trong constructor'],
-                  correctAnswers: ['Thuộc về class, không thuộc về instance'],
-                  explanation: 'Static method thuộc về class và có thể gọi mà không cần tạo instance'
-                },
-                {
-                  id: 'q10',
-                  question: 'Garbage Collection trong OOP có tác dụng gì?',
-                  type: 'single' as const,
-                  options: ['Tự động giải phóng bộ nhớ', 'Tạo đối tượng mới', 'Sắp xếp đối tượng', 'Bảo mật đối tượng'],
-                  correctAnswers: ['Tự động giải phóng bộ nhớ'],
-                  explanation: 'Garbage Collection tự động thu hồi bộ nhớ của các đối tượng không còn được sử dụng'
-                }
-              ],
-              createdAt: new Date('2025-08-2'),
-              updatedAt: new Date('2025-08-2')
-            },
-            {
-              id: 'dsa-basic',
-              title: 'Cấu trúc dữ liệu và giải thuật',
-              description: 'Kiểm tra kiến thức cơ bản về cấu trúc dữ liệu và giải thuật',
-              questions: [
-                {
-                  id: 'q1',
-                  question: 'Array có đặc điểm gì?',
-                  type: 'single' as const,
-                  options: ['Lưu trữ tuần tự trong bộ nhớ', 'Lưu trữ ngẫu nhiên', 'Không có thứ tự', 'Chỉ lưu số'],
-                  correctAnswers: ['Lưu trữ tuần tự trong bộ nhớ'],
-                  explanation: 'Array lưu trữ các phần tử liên tiếp trong bộ nhớ'
-                },
-                {
-                  id: 'q2',
-                  question: 'Stack hoạt động theo nguyên tắc nào?',
-                  type: 'single' as const,
-                  options: ['LIFO (Last In First Out)', 'FIFO (First In First Out)', 'Random access', 'Priority based'],
-                  correctAnswers: ['LIFO (Last In First Out)'],
-                  explanation: 'Stack hoạt động theo nguyên tắc LIFO - phần tử cuối vào sẽ ra đầu tiên'
-                },
-                {
-                  id: 'q3',
-                  question: 'Queue hoạt động theo nguyên tắc nào?',
-                  type: 'single' as const,
-                  options: ['FIFO (First In First Out)', 'LIFO (Last In First Out)', 'Random access', 'Priority based'],
-                  correctAnswers: ['FIFO (First In First Out)'],
-                  explanation: 'Queue hoạt động theo nguyên tắc FIFO - phần tử đầu vào sẽ ra đầu tiên'
-                }
-              ],
-              createdAt: new Date('2025-08-2'),
-              updatedAt: new Date('2025-08-2')
-            },
-            {
-              id: 'blender-shading',
-              title: 'Kỹ thuật shading trong Blender',
-              description: 'Kiểm tra kiến thức về shading và material trong Blender',
-              questions: [
-                {
-                  id: 'q1',
-                  question: 'Shader Editor được dùng để làm gì?',
-                  type: 'single' as const,
-                  options: ['Tạo và chỉnh sửa material', 'Modeling 3D', 'Animation', 'Rendering'],
-                  correctAnswers: ['Tạo và chỉnh sửa material'],
-                  explanation: 'Shader Editor là nơi tạo và chỉnh sửa các material cho object'
-                },
-                {
-                  id: 'q2',
-                  question: 'Principled BSDF là gì?',
-                  type: 'single' as const,
-                  options: ['Shader node chính cho material', 'Tool modeling', 'Modifier', 'Camera setting'],
-                  correctAnswers: ['Shader node chính cho material'],
-                  explanation: 'Principled BSDF là shader node cơ bản và quan trọng nhất cho material'
-                },
-                {
-                  id: 'q3',
-                  question: 'Roughness parameter điều khiển gì?',
-                  type: 'single' as const,
-                  options: ['Độ nhám của bề mặt', 'Màu sắc', 'Độ trong suốt', 'Kích thước'],
-                  correctAnswers: ['Độ nhám của bề mặt'],
-                  explanation: 'Roughness điều khiển độ nhám/mịn của bề mặt material'
-                }
-              ],
-              createdAt: new Date('2025-08-2'),
-              updatedAt: new Date('2025-08-2')
-            }
-            // Có thể thêm các quiz khác từ mock data
-          ];
-          
-          quiz = mockQuizzes.find(q => q.id === quizId);
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          navigate('/');
+          return;
         }
-
-        if (quiz && quiz.questions) {
-          setQuizTitle(quiz.title);
-          setQuestions(quiz.questions);
+        const { QuizzesAPI } = await import('../utils/api');
+        
+        // Use direct API call which handles public/share/owner logic in backend
+        const found = await QuizzesAPI.getById(quizId, token);
+        
+        if (found) {
+          setQuizTitle(found.title);
+          setQuestions(found.questions || []);
+          setEffectiveQuizId(found.id);
         } else {
-          console.error('Quiz not found:', quizId);
-          setQuestions([{
-            id: 'error',
-            question: 'Không tìm thấy bài kiểm tra này',
-            type: 'single',
-            options: ['Quay lại'],
-            correctAnswers: ['Quay lại']
-          }]);
+          throw new Error('Quiz không tìm thấy');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading quiz:', error);
         setQuestions([{
           id: 'error',
-          question: 'Có lỗi khi tải bài kiểm tra',
+          question: error?.message?.includes('Forbidden') || error?.message?.includes('Quiz chưa xuất bản')
+            ? 'Quiz không khả dụng hoặc chưa được chia sẻ'
+            : 'Quiz không tìm thấy',
           type: 'single',
           options: ['Quay lại'],
           correctAnswers: ['Quay lại']
@@ -300,63 +140,28 @@ const QuizPage: React.FC = () => {
   };
 
   // Submit answers
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (window.confirm('Bạn có chắc chắn muốn nộp bài?')) {
-      const score = userAnswers.reduce((total, userAnswer) => {
-        const question = questions.find(q => q.id === userAnswer.questionId);
-        if (!question) return total;
-        
-        let isCorrect = false;
-        
-        if (question.type === 'text') {
-          // Đối với câu hỏi text, so sánh linh hoạt với tất cả đáp án đúng có thể
-          const userAnswer_normalized = userAnswer.answers[0]?.trim().toLowerCase() || '';
-          
-          // Kiểm tra xem câu trả lời của user có khớp với bất kỳ đáp án đúng nào không
-          isCorrect = question.correctAnswers.some(correctAnswer => {
-            const correctAnswer_normalized = correctAnswer?.trim().toLowerCase() || '';
-            return userAnswer_normalized === correctAnswer_normalized;
-          });
-          
-          console.log('Text question check:', {
-            question: question.question.substring(0, 50) + '...',
-            userAnswer: userAnswer.answers[0],
-            correctAnswers: question.correctAnswers,
-            userAnswer_normalized,
-            isCorrect,
-            availableAnswers: question.correctAnswers.map(ans => ans?.trim().toLowerCase())
-          });
-        } else {
-          // Đối với câu hỏi trắc nghiệm, sử dụng logic cũ
-          isCorrect = question.correctAnswers.length === userAnswer.answers.length &&
-            question.correctAnswers.every(answer => userAnswer.answers.includes(answer));
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          alert('Vui lòng đăng nhập để nộp bài.');
+          return;
         }
-        
-        return total + (isCorrect ? 1 : 0);
-      }, 0);
-
-      // Tính thời gian làm bài (giây)
-      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-
-      // Tạo object kết quả
-      const result = {
-        quizId: quizId!,
-        quizTitle: quizTitle,
-        userAnswers: userAnswers.reduce((acc, answer) => {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        const answersMap = userAnswers.reduce((acc, answer) => {
           acc[answer.questionId] = answer.answers;
           return acc;
-        }, {} as Record<string, string[]>),
-        score: score,
-        totalQuestions: questions.length,
-        timeSpent: timeSpent,
-        completedAt: new Date()
-      };
-
-      // Lưu kết quả vào sessionStorage
-      sessionStorage.setItem(`quiz-result-${quizId}`, JSON.stringify(result));
-
-      // Chuyển hướng đến trang kết quả
-      navigate(`/results/${quizId}`);
+        }, {} as Record<string, string[]>);
+        const { SessionsAPI } = await import('../utils/api');
+        const qid = effectiveQuizId || quizId!;
+        await SessionsAPI.submit({ quizId: qid, answers: answersMap, timeSpent }, token);
+        navigate(`/results/${qid}`);
+      } catch (e) {
+        console.error('Submit failed:', e);
+        alert('Có lỗi xảy ra khi nộp bài.');
+      }
     }
   };
 

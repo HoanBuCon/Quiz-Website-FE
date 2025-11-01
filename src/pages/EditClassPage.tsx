@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ClassRoom } from '../types';
 
@@ -6,37 +6,64 @@ const EditClassPage: React.FC = () => {
   const { classId } = useParams<{ classId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const classRoom: ClassRoom | undefined = location.state?.classRoom;
+  const stateClass: ClassRoom | undefined = (location.state as any)?.classRoom;
 
-  const [name, setName] = useState(classRoom?.name || '');
-  const [description, setDescription] = useState(classRoom?.description || '');
+  const [loading, setLoading] = useState(!stateClass);
+  const [name, setName] = useState(stateClass?.name || '');
+  const [description, setDescription] = useState(stateClass?.description || '');
   const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  // If classRoom not provided via state, fetch from backend (mine)
+  useEffect(() => {
+    if (stateClass || !classId) return;
+    (async () => {
+      try {
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) { alert('Vui lòng đăng nhập'); navigate('/'); return; }
+        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const mine = await ClassesAPI.listMine(token);
+        const found = mine.find((c: any) => c.id === classId);
+        if (!found) { alert('Không tìm thấy lớp học!'); navigate(-1); return; }
+        setName(found.name || '');
+        setDescription(found.description || '');
+      } catch (e) {
+        alert('Không thể tải lớp học!');
+        navigate(-1);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [stateClass, classId, navigate]);
+
+  const handleSave = async () => {
     if (!name.trim()) {
       alert('Vui lòng nhập tên lớp học');
       return;
     }
     setSaving(true);
     try {
-      const savedClasses = localStorage.getItem('classrooms') || '[]';
-      const classRooms = JSON.parse(savedClasses);
-      const idx = classRooms.findIndex((cls: ClassRoom) => cls.id === classId);
-      if (idx !== -1) {
-        classRooms[idx].name = name;
-        classRooms[idx].description = description;
-        localStorage.setItem('classrooms', JSON.stringify(classRooms));
-        alert('Đã cập nhật lớp học thành công!');
-        navigate(-1);
-      } else {
-        alert('Không tìm thấy lớp học!');
-      }
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { ClassesAPI } = await import('../utils/api');
+      await ClassesAPI.update(classId!, { name, description }, token);
+      alert('Đã cập nhật lớp học thành công!');
+      navigate(-1);
     } catch (e) {
       alert('Có lỗi xảy ra khi lưu.');
     } finally {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="card p-6 animate-pulse h-32" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center h-full bg-transparent">
