@@ -20,9 +20,36 @@ const visibilityRouter = require('./routes/visibility');
 
 const app = express();
 
+// Enforce required secrets in production
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is required in production');
+  process.exit(1);
+}
+
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
+
+// CORS
+// - In production: set CORS_ORIGIN to a comma-separated list of allowed origins
+//   e.g. "https://quiz.yourdomain.com,https://admin.yourdomain.com"
+// - In development: default allow localhost:3000 if not specified
+const allowedOriginsFromEnv = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+const devDefaults = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const corsOrigins = allowedOriginsFromEnv.length
+  ? allowedOriginsFromEnv
+  : (isProd ? [] : devDefaults);
+
+app.use(cors({
+  origin: corsOrigins,
+  credentials: corsOrigins.length > 0,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -51,8 +78,9 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
+const host = '0.0.0.0';
+app.listen(port, host, () => {
+  console.log(`API listening on http://${host}:${port}`);
 });
 
 process.on('SIGINT', async () => { await prisma.$disconnect(); process.exit(0); });
