@@ -6,6 +6,9 @@ module.exports = {
   darkMode: 'class', // Hỗ trợ dark mode
   theme: {
     extend: {
+      screens: {
+        'nav': '900px', // Custom breakpoint cho navigation menu
+      },
       colors: {
         primary: {
           50: '#eff6ff',

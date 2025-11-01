@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClassRoom, Quiz } from '../types';
 import { buildShortId, isShortIdCode } from '../utils/share';
+import {
+  UserIcon,
+  EyeIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from "@heroicons/react/24/solid";
 
 const ClassesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -87,12 +93,12 @@ const ClassesPage: React.FC = () => {
     }
   };
 
-// Toggle public for class
+  // Toggle public for class
   const handleToggleClassPublic = async (classId: string, current: boolean) => {
     const newState = !current;
     const message = newState 
-      ? 'Bạn có chắc muốn đặt lớp học ở trạng thái Công khai?\n\n✓ Lớp học sẽ được công khai\n✓ TẤT CẢ quiz trong lớp sẽ được công khai\n✓ Sau đó bạn có thể đặt riêng tư từng quiz riêng lẻ'
-      : 'Bạn có chắc muốn đặt lớp học ở trạng thái Riêng tư?\n\n✓ Lớp học sẽ được đặt riêng tư\n✓ Các quiz đang CÔNG KHAI sẽ được đặt riêng tư\n✓ Các quiz đã riêng tư sẽ giữ nguyên';
+      ? '📢 Đặt Class Public?\n\n✓ Class sẽ Public\n✓ TẤT CẢ Quiz sẽ Public\n✓ Sau đó có thể đặt Private từng Quiz'
+      : '🔒 Đặt Class Private?\n\n✓ Class sẽ Private\n✓ Các Quiz Public → Private\n✓ Các Quiz Private → giữ nguyên';
     
     if (!window.confirm(message)) return;
     
@@ -110,12 +116,12 @@ const ClassesPage: React.FC = () => {
       await loadMyClasses();
       
       const successMsg = newState 
-        ? '✅ Đã đặt công khai lớp học và TẤT CẢ quiz bên trong\n\nBạn có thể đặt riêng tư từng quiz riêng lẻ sau' 
-        : '✅ Đã đặt riêng tư lớp học\n\n• Quiz đang công khai → đã chuyển riêng tư\n• Quiz đã riêng tư → giữ nguyên';
+        ? '✅ Đã Public Class và TẤT CẢ Quiz\n\n💡 Bạn có thể Private từng Quiz sau' 
+        : '✅ Đã Private Class\n\n• Quiz Public → Private\n• Quiz Private → giữ nguyên';
       alert(successMsg);
     } catch (e) {
       console.error('toggle public failed', e);
-      alert('❌ Không thể cập nhật trạng thái công khai');
+      alert('❌ Không thể cập nhật trạng thái');
     }
   };
 
@@ -145,12 +151,12 @@ const ClassesPage: React.FC = () => {
     setShareOpen(true);
   };
 
-// Toggle publish for quiz: if publishing and class is private -> make class public, but only this quiz is published
+  // Toggle publish for quiz: if publishing and class is private -> make class public, but only this quiz is published
   const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
     const newState = !current;
     const message = newState
-      ? 'Bạn có chắc muốn đặt quiz ở trạng thái Công khai?\n\n✓ Quiz sẽ được công khai\n✓ Lớp học chứa quiz cũng sẽ được đặt công khai (nếu đang private)\n✓ Các quiz khác trong lớp GIỮ NGUYÊN trạng thái'
-      : 'Bạn có chắc muốn đặt quiz ở trạng thái Riêng tư?\n\n✓ CHỈ quiz này sẽ được đặt riêng tư\n✓ Lớp học giữ nguyên trạng thái công khai';
+      ? '📢 Public Quiz?\n\n✓ Quiz sẽ Public\n✓ Class sẽ Public (nếu đang Private)\n✓ Quiz khác GIỮ NGUYÊN'
+      : '🔒 Private Quiz?\n\n✓ CHỈ Quiz này Private\n✓ Class giữ nguyên Public';
     
     if (!window.confirm(message)) return;
     
@@ -168,12 +174,12 @@ const ClassesPage: React.FC = () => {
       await loadMyClasses();
 
       const message = newState 
-        ? '✅ Đã xuất bản quiz\n\n• Quiz đã được công khai\n• Lớp học cũng đã được đặt công khai\n• Các quiz khác giữ nguyên trạng thái'
-        : '✅ Đã đặt quiz ở trạng thái riêng tư\n\n• Chỉ quiz này được đặt riêng tư\n• Lớp học giữ nguyên công khai';
+        ? '✅ Đã Public Quiz\n\n• Quiz Public\n• Class Public\n• Quiz khác giữ nguyên'
+        : '✅ Đã Private Quiz\n\n• Chỉ Quiz này Private\n• Class giữ Public';
       alert(message);
     } catch (e) {
       console.error('toggle publish failed', e);
-      alert('❌ Không thể cập nhật trạng thái quiz');
+      alert('❌ Không thể cập nhật trạng thái');
     }
   };
 
@@ -1171,31 +1177,84 @@ const ClassesPage: React.FC = () => {
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-4">
-                <svg className="w-6 h-6 text-purple-700 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
-                </svg>
-                <span>Tạo ID và Link truy cập lớp học và bài tập trắc nghiệm người khác tham gia.</span>
+                <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <svg
+                    className="w-5 h-5 text-purple-700 dark:text-purple-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4"
+                    />
+                  </svg>
+                </div>
+                <span>Tạo ID và LINK truy cập lớp học và bài tập trắc nghiệm người khác tham gia.</span>
               </div>
 
-              <div className="flex items-center gap-4 mt-1">
-                <svg className="w-6 h-6 text-green-700 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Đặt trạng thái Công khai hoặc Riêng tư cho lớp học và bài tập trắc nghiệm.</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <svg
+                    className="w-5 h-5 text-green-700 dark:text-green-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <span>Đặt trạng thái CÔNG KHAI hoặc RIÊNG TƯ cho lớp học và bài tập trắc nghiệm.</span>
               </div>
 
-              <div className="flex items-center gap-4 mt-1">
-                <svg className="w-6 h-6 text-blue-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z" />
-                </svg>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <svg
+                    className="w-5 h-5 text-blue-700 dark:text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
+                    />
+                  </svg>
+                </div>
                 <span>Chỉnh sửa thông tin và nội dung lớp học và bài tập trắc nghiệm.</span>
               </div>
 
-              <div className="flex items-center gap-4 mt-1">
-                <svg className="w-6 h-6 text-red-700 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <svg
+                    className="w-5 h-5 text-red-700 dark:text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </div>
                 <span>Xóa lớp học và bài tập trắc nghiệm.</span>
               </div>
             </div>
