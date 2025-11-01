@@ -381,7 +381,7 @@ const DocumentsPage: React.FC = () => {
           if (result.success && result.questions) {
             questions = result.questions;
           } else {
-            alert(`Không thể phân tích file: ${result.error || 'Lỗi không xác định'}`);
+            alert(`Không thể phân tích file, hãy tạo lớp học thủ công và Copy-Patse nội dung trong file. Lỗi: ${result.error || 'Lỗi không xác định'}`);
             return;
           }
         }
