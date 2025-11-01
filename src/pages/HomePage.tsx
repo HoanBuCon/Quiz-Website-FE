@@ -49,13 +49,14 @@ const HomePage: React.FC = () => {
         let quizCount = 0;
         for (const cls of pubs) {
           const qzs = await QuizzesAPI.byClass(cls.id, token);
-          const published = (qzs || []).filter((q: any) => q && q.published);
-          quizCount += published.length;
+          // Filter only published quizzes
+          const visible = (qzs || []).filter((q: any) => q.published === true);
+          quizCount += visible.length;
           classesWithQuizzes.push({
             id: cls.id,
             name: cls.name,
             description: cls.description,
-            quizzes: published,
+            quizzes: visible,
             createdAt: new Date(cls.createdAt),
             updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
           } as unknown as ClassRoom);

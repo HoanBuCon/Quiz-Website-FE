@@ -6,10 +6,15 @@ const router = express.Router();
 router.get('/by-class/:classId', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const classId = req.params.classId;
-  // Allow owner or public class
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (!cls) return res.status(404).json({ message: 'Class not found' });
-  if (!cls.isPublic && cls.ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+  const isOwner = cls.ownerId === req.user.id;
+  const hasPublicItem = await prisma.publicItem.findFirst({ where: { targetType: 'class', targetId: classId } });
+  const isPublic = !!cls.isPublic || !!hasPublicItem; // accept legacy flag OR new table
+  const hasShared = await prisma.sharedAccess.findFirst({ where: { userId: req.user.id, targetType: 'class', targetId: classId } });
+  if (!isOwner && !isPublic && !hasShared) return res.status(403).json({ message: 'Forbidden' });
+
   const quizzes = await prisma.quiz.findMany({ where: { classId }, include: { questions: true } });
   res.json(quizzes);
 });
@@ -54,13 +59,26 @@ router.put('/:id', authRequired, async (req, res) => {
   const { title, description, published, questions } = req.body || {};
   const updated = await prisma.$transaction(async (tx) => {
     // Update quiz fields
-    const qz = await tx.quiz.update({ where: { id }, data: { title, description, published } });
+    await tx.quiz.update({ where: { id }, data: { title, description, published } });
+
+    // sync PublicItem when published provided
+    if (typeof published === 'boolean') {
+      if (published) {
+        await tx.publicItem.upsert({
+          where: { targetType_targetId: { targetType: 'quiz', targetId: id } },
+          create: { targetType: 'quiz', targetId: id },
+          update: {},
+        });
+      } else {
+        await tx.publicItem.deleteMany({ where: { targetType: 'quiz', targetId: id } });
+      }
+    }
+
     if (Array.isArray(questions)) {
       // Replace questions: delete then recreate
       await tx.question.deleteMany({ where: { quizId: id } });
       await tx.question.createMany({
         data: questions.map(q => ({
-          id: undefined,
           quizId: id,
           question: q.question,
           type: q.type,
@@ -85,6 +103,39 @@ router.delete('/:id', authRequired, async (req, res) => {
   if (!found || found.ownerId !== req.user.id) return res.status(404).json({ message: 'Not found' });
   await prisma.quiz.delete({ where: { id } });
   res.status(204).end();
+});
+
+// Get quiz by ID or shortId (supports public/share)
+router.get('/:id', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const id = req.params.id;
+  try {
+    let quiz = await prisma.quiz.findUnique({ where: { id }, include: { questions: true, class: true } });
+    if (!quiz) {
+      const { buildShortId } = require('../utils/share');
+      const all = await prisma.quiz.findMany({ include: { questions: true, class: true } });
+      quiz = all.find(q => buildShortId(q.id) === id);
+    }
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+    const isOwner = quiz.ownerId === req.user.id;
+    const quizPublic = await prisma.publicItem.findFirst({ where: { targetType: 'quiz', targetId: quiz.id } });
+    const classPublic = await prisma.publicItem.findFirst({ where: { targetType: 'class', targetId: quiz.classId } });
+    const hasQuizShared = await prisma.sharedAccess.findFirst({ where: { userId: req.user.id, targetType: 'quiz', targetId: quiz.id } });
+    const hasClassShared = await prisma.sharedAccess.findFirst({ where: { userId: req.user.id, targetType: 'class', targetId: quiz.classId } });
+    
+    // Also check legacy isPublic flag on class
+    const isClassPublicLegacy = quiz.class.isPublic;
+
+    if (!isOwner && !quizPublic && !classPublic && !isClassPublicLegacy && !hasQuizShared && !hasClassShared) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    res.json(quiz);
+  } catch (e) {
+    console.error('Error fetching quiz', e);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
 
 module.exports = router;

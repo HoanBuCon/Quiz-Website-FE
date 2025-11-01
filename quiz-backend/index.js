@@ -16,6 +16,7 @@ const classesRouter = require('./routes/classes');
 const quizzesRouter = require('./routes/quizzes');
 const sessionsRouter = require('./routes/sessions');
 const filesRouter = require('./routes/files');
+const visibilityRouter = require('./routes/visibility');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/classes', classesRouter);
 app.use('/quizzes', quizzesRouter);
 app.use('/sessions', sessionsRouter);
 app.use('/files', filesRouter);
+app.use('/visibility', visibilityRouter);
 
 // Error handler
 app.use((err, _req, res, _next) => {

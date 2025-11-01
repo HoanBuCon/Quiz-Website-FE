@@ -42,12 +42,46 @@ export const ClassesAPI = {
 };
 
 export const QuizzesAPI = {
+  getById: (quizId: string, token: string) => apiRequest<any>(`/quizzes/${quizId}`, { token }),
   byClass: (classId: string, token: string) => apiRequest<any[]>(`/quizzes/by-class/${classId}`, { token }),
   create: (data: any, token: string) => apiRequest<any>(`/quizzes`, { method: 'POST', token, body: JSON.stringify({ published: false, ...data }) }),
   update: (id: string, data: any, token: string) => apiRequest<any>(`/quizzes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
   remove: (id: string, token: string) => apiRequest<void>(`/quizzes/${id}`, { method: 'DELETE', token }),
 };
 
+export const VisibilityAPI = {
+  publicToggle: async (
+    payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean },
+    token: string
+  ) => {
+    // Prefer legacy-compatible update first to work with older backends (no /visibility route)
+    try {
+      if (payload.targetType === 'class') {
+        await ClassesAPI.update(payload.targetId, { isPublic: payload.enabled }, token);
+      } else {
+        await QuizzesAPI.update(payload.targetId, { published: payload.enabled }, token);
+      }
+      return { ok: true, fallback: true } as any;
+    } catch (_legacyErr) {
+      // If legacy path fails (or not permitted), try the newer consolidated endpoint
+      return await apiRequest<any>(`/visibility/public`, { method: 'POST', token, body: JSON.stringify(payload) });
+    }
+  },
+  shareToggle: async (payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean }, token: string) => {
+    try {
+      return await apiRequest<any>(`/visibility/share`, { method: 'POST', token, body: JSON.stringify(payload) });
+    } catch (_e: any) {
+      // Older backend without share endpoints: best-effort no-op so UI can still open Share modal
+      return { ok: true, fallback: true } as any;
+    }
+  },
+  claim: (payload: { classId?: string; quizId?: string; code?: string }, token: string) =>
+    apiRequest<any>(`/visibility/claim`, { method: 'POST', token, body: JSON.stringify(payload) }),
+  removeAccess: (payload: { classId?: string; quizId?: string }, token: string) =>
+    apiRequest<void>(`/visibility/access`, { method: 'DELETE', token, body: JSON.stringify(payload) }),
+  listSharedClasses: (token: string) => apiRequest<any[]>(`/visibility/shared/classes`, { token }),
+  listSharedQuizzes: (token: string) => apiRequest<any[]>(`/visibility/shared/quizzes`, { token }),
+};
 export const SessionsAPI = {
   start: (quizId: string, token: string) => apiRequest<any>(`/sessions/start`, { method: 'POST', token, body: JSON.stringify({ quizId }) }),
   submit: (payload: { quizId: string; answers: Record<string, string[]>; timeSpent: number }, token: string) =>

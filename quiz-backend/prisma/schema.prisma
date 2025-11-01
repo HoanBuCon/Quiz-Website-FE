@@ -8,16 +8,18 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  passwordHash String
-  name         String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  classes      Class[]
-  quizzes      Quiz[]
-  sessions     QuizSession[]
-  files        UploadedFile[]
+  id             String         @id @default(cuid())
+  email          String         @unique
+  passwordHash   String
+  name           String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  classes        Class[]
+  quizzes        Quiz[]
+  sessions       QuizSession[]
+  sharedItems    ShareItem[]
+  sharedAccesses SharedAccess[]
+  files          UploadedFile[]
 }
 
 model Class {
@@ -85,6 +87,38 @@ model UploadedFile {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model PublicItem {
+  id         String     @id @default(cuid())
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+
+  @@unique([targetType, targetId])
+}
+
+model ShareItem {
+  id         String     @id @default(cuid())
+  ownerId    String
+  targetType TargetType
+  targetId   String
+  code       String?
+  createdAt  DateTime   @default(now())
+  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([targetType, targetId])
+}
+
+model SharedAccess {
+  id         String     @id @default(cuid())
+  userId     String
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+}
+
 enum QuestionType {
   single
   multiple
@@ -95,4 +129,9 @@ enum FileType {
   docs
   json
   txt
+}
+
+enum TargetType {
+  class
+  quiz
 }

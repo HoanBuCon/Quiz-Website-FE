@@ -18,6 +18,7 @@ export interface Quiz {
   questions: Question[];
   createdAt: Date;
   updatedAt: Date;
+  accessType?: 'owner' | 'shared' | 'public'; // runtime-only: FE permissions
 }
 
 export interface ClassRoom {
@@ -31,6 +32,7 @@ export interface ClassRoom {
   isActive?: boolean;
   createdAt: Date;
   updatedAt?: Date;
+  accessType?: 'owner' | 'shared' | 'public'; // runtime-only: FE permissions
 }
 
 export interface UserAnswer {

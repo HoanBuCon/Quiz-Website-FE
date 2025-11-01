@@ -43,39 +43,32 @@ const DocumentsPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Lấy documents từ backend
+    // Load both documents and stats together
     (async () => {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
-        if (token) {
-          const { FilesAPI } = await import('../utils/api');
-          const files = await FilesAPI.listMine(token);
-          setDocuments(files.map((f: any) => ({ ...f, uploadedAt: new Date(f.uploadedAt) })));
-        } else {
-          setDocuments([]);
-        }
-      } catch (e) {
-        console.error('Failed to load documents:', e);
-      }
-    })();
-    
-    // Lấy số lượng lớp học/quizzes từ backend
-    (async () => {
-      try {
-        const { getToken } = await import('../utils/auth');
-        const token = getToken();
+        
         if (!token) {
+          setDocuments([]);
           setTotalClasses(0);
           setTotalQuizzes(0);
           setExistingClasses([]);
           setLoading(false);
           return;
         }
-        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+
+        const { FilesAPI, ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        
+        // Load documents
+        const files = await FilesAPI.listMine(token);
+        setDocuments(files.map((f: any) => ({ ...f, uploadedAt: new Date(f.uploadedAt) })));
+        
+        // Load classes and quizzes stats
         const mine = await ClassesAPI.listMine(token);
         setExistingClasses(mine);
         setTotalClasses(mine.length);
+        
         let quizCount = 0;
         for (const cls of mine) {
           const qzs = await QuizzesAPI.byClass(cls.id, token);
@@ -83,7 +76,7 @@ const DocumentsPage: React.FC = () => {
         }
         setTotalQuizzes(quizCount);
       } catch (e) {
-        console.error('Failed to load backend stats:', e);
+        console.error('Failed to load data:', e);
       } finally {
         setLoading(false);
       }

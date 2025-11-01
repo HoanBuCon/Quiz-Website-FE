@@ -23,16 +23,19 @@ const ClassesPage: React.FC = () => {
 
   // Hàm xóa lớp học
   const handleDeleteClass = async (classId: string, className: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Tất cả bài kiểm tra trong lớp học này cũng sẽ bị xóa.`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Nếu là lớp được chia sẻ, thao tác này chỉ gỡ lớp khỏi danh sách của bạn.`)) {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
-        if (!token) {
-          alert('Vui lòng đăng nhập để thực hiện thao tác.');
-          return;
+        if (!token) { alert('Vui lòng đăng nhập để thực hiện thao tác.'); return; }
+        const { ClassesAPI, VisibilityAPI } = await import('../utils/api');
+        const cls = classes.find(c => c.id === classId) as any;
+        const isShared = cls && cls.accessType === 'shared';
+        if (isShared) {
+          await VisibilityAPI.removeAccess({ classId }, token);
+        } else {
+          await ClassesAPI.remove(classId, token);
         }
-        const { ClassesAPI } = await import('../utils/api');
-        await ClassesAPI.remove(classId, token);
         setClasses(prev => prev.filter(cls => cls.id !== classId));
         alert(`Đã xóa lớp học "${className}" thành công!`);
       } catch (error) {
@@ -44,16 +47,19 @@ const ClassesPage: React.FC = () => {
 
   // Hàm xóa quiz khỏi lớp học
   const handleDeleteQuiz = async (classId: string, quizId: string, quizTitle: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa bài kiểm tra "${quizTitle}"?`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa bài kiểm tra "${quizTitle}"?\n\nLưu ý: Nếu là bài được chia sẻ, thao tác này chỉ gỡ khỏi danh sách của bạn.`)) {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
-        if (!token) {
-          alert('Vui lòng đăng nhập để thực hiện thao tác.');
-          return;
+        if (!token) { alert('Vui lòng đăng nhập để thực hiện thao tác.'); return; }
+        const { QuizzesAPI, VisibilityAPI } = await import('../utils/api');
+        const host = classes.find(c => c.id === classId) as any;
+        const isShared = host && host.accessType === 'shared';
+        if (isShared) {
+          await VisibilityAPI.removeAccess({ quizId }, token);
+        } else {
+          await QuizzesAPI.remove(quizId, token);
         }
-        const { QuizzesAPI } = await import('../utils/api');
-        await QuizzesAPI.remove(quizId, token);
         // Cập nhật state cục bộ
         setClasses(prev => prev.map(cls => {
           if (cls.id === classId) {
@@ -83,79 +89,91 @@ const ClassesPage: React.FC = () => {
 
 // Toggle public for class
   const handleToggleClassPublic = async (classId: string, current: boolean) => {
-    if (!window.confirm(`Bạn có chắc muốn đặt lớp học ở trạng thái ${current ? 'Riêng tư' : 'Công khai'}?`)) return;
+    const newState = !current;
+    const message = newState 
+      ? 'Bạn có chắc muốn đặt lớp học ở trạng thái Công khai?\n\n✓ Lớp học sẽ được công khai\n✓ TẤT CẢ quiz trong lớp sẽ được công khai\n✓ Sau đó bạn có thể đặt riêng tư từng quiz riêng lẻ'
+      : 'Bạn có chắc muốn đặt lớp học ở trạng thái Riêng tư?\n\n✓ Lớp học sẽ được đặt riêng tư\n✓ Các quiz đang CÔNG KHAI sẽ được đặt riêng tư\n✓ Các quiz đã riêng tư sẽ giữ nguyên';
+    
+    if (!window.confirm(message)) return;
+    
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
-      const updated = await ClassesAPI.update(classId, { isPublic: !current }, token);
+      const { VisibilityAPI } = await import('../utils/api');
+      
+      // Toggle class public state - backend will sync quizzes accordingly
+      await VisibilityAPI.publicToggle({ targetType: 'class', targetId: classId, enabled: newState }, token);
 
-      // When class public/private toggled, sync all quizzes' published accordingly
-      const target = classes.find(c => c.id === classId);
-      const quizzes = (target?.quizzes as Quiz[]) || [];
-      await Promise.all(quizzes.map(q => QuizzesAPI.update((q as any).id, { published: !current }, token).catch(() => null)));
-
-      setClasses(prev => prev.map(c =>
-        c.id === classId
-          ? {
-              ...c,
-              isPublic: updated?.isPublic ?? !current,
-              quizzes: c.quizzes ? (c.quizzes as Quiz[]).map(q => ({ ...q, published: !current } as any)) : c.quizzes,
-              updatedAt: updated?.updatedAt ? new Date(updated.updatedAt) : new Date(),
-            }
-          : c
-      ));
-      alert(!current ? 'Đã đặt công khai lớp học' : 'Đã đặt riêng tư lớp học');
+      // Reload classes to sync all quiz published states and icons
+      setLoading(true);
+      await loadMyClasses();
+      
+      const successMsg = newState 
+        ? '✅ Đã đặt công khai lớp học và TẤT CẢ quiz bên trong\n\nBạn có thể đặt riêng tư từng quiz riêng lẻ sau' 
+        : '✅ Đã đặt riêng tư lớp học\n\n• Quiz đang công khai → đã chuyển riêng tư\n• Quiz đã riêng tư → giữ nguyên';
+      alert(successMsg);
     } catch (e) {
       console.error('toggle public failed', e);
-      alert('Không thể cập nhật công khai');
+      alert('❌ Không thể cập nhật trạng thái công khai');
     }
   };
 
-  const handleShareClass = (classId: string) => {
+  const handleShareClass = async (classId: string) => {
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (token) {
+        const { VisibilityAPI } = await import('../utils/api');
+        await VisibilityAPI.shareToggle({ targetType: 'class', targetId: classId, enabled: true }, token);
+      }
+    } catch {}
     setShareData({ type: 'class', id: classId });
     setShareOpen(true);
   };
 
-  const handleShareQuiz = (quizId: string) => {
+  const handleShareQuiz = async (quizId: string) => {
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (token) {
+        const { VisibilityAPI } = await import('../utils/api');
+        await VisibilityAPI.shareToggle({ targetType: 'quiz', targetId: quizId, enabled: true }, token);
+      }
+    } catch {}
     setShareData({ type: 'quiz', id: quizId });
     setShareOpen(true);
   };
 
 // Toggle publish for quiz: if publishing and class is private -> make class public, but only this quiz is published
   const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
-    if (!window.confirm(`Bạn có chắc muốn đặt quiz ở trạng thái ${current ? 'Nháp (riêng tư)' : 'Công khai'}?`)) return;
+    const newState = !current;
+    const message = newState
+      ? 'Bạn có chắc muốn đặt quiz ở trạng thái Công khai?\n\n✓ Quiz sẽ được công khai\n✓ Lớp học chứa quiz cũng sẽ được đặt công khai (nếu đang private)\n✓ Các quiz khác trong lớp GIỮ NGUYÊN trạng thái'
+      : 'Bạn có chắc muốn đặt quiz ở trạng thái Riêng tư?\n\n✓ CHỈ quiz này sẽ được đặt riêng tư\n✓ Lớp học giữ nguyên trạng thái công khai';
+    
+    if (!window.confirm(message)) return;
+    
     try {
       const { getToken } = await import('../utils/auth');
       const token = getToken();
       if (!token) { alert('Vui lòng đăng nhập'); return; }
-      const { QuizzesAPI, ClassesAPI } = await import('../utils/api');
+      const { VisibilityAPI } = await import('../utils/api');
 
-      // Find host class of this quiz
-      const host = classes.find(c => (c.quizzes as Quiz[])?.some(q => (q as any).id === quizId));
+      // Toggle public state for quiz via visibility API
+      await VisibilityAPI.publicToggle({ targetType: 'quiz', targetId: quizId, enabled: newState }, token);
 
-      // Update quiz published status
-      const updated = await QuizzesAPI.update(quizId, { published: !current }, token);
+      // Reload classes to sync quiz and class states and update icons
+      setLoading(true);
+      await loadMyClasses();
 
-      // If publishing and class is currently private, make class public (but do NOT touch other quizzes)
-      if (!current && host && !host.isPublic) {
-        await ClassesAPI.update(host.id, { isPublic: true }, token);
-      }
-
-      setClasses(prev => prev.map(cls => {
-        const isHost = host && cls.id === host.id;
-        return {
-          ...cls,
-          ...(isHost && !current && !cls.isPublic ? { isPublic: true } : {}),
-          quizzes: (cls.quizzes as Quiz[])?.map(q => (q && (q as any).id === quizId ? { ...q, ...(updated || {}), updatedAt: new Date() } : q))
-        } as any;
-      }));
-
-      alert(!current ? 'Đã xuất bản quiz' : 'Đã đặt quiz ở trạng thái nháp');
+      const message = newState 
+        ? '✅ Đã xuất bản quiz\n\n• Quiz đã được công khai\n• Lớp học cũng đã được đặt công khai\n• Các quiz khác giữ nguyên trạng thái'
+        : '✅ Đã đặt quiz ở trạng thái riêng tư\n\n• Chỉ quiz này được đặt riêng tư\n• Lớp học giữ nguyên công khai';
+      alert(message);
     } catch (e) {
       console.error('toggle publish failed', e);
-      alert('Không thể cập nhật trạng thái quiz');
+      alert('❌ Không thể cập nhật trạng thái quiz');
     }
   };
 
@@ -187,6 +205,7 @@ const ClassesPage: React.FC = () => {
           name: cls.name,
           description: cls.description,
           isPublic: cls.isPublic,
+          accessType: (cls as any).accessType,
           quizzes: quizzes.map((q: any) => ({
             ...q,
             createdAt: new Date(q.createdAt),
@@ -279,15 +298,25 @@ const ClassesPage: React.FC = () => {
       // Fallback: clone from public by frontend if backend import route is unavailable
       const doClientClone = async (kind: 'class'|'quiz', id: string) => {
         const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const sanitize = (raw: string, kindHint: 'class'|'quiz') => {
+          if (!raw) return raw;
+          if (raw.startsWith('http')) {
+            const marker = kindHint === 'class' ? '/class/' : '/quiz/';
+            const idx = raw.indexOf(marker);
+            if (idx >= 0) return raw.substring(idx + marker.length).split(/[?#/]/)[0];
+          }
+          return raw;
+        };
+        const normId = sanitize(id, kind);
         // Load all public classes to find source
         const mine = await ClassesAPI.listMine(token).catch(() => []);
         const pub = await ClassesAPI.listPublic(token).catch(() => []);
         const all = [...pub, ...mine];
 
         if (kind === 'class') {
-          const src = all.find((c: any) => c.id === id);
+          const src = all.find((c: any) => c.id === normId);
           // Fetch quizzes of source class even if class meta not found in lists
-          const qzs = await QuizzesAPI.byClass(src ? src.id : id, token).catch(() => []);
+          const qzs = await QuizzesAPI.byClass(src ? src.id : normId, token).catch(() => []);
           if (!src && (!qzs || qzs.length === 0)) throw new Error('Không tìm thấy lớp học nguồn');
           // Create new class under current user (private)
           const { ClassesAPI: CAPI } = await import('../utils/api');
@@ -305,17 +334,15 @@ const ClassesPage: React.FC = () => {
           didImport = true;
         } else {
           // kind === 'quiz'
-          // Find the source class that contains this quiz
-          let host: any | null = null;
-          let quizData: any | null = null;
-          for (const c of all) {
-            const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
-            const found = qzs.find((qq: any) => qq.id === id);
-            if (found) { host = c; quizData = found; break; }
-          }
-          if (!host || !quizData) throw new Error('Không tìm thấy quiz nguồn');
+          // Use new API to get quiz directly by ID (supports published quizzes)
+          const quizData = await QuizzesAPI.getById(normId, token).catch(() => null);
+          if (!quizData) throw new Error('Không tìm thấy quiz nguồn hoặc quiz chưa xuất bản');
+          
           // Create new class under current user (private)
-          const created = await ClassesAPI.create({ name: host.name, description: host.description || '', isPublic: false }, token);
+          const className = quizData.class?.name || 'Lớp đã nhập';
+          const classDesc = quizData.class?.description || '';
+          const created = await ClassesAPI.create({ name: className, description: classDesc, isPublic: false }, token);
+          
           // Clone only this quiz (private)
           await QuizzesAPI.create({
             classId: created.id,
@@ -330,12 +357,16 @@ const ClassesPage: React.FC = () => {
 
       const rawUpper = raw.toUpperCase();
       if (isShortIdCode(rawUpper)) {
-        // Resolve short code by scanning public (and mine as fallback)
+        // Resolve short code by scanning public, mine, and shared items
         const mine = await ClassesAPI.listMine(token).catch(() => []);
         const pub = await ClassesAPI.listPublic(token).catch(() => []);
-        const all = [...pub, ...mine];
+        const { VisibilityAPI } = await import('../utils/api');
+        const sharedClasses = await VisibilityAPI.listSharedClasses(token).catch(() => []);
+        const sharedQuizzes = await VisibilityAPI.listSharedQuizzes(token).catch(() => []);
+        
+        const allClasses = [...pub, ...mine, ...sharedClasses];
         let foundClassId: string | null = null;
-        for (const c of all) {
+        for (const c of allClasses) {
           if (buildShortId(c.id).toUpperCase() === rawUpper) { foundClassId = c.id; break; }
         }
         if (foundClassId) {
@@ -343,10 +374,15 @@ const ClassesPage: React.FC = () => {
           usedType = 'class';
         } else {
           // search quizzes under classes
-          for (const c of all) {
+          for (const c of allClasses) {
             const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
             const matched = qzs.find((q: any) => buildShortId(q.id).toUpperCase() === rawUpper);
             if (matched) { payload.quizId = matched.id; usedType = 'quiz'; break; }
+          }
+          // also check shared quizzes directly
+          if (!usedType) {
+            const matched = sharedQuizzes.find((q: any) => buildShortId(q.id).toUpperCase() === rawUpper);
+            if (matched) { payload.quizId = matched.id; usedType = 'quiz'; }
           }
         }
         if (!usedType) throw new Error('Không tìm thấy nội dung với mã này');
@@ -356,7 +392,9 @@ const ClassesPage: React.FC = () => {
           // treat as short code embedded in link
           const mine = await ClassesAPI.listMine(token).catch(() => []);
           const pub = await ClassesAPI.listPublic(token).catch(() => []);
-          const all = [...pub, ...mine];
+          const { VisibilityAPI } = await import('../utils/api');
+          const sharedClasses = await VisibilityAPI.listSharedClasses(token).catch(() => []);
+          const all = [...pub, ...mine, ...sharedClasses];
           const code = idPart.toUpperCase();
           let found: string | null = null;
           for (const c of all) { if (buildShortId(c.id).toUpperCase() === code) { found = c.id; break; } }
@@ -371,12 +409,20 @@ const ClassesPage: React.FC = () => {
         if (isShortIdCode(idPart.toUpperCase())) {
           const mine = await ClassesAPI.listMine(token).catch(() => []);
           const pub = await ClassesAPI.listPublic(token).catch(() => []);
-          const all = [...pub, ...mine];
+          const { VisibilityAPI } = await import('../utils/api');
+          const sharedClasses = await VisibilityAPI.listSharedClasses(token).catch(() => []);
+          const sharedQuizzes = await VisibilityAPI.listSharedQuizzes(token).catch(() => []);
+          const all = [...pub, ...mine, ...sharedClasses];
           const code = idPart.toUpperCase();
           let found: string | null = null;
           outer: for (const c of all) {
             const qzs = await QuizzesAPI.byClass(c.id, token).catch(() => []);
             for (const q of qzs) { if (buildShortId(q.id).toUpperCase() === code) { found = q.id; break outer; } }
+          }
+          // also check shared quizzes directly
+          if (!found) {
+            const matched = sharedQuizzes.find((q: any) => buildShortId(q.id).toUpperCase() === code);
+            if (matched) found = matched.id;
           }
           if (found) { payload.quizId = found; usedType = 'quiz'; }
           else throw new Error('Không tìm thấy quiz với mã này');
@@ -397,16 +443,24 @@ const ClassesPage: React.FC = () => {
 
       if (!didImport && usedType && (payload.classId || payload.quizId)) {
         try {
-          await ClassesAPI.import(payload, token);
+          const { VisibilityAPI } = await import('../utils/api');
+          await VisibilityAPI.claim(payload as any, token);
           didImport = true;
         } catch (err: any) {
-          // Backend route missing -> fallback to client clone
-          if (usedType === 'class' && payload.classId) {
-            await doClientClone('class', payload.classId);
-          } else if (usedType === 'quiz' && payload.quizId) {
-            await doClientClone('quiz', payload.quizId);
-          } else {
-            throw err;
+          try {
+            await ClassesAPI.import(payload, token);
+            didImport = true;
+          } catch (err2: any) {
+            // Backend route missing -> fallback to client clone
+            if (usedType === 'class' && payload.classId) {
+              await doClientClone('class', payload.classId);
+              didImport = true;
+            } else if (usedType === 'quiz' && payload.quizId) {
+              await doClientClone('quiz', payload.quizId);
+              didImport = true;
+            } else {
+              throw err2;
+            }
           }
         }
       }
@@ -647,7 +701,8 @@ const ClassesPage: React.FC = () => {
                         
                         <button
                           onClick={() => handleShareClass(classRoom.id)}
-                          className="btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Chia sẻ lớp học"
                         >
                           {/* Unified Share Icon */}
@@ -657,8 +712,9 @@ const ClassesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
-                          className="btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
-                          title="Công khai/ Riêng tư lớp học"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={`Trạng thái: ${classRoom.isPublic ? 'Công khai' : 'Riêng tư'}\n\nNhấn để ${classRoom.isPublic ? 'đặt riêng tư' : 'công khai'} lớp học và tất cả quiz`}
                         >
                           {/* Public vs Private Icon */}
                           {classRoom.isPublic ? (
@@ -675,7 +731,8 @@ const ClassesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
-                          className="btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Chỉnh sửa lớp học"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -833,7 +890,8 @@ const ClassesPage: React.FC = () => {
                         {/* Nút chia sẻ & công khai cho mobile */}
                         <button
                           onClick={() => handleShareClass(classRoom.id)}
-                          className="w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Chia sẻ lớp học"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -842,18 +900,27 @@ const ClassesPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
-                          className="w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
-                          title="Công khai / Riêng tư"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={`${classRoom.isPublic ? 'Công khai' : 'Riêng tư'}`}
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.4 15a8 8 0 10-14.8 0" />
-                          </svg>
+                          {classRoom.isPublic ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 11h14v10H5z" />
+                            </svg>
+                          )}
                         </button>
                         {/* Nút chỉnh sửa & xóa lớp học - mobile */}
                         <button
                           onClick={() => navigate(`/edit-class/${classRoom.id}`, { state: { classRoom } })}
-                          className="w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Chỉnh sửa lớp học"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -909,7 +976,8 @@ const ClassesPage: React.FC = () => {
                                   </Link>
                                   <button
                                     onClick={() => handleShareQuiz(quiz.id)}
-                                    className="text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chia sẻ"
                                   >
                                     {/* Unified Share Icon */}
@@ -919,8 +987,9 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   <button
                                     onClick={() => handleToggleQuizPublished(quiz.id, Boolean((quiz as any).published))}
-                                    className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
-                                    title="Công khai / Riêng tư"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={`Trạng thái: ${(quiz as any).published ? 'Công khai' : 'Nháp (Riêng tư)'}\n\nNhấn để ${(quiz as any).published ? 'đặt nháp' : 'công khai quiz'}`}
                                   >
                                     {/* Public vs Private Icon */}
                                     {(quiz as any).published ? (
@@ -944,7 +1013,8 @@ const ClassesPage: React.FC = () => {
                                       quizDescription: quiz.description,
                                       isEdit: true
                                     } })}
-                                    className="text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chỉnh sửa bài kiểm tra"
                                   >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -980,7 +1050,8 @@ const ClassesPage: React.FC = () => {
                                   </Link>
                                   <button
                                     onClick={() => handleShareQuiz(quiz.id)}
-                                    className="w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chia sẻ"
                                   >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -989,8 +1060,9 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   <button
                                     onClick={() => handleToggleQuizPublished(quiz.id, Boolean((quiz as any).published))}
-                                    className="w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110"
-                                    title="Công khai / Riêng tư"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={`${(quiz as any).published ? 'Công khai' : 'Nháp'}`}
                                   >
                                     {(quiz as any).published ? (
                                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1013,7 +1085,8 @@ const ClassesPage: React.FC = () => {
                                       quizDescription: quiz.description,
                                       isEdit: true
                                     } })}
-                                    className="w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                    disabled={(classRoom as any).accessType === 'shared'}
+                                    className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chỉnh sửa bài kiểm tra"
                                   >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

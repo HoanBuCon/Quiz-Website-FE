@@ -93,3 +93,81 @@ Notes for future agents
 - Local demo data: HomePage seeds public classes and persists quizzes to localStorage; keep this in mind when testing navigation or cleanup logic.
 - ClassesPage supports both legacy quizIds and embedded quiz objects; helper mapping code normalizes to Quiz[].
 - Deleting a class removes associated quizzes from localStorage but intentionally leaves uploaded documents intact.
+
+---
+
+## Sharing & Visibility (Public/Private) Logic
+
+This section documents how sharing and visibility work for Class and Quiz across frontend and backend.
+
+### Concepts
+- Class.isPublic (boolean): class discoverability for others.
+- Quiz.published (boolean): whether a quiz is accessible by non-owners.
+- Ownership: Class/Quiz bound to `ownerId`; owner-only operations enforced.
+- Short ID (share code): deterministic code like `ABC123456789` from a stable hash of the id.
+
+### Data model (Prisma)
+- Class: has `isPublic`.
+- Quiz: has `published`, belongs to a Class and an Owner.
+  - File: `quiz-backend/prisma/schema.prisma` (Class: lines 23-33, Quiz: lines 35-48)
+
+### Backend enforcement
+- All routes require JWT auth (`quiz-backend/middleware/auth.js`).
+
+Classes API (`quiz-backend/routes/classes.js`)
+- GET `/classes?mine=true` → list owner’s classes only.
+- GET `/classes` → list public classes only (`isPublic=true`).
+- PUT `/classes/:id` and DELETE `/classes/:id` → owner only.
+- POST `/classes/import` → clone by id:
+  - Import class: source must be public or owned by requester; creates a new private class and clones quizzes as private. (lines 78-87)
+  - Import quiz: source quiz’s class must be public or owned; creates a new private class and a private clone of that quiz. (lines 89-96)
+
+Quizzes API (`quiz-backend/routes/quizzes.js`)
+- GET `/quizzes/by-class/:classId` → allowed if (owner) OR (class is public). Returns all quizzes of the class (backend does not filter by `published`). (lines 5-15)
+- GET `/quizzes/:id` → fetch by exact id OR by short code (compares `buildShortId(q.id)`):
+  - Owner: always allowed.
+  - Non-owner: allowed only if `published=true` (else 403 “Quiz chưa xuất bản”). (lines 17-58)
+- POST `/quizzes` and PUT `/quizzes/:id` → owner only; create/update quiz + questions. (create: 60-89; update: 91-121)
+
+Share utilities (backend): `quiz-backend/utils/share.js` (short code generation/validation).
+
+### Frontend behavior
+
+Sharing artefacts
+- Short code generation: `src/utils/share.ts` (`buildShortId`, `isShortIdCode`).
+- Share links built in `src/pages/ClassesPage.tsx`:
+  - Class link: `/class/:id` (uses full id; short code shown separately in modal). (lines 252-257, 1115-1141)
+  - Quiz link: `/quiz/:id` (full id; backend also accepts short code).
+
+Owner toggles (Classes page)
+- Toggle Class public/private: `handleToggleClassPublic` updates class and then sets ALL quizzes in that class so `published = class.isPublic` (publish all on public; unpublish all on private). (lines 84-114, 95-108)
+- Toggle a single Quiz published/draft: `handleToggleQuizPublished` flips only that quiz; if turning ON while class is private → also sets the class to public; does not change other quizzes. (lines 126-160)
+
+Viewing access
+- Class view route `/class/:classIdOrShort`: `src/pages/ClassViewPage.tsx`
+  - Resolves id or short by scanning mine + public lists. (lines 16-32)
+  - Loads quizzes via `/quizzes/by-class/:classId` and, if not owner, filters to only `published` quizzes on the client. (line 32)
+- Quiz route `/quiz/:quizIdOrShort`: `src/pages/QuizPage.tsx`
+  - Calls `/quizzes/:id` (supports id or short). Owner always allowed; non-owner only if `published`. (lines 22-63)
+
+Importing by ID/Link/Short code (Classes page)
+- Parser supports raw short codes, raw ids, and links containing `/class/` or `/quiz/`.
+- Primary: POST `/classes/import` with `{ classId? | quizId? }`.
+- Fallback: client-side clone (`doClientClone`):
+  - Clone Class → create new private class and copy all quizzes as private. (lines 287-306)
+  - Clone Quiz → fetch via `QuizzesAPI.getById` (id or short), require accessibility (owner or published), create new private class, copy that quiz as private. (lines 307-325)
+  - File: `src/pages/ClassesPage.tsx` (lines 259-409)
+
+### Interplay and UX summary
+- Class → public: all quizzes become published.
+- Class → private: all quizzes become unpublished.
+- Single quiz → publish while class is private: class becomes public; other quizzes unchanged.
+- Non-owners:
+  - Can list public classes.
+  - See only published quizzes on a class page.
+  - Can open a quiz link only if that quiz is published.
+- Owners can access/edit regardless of visibility (subject to endpoint checks).
+
+### Notable implications
+- Backend returns all quizzes in `/quizzes/by-class/:classId` for public classes; client filters unpublished for non-owners. Consider server-side filtering for stronger guarantees.
+- All shared links still require authentication; FE redirects unauthenticated users.

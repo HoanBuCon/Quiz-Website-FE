@@ -34,31 +34,25 @@ const QuizPage: React.FC = () => {
           navigate('/');
           return;
         }
-        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
-        // Tìm quiz theo id bằng cách duyệt qua lớp của tôi và lớp public
-        const mine = await ClassesAPI.listMine(token);
-        const pub = await ClassesAPI.listPublic(token);
-        let found: any = null;
-        for (const cls of [...mine, ...pub]) {
-          const qzs = await QuizzesAPI.byClass(cls.id, token);
-          const q = qzs.find((qq: any) => qq.id === quizId || buildShortId(qq.id) === quizId);
-          if (q) { found = q; break; }
-        }
+        const { QuizzesAPI } = await import('../utils/api');
+        
+        // Use direct API call which handles public/share/owner logic in backend
+        const found = await QuizzesAPI.getById(quizId, token);
+        
         if (found) {
           setQuizTitle(found.title);
           setQuestions(found.questions || []);
           setEffectiveQuizId(found.id);
-          // If not owner (found via public classes only) and quiz is not published, block access
-          const inMine = mine.some((c: any) => c.id === found.classId);
-          if (!inMine && !found.published) {
-            throw new Error('Quiz chưa xuất bản');
-          }
+        } else {
+          throw new Error('Quiz không tìm thấy');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading quiz:', error);
         setQuestions([{
           id: 'error',
-          question: 'Quiz không khả dụng hoặc chưa xuất bản',
+          question: error?.message?.includes('Forbidden') || error?.message?.includes('Quiz chưa xuất bản')
+            ? 'Quiz không khả dụng hoặc chưa được chia sẻ'
+            : 'Quiz không tìm thấy',
           type: 'single',
           options: ['Quay lại'],
           correctAnswers: ['Quay lại']

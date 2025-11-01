@@ -26,8 +26,8 @@ const ClassViewPage: React.FC = () => {
         if (cls) setTitle(cls.name);
         const effectiveClassId = cls ? cls.id : classId;
         const qzs = await QuizzesAPI.byClass(effectiveClassId, token);
-        const mineIds = new Set(mine.map((m: any) => m.id));
-        const owner = mineIds.has(effectiveClassId);
+        const ownerIds = new Set(mine.filter((m: any) => m.accessType === 'owner').map((m: any) => m.id));
+        const owner = ownerIds.has(effectiveClassId);
         setIsOwner(owner);
         const visible = owner ? qzs : qzs.filter((q: any) => q.published);
         setQuizzes(visible);

@@ -2,13 +2,42 @@ const express = require('express');
 const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
-// List classes: mine or public
+// List classes: mine (owned + shared) or public (from PublicItem)
 router.get('/', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const mine = req.query.mine === 'true';
-  const where = mine ? { ownerId: req.user.id } : { isPublic: true };
-  const classes = await prisma.class.findMany({ where, include: { quizzes: true } });
-  res.json(classes);
+
+  if (mine) {
+    const owned = await prisma.class.findMany({ where: { ownerId: req.user.id }, include: { quizzes: true } });
+    const sharedAccess = await prisma.sharedAccess.findMany({ where: { userId: req.user.id, targetType: 'class' } });
+    const sharedIds = sharedAccess.map(s => s.targetId);
+    const shared = sharedIds.length > 0
+      ? await prisma.class.findMany({ where: { id: { in: sharedIds } }, include: { quizzes: true } })
+      : [];
+
+    const withFlags = [
+      ...owned.map(c => ({ ...c, accessType: 'owner' })),
+      ...shared.map(c => ({ ...c, accessType: 'shared' })),
+    ];
+    return res.json(withFlags);
+  }
+
+  // public classes from PublicItem table OR legacy isPublic flag
+  const pub = await prisma.publicItem.findMany({ where: { targetType: 'class' } });
+  const ids = pub.map(p => p.targetId);
+  const classes = await prisma.class.findMany({
+    where: {
+      OR: [
+        { id: { in: ids } },
+        { isPublic: true },
+      ]
+    },
+    include: { quizzes: true }
+  });
+
+  // mark as public for FE backward-compat
+  const withPublic = classes.map(c => ({ ...c, isPublic: true, accessType: 'public' }));
+  res.json(withPublic);
 });
 
 // Create class
@@ -28,6 +57,20 @@ router.put('/:id', authRequired, async (req, res) => {
   if (!found || found.ownerId !== req.user.id) return res.status(404).json({ message: 'Not found' });
   const { name, description, isPublic } = req.body || {};
   const cls = await prisma.class.update({ where: { id }, data: { name, description, isPublic } });
+
+  // sync PublicItem when isPublic provided
+  if (typeof isPublic === 'boolean') {
+    if (isPublic) {
+      await prisma.publicItem.upsert({
+        where: { targetType_targetId: { targetType: 'class', targetId: id } },
+        create: { targetType: 'class', targetId: id },
+        update: {},
+      });
+    } else {
+      await prisma.publicItem.deleteMany({ where: { targetType: 'class', targetId: id } });
+    }
+  }
+
   res.json(cls);
 });
 
