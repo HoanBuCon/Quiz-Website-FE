@@ -1,5 +1,51 @@
 /* Responsive Design for Quiz Website */
 
+/* Desktop improvements - Đồng bộ button style với mobile */
+@media (min-width: 769px) {
+  /* Button improvements for desktop */
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.625rem 1rem;
+    min-height: 40px;
+    font-size: 0.9375rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  /* Icon buttons - vuông vắn hơn */
+  button.btn-secondary svg,
+  button.text-purple-600 svg,
+  button.text-red-600 svg,
+  button.text-blue-600 svg,
+  button.text-green-600 svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+  
+  /* Button chỉ có icon */
+  button.btn-secondary:has(svg):not(:has(*:not(svg))),
+  button[class*="text-"]:has(svg):not(:has(*:not(svg))) {
+    padding: 0.625rem;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Button có cả icon và text */
+  button.btn-secondary:has(svg):has(*:not(svg)) {
+    padding: 0.625rem 1rem;
+    gap: 0.5rem;
+  }
+}
+
 /* Global responsive improvements */
 @media (max-width: 640px) {
   /* Small screens - phones */
@@ -41,6 +87,20 @@
   
   .space-y-4 > * + * {
     margin-top: 0.75rem;
+  }
+  
+  /* Icon buttons - căn giữa cho các nút icon */
+  button[class*="text-purple-"],
+  button[class*="text-red-"],
+  button[class*="text-blue-"],
+  button[class*="text-green-"],
+  button[class*="text-yellow-"],
+  button[class*="text-gray-"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
   }
   
   /* Quiz page specific */
@@ -153,6 +213,19 @@
   .btn-secondary {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+  
+  /* Đảm bảo thẻ <a> với class btn cũng căn giữa */
+  a.btn-primary,
+  a.btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
   }
   
   .form-container {
