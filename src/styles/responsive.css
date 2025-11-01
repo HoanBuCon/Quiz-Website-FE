@@ -44,6 +44,96 @@
     padding: 0.625rem 1rem;
     gap: 0.5rem;
   }
+  
+  /* Force mobile layout cho trang Lớp học - ẩn desktop layout */
+  .card .hidden.sm\:flex {
+    display: none !important;
+  }
+  
+  /* Force mobile layout cho trang Lớp học - hiển thị mobile layout */
+  .card .sm\:hidden {
+    display: block !important;
+    width: 100%;
+  }
+  
+  /* Force mobile layout cho quiz items trong lớp */
+  .card .space-y-2 .hidden.sm\:flex {
+    display: none !important;
+  }
+  
+  .card .space-y-2 .sm\:hidden {
+    display: block !important;
+    width: 100%;
+  }
+  
+  /* Tỉ lệ 60-40 cho nút Tham gia/Làm bài và cụm nút action */
+  /* Container flex - full width */
+  .card .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  /* Nút chính (Tham gia/Làm bài) - chiếm 60% */
+  .card .sm\:hidden .flex.flex-row.gap-2 .btn-primary,
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary.w-full,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.btn-primary {
+    flex: 0 0 60%;
+    min-width: 0;
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+  }
+  
+  /* Dropdown container cũng chiếm 60% */
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative {
+    flex: 0 0 60%;
+    min-width: 0;
+    max-width: 60%;
+  }
+  
+  /* Button trong dropdown container - chiếm full width của parent */
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative > button.btn-primary {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 100%;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+  }
+  
+  /* Các nút icon - tự giãn ra để chiếm hết không gian còn lại */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: auto;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  
+  /* Căn giữa icon SVG trong các nút action */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] svg {
+    display: block;
+    margin: auto;
+    flex-shrink: 0;
+  }
+  
+  /* Wrapper cho tất cả icon buttons - chiếm 1 phần flex bằng nút chính */
+  .card .sm\:hidden .flex.flex-row.gap-2 {
+    justify-content: space-between;
+  }
 }
 
 /* Global responsive improvements */
@@ -101,6 +191,84 @@
     justify-content: center;
     min-width: 40px;
     min-height: 40px;
+  }
+  
+  /* Force mobile layout cho trang Lớp học ở tablet */
+  .card .hidden.sm\:flex {
+    display: none !important;
+  }
+  
+  .card .sm\:hidden {
+    display: block !important;
+    width: 100%;
+  }
+  
+  .card .space-y-2 .hidden.sm\:flex {
+    display: none !important;
+  }
+  
+  .card .space-y-2 .sm\:hidden {
+    display: block !important;
+    width: 100%;
+  }
+  
+  /* Tỉ lệ 60-40 cho mobile/tablet */
+  .card .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .card .sm\:hidden .flex.flex-row.gap-2 .btn-primary,
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary.w-full,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.btn-primary {
+    flex: 0 0 60%;
+    min-width: 0;
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative {
+    flex: 0 0 60%;
+    min-width: 0;
+    max-width: 60%;
+  }
+  
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative > button.btn-primary {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 100%;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+  }
+  
+  /* Các nút icon mobile - tự giãn ra */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: auto;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] svg {
+    display: block;
+    margin: auto;
+    flex-shrink: 0;
   }
   
   /* Quiz page specific */
@@ -230,6 +398,34 @@
   
   .form-container {
     padding: 1rem;
+  }
+  
+  /* Điều chỉnh tỉ lệ cho màn hình nhỏ - nút chính co lại, nút action giữ nguyên */
+  .card .sm\:hidden .flex.flex-row.gap-2 .btn-primary,
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary.w-full,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.btn-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+  
+  /* Các nút icon giữ kích thước cố định trên màn hình nhỏ */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] {
+    flex: 0 0 auto;
+    min-width: 36px;
+    max-width: 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0.375rem;
   }
 }
 
