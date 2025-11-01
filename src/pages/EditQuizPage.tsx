@@ -290,29 +290,84 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // Validation trước khi xuất bản
-      const invalidQuestions = [];
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
+      // Validation và làm sạch dữ liệu trước khi xuất bản
+      const invalidQuestions: string[] = [];
+      const cleanedQuestions = questions.map((q, i) => {
         if (!q.question.trim()) {
           invalidQuestions.push(`Câu ${i + 1}: Chưa có nội dung câu hỏi`);
-          continue;
+          return q;
         }
+        
         if (q.type === 'text') {
-          if (!q.correctAnswers[0]?.trim()) {
+          const ca = Array.isArray(q.correctAnswers) ? q.correctAnswers as string[] : [];
+          if (!(ca[0]?.trim())) {
             invalidQuestions.push(`Câu ${i + 1}: Câu hỏi tự luận chưa có đáp án đúng`);
           }
+          return q;
+        } else if (q.type === 'drag') {
+          const opt = (q.options as any) || { targets: [], items: [] };
+          const targets: any[] = Array.isArray(opt.targets) ? opt.targets.filter((t: any) => (t.label || '').trim()) : [];
+          const items: any[] = Array.isArray(opt.items) ? opt.items.filter((t: any) => (t.label || '').trim()) : [];
+          const mapping = (q.correctAnswers as Record<string, string>) || {};
+          
+          // Cho phép 1 nhóm trở lên
+          if (targets.length < 1) invalidQuestions.push(`Câu ${i + 1}: Kéo thả cần ít nhất 1 nhóm/ô đích`);
+          if (items.length < 1) invalidQuestions.push(`Câu ${i + 1}: Kéo thả cần ít nhất 1 đáp án`);
+          // Không bắt buộc phải map hết - đáp án không map = không thuộc nhóm nào
+          
+          // Trả về câu hỏi drag đã được làm sạch
+          return {
+            ...q,
+            options: { targets, items },
+            correctAnswers: mapping
+          };
+        } else if (q.type === 'composite') {
+          // Validate composite question
+          const subQuestions = q.subQuestions || [];
+          if (subQuestions.length === 0) {
+            invalidQuestions.push(`Câu ${i + 1}: Câu hỏi mẹ cần ít nhất 1 câu hỏi con`);
+            return q;
+          }
+          
+          // Validate each sub-question
+          subQuestions.forEach((subQ, subIdx) => {
+            if (!subQ.question.trim()) {
+              invalidQuestions.push(`Câu ${i + 1} - Câu con ${subIdx + 1}: Chưa có nội dung câu hỏi`);
+            }
+            
+            if (subQ.type === 'text') {
+              const ca = Array.isArray(subQ.correctAnswers) ? subQ.correctAnswers as string[] : [];
+              if (!ca[0]?.trim()) {
+                invalidQuestions.push(`Câu ${i + 1} - Câu con ${subIdx + 1}: Chưa có đáp án đúng`);
+              }
+            } else {
+              const validOpts = Array.isArray(subQ.options) ? (subQ.options as string[]).filter((opt: string) => opt.trim()) : [];
+              if (validOpts.length < 2) {
+                invalidQuestions.push(`Câu ${i + 1} - Câu con ${subIdx + 1}: Cần ít nhất 2 đáp án`);
+              }
+              const ca = Array.isArray(subQ.correctAnswers) ? subQ.correctAnswers as string[] : [];
+              const validCorrect = ca.filter((ans: string) => validOpts.includes(ans));
+              if (validCorrect.length === 0) {
+                invalidQuestions.push(`Câu ${i + 1} - Câu con ${subIdx + 1}: Chưa chọn đáp án đúng`);
+              }
+            }
+          });
+          
+          return q;
         } else {
-          const validOptions = q.options?.filter(opt => opt.trim()) || [];
+          const validOptions: string[] = Array.isArray(q.options) ? (q.options as string[]).filter((opt: string) => opt.trim()) : [];
           if (validOptions.length < 2) {
             invalidQuestions.push(`Câu ${i + 1}: Câu hỏi trắc nghiệm cần ít nhất 2 đáp án`);
           }
-          const validCorrectAnswers = q.correctAnswers.filter(ans => validOptions.includes(ans));
+          const ca = Array.isArray(q.correctAnswers) ? q.correctAnswers as string[] : [];
+          const validCorrectAnswers = ca.filter((ans: string) => validOptions.includes(ans));
           if (validCorrectAnswers.length === 0) {
             invalidQuestions.push(`Câu ${i + 1}: Chưa chọn đáp án đúng`);
           }
+          return q;
         }
-      }
+      });
+      
       if (invalidQuestions.length > 0) {
         alert(`Vui lòng sửa các lỗi sau:\n\n${invalidQuestions.join('\n')}`);
         return;
@@ -329,7 +384,7 @@ const EditQuizPage: React.FC = () => {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
           // giữ nguyên trạng thái published hiện tại (không thay đổi khi chỉnh sửa)
-          questions: questions,
+          questions: cleanedQuestions,
         }, token);
         toast.success('Cập nhật quiz thành công!');
         navigate('/classes');
@@ -371,7 +426,7 @@ const EditQuizPage: React.FC = () => {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
           published: false, // mặc định Private khi tạo mới
-          questions: questions,
+          questions: cleanedQuestions,
         }, token);
         toast.success('Xuất bản thành công!');
         navigate('/classes');
@@ -423,6 +478,7 @@ const EditQuizPage: React.FC = () => {
       options: q.options,
       correctAnswers: q.correctAnswers,
       explanation: q.explanation,
+      subQuestions: q.subQuestions, // Giữ lại subQuestions nếu có
       questionImage: undefined,
       optionImages: undefined
     }));
@@ -504,13 +560,37 @@ const EditQuizPage: React.FC = () => {
       
       if (q.type === 'text') {
         content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
+      } else if (q.type === 'composite') {
+        content += `(Câu hỏi mẹ chứa ${q.subQuestions?.length || 0} câu hỏi con)\n`;
+        if (q.subQuestions && q.subQuestions.length > 0) {
+          q.subQuestions.forEach((subQ, subIdx) => {
+            content += `  Câu con ${subIdx + 1}: ${subQ.question}\n`;
+            if (subQ.type === 'text') {
+              const answers = Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]).filter(a => a.trim()) : [];
+              if (answers.length > 0) {
+                content += `    Đáp án: ${answers.join(', ')}\n`;
+              }
+            } else if (Array.isArray(subQ.options)) {
+              (subQ.options as string[]).forEach((opt, optIdx) => {
+                const isCorrect = Array.isArray(subQ.correctAnswers) && (subQ.correctAnswers as string[]).includes(opt);
+                const prefix = isCorrect ? '*' : '';
+                const letter = String.fromCharCode(65 + optIdx);
+                content += `    ${prefix}${letter}. ${opt}\n`;
+              });
+            }
+          });
+        }
+      } else if (q.type === 'drag') {
+        content += `(Câu hỏi kéo thả)\n`;
       } else {
-        q.options?.forEach((option, optIndex) => {
-          const isCorrect = q.correctAnswers.includes(option);
-          const prefix = isCorrect ? '*' : '';
-          const letter = String.fromCharCode(65 + optIndex);
-          content += `${prefix}${letter}. ${option}\n`;
-        });
+        if (Array.isArray(q.options)) {
+          q.options.forEach((option, optIndex) => {
+            const isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(option);
+            const prefix = isCorrect ? '*' : '';
+            const letter = String.fromCharCode(65 + optIndex);
+            content += `${prefix}${letter}. ${option}\n`;
+          });
+        }
       }
       
       if (index < questionsArray.length - 1) {
@@ -600,7 +680,7 @@ const EditQuizPage: React.FC = () => {
 
   const QuestionEditor: React.FC<{ question: QuestionWithImages; index: number }> = ({ question, index }) => {
     const [editedQuestion, setEditedQuestion] = useState<QuestionWithImages>(question);
-    const savedOptionsRef = useRef<string[]>(question.options || ["", ""]);
+    const savedOptionsRef = useRef<string[]>(Array.isArray(question.options) ? question.options as string[] : ["", ""]);
 
     useEffect(() => {
       // Đảm bảo câu hỏi text luôn có ít nhất 1 đáp án trống
@@ -614,7 +694,7 @@ const EditQuizPage: React.FC = () => {
       }
       
       // Luôn đảm bảo có ít nhất 2 options để backup
-      const optionsBackup = question.options || ["", ""];
+      const optionsBackup = Array.isArray(question.options) ? (question.options as string[]) : ["", ""];
       savedOptionsRef.current = optionsBackup.length >= 2 ? optionsBackup : ["", ""];
     }, [question.id]);
 
@@ -629,7 +709,7 @@ const EditQuizPage: React.FC = () => {
 
       if (editedQuestion.type === 'text') {
         // Đối với câu hỏi text, đảm bảo có ít nhất một đáp án đúng
-        const validAnswers = editedQuestion.correctAnswers.filter(answer => answer?.trim());
+        const validAnswers = (editedQuestion.correctAnswers as string[]).filter((answer: string) => answer?.trim());
         if (validAnswers.length === 0) {
           alert('Vui lòng nhập ít nhất một đáp án đúng cho câu hỏi tự luận');
           return;
@@ -643,15 +723,83 @@ const EditQuizPage: React.FC = () => {
         
         console.log('Saving text question with data:', updatedData); // Debug log
         handleQuestionSave(question.id, updatedData);
+      } else if (editedQuestion.type === 'drag') {
+        // Lưu cấu trúc kéo thả: options.targets, options.items, correctAnswers là map itemId->targetId
+        const dragOpt = (editedQuestion.options as any) || { targets: [], items: [] };
+        const targets = Array.isArray(dragOpt.targets) ? dragOpt.targets.filter((t: any) => (t.label || '').trim()) : [];
+        const items = Array.isArray(dragOpt.items) ? dragOpt.items.filter((i: any) => (i.label || '').trim()) : [];
+        
+        // Cho phép 1 nhóm trở lên (không bắt buộc 2 nhóm)
+        if (targets.length < 1) { alert('Cần ít nhất 1 nhóm/ô đích'); return; }
+        if (items.length < 1) { alert('Cần ít nhất 1 đáp án'); return; }
+        
+        // Mapping cho phép undefined (đáp án không thuộc nhóm nào = đúng)
+        const mapping = (editedQuestion.correctAnswers as any) || {};
+        
+        const updatedData = {
+          ...editedQuestion,
+          options: { targets, items },
+          correctAnswers: mapping, // Không bắt buộc phải map hết
+        };
+        handleQuestionSave(question.id, updatedData);
+      } else if (editedQuestion.type === 'composite') {
+        // Đối với câu hỏi mẹ
+        const subQuestions = editedQuestion.subQuestions || [];
+        if (subQuestions.length === 0) {
+          alert('Câu hỏi mẹ cần có ít nhất 1 câu hỏi con');
+          return;
+        }
+        
+        // Kiểm tra từng câu hỏi con
+        for (let i = 0; i < subQuestions.length; i++) {
+          const subQ = subQuestions[i];
+          if (!subQ.question.trim()) {
+            alert(`Câu hỏi con ${i + 1}: Vui lòng nhập nội dung câu hỏi`);
+            return;
+          }
+          
+          if (subQ.type === 'text') {
+            const validAnswers = Array.isArray(subQ.correctAnswers) 
+              ? (subQ.correctAnswers as string[]).filter(a => a.trim()) 
+              : [];
+            if (validAnswers.length === 0) {
+              alert(`Câu hỏi con ${i + 1}: Vui lòng nhập ít nhất một đáp án đúng`);
+              return;
+            }
+          } else {
+            const validOpts = Array.isArray(subQ.options) 
+              ? (subQ.options as string[]).filter(opt => opt.trim()) 
+              : [];
+            if (validOpts.length < 2) {
+              alert(`Câu hỏi con ${i + 1}: Cần ít nhất 2 đáp án`);
+              return;
+            }
+            const validCorrect = Array.isArray(subQ.correctAnswers) 
+              ? (subQ.correctAnswers as string[]).filter(ans => validOpts.includes(ans)) 
+              : [];
+            if (validCorrect.length === 0) {
+              alert(`Câu hỏi con ${i + 1}: Vui lòng chọn ít nhất một đáp án đúng`);
+              return;
+            }
+          }
+        }
+        
+        const updatedData = {
+          ...editedQuestion,
+          subQuestions: subQuestions
+        };
+        
+        console.log('Saving composite question with data:', updatedData); // Debug log
+        handleQuestionSave(question.id, updatedData);
       } else {
         // Đối với câu hỏi trắc nghiệm
-        const filteredOptions = (editedQuestion.options || []).filter(opt => opt.trim() !== '');
+        const filteredOptions = (Array.isArray(editedQuestion.options) ? editedQuestion.options as string[] : []).filter((opt: string) => opt.trim() !== '');
         if (filteredOptions.length < 2) {
           alert('Câu hỏi trắc nghiệm cần ít nhất 2 đáp án');
           return;
         }
         
-        const filteredCorrectAnswers = editedQuestion.correctAnswers.filter(ans => filteredOptions.includes(ans));
+        const filteredCorrectAnswers = (Array.isArray(editedQuestion.correctAnswers) ? editedQuestion.correctAnswers as string[] : []).filter((ans: string) => filteredOptions.includes(ans));
         if (filteredCorrectAnswers.length === 0) {
           alert('Vui lòng chọn ít nhất một đáp án đúng');
           return;
@@ -674,7 +822,7 @@ const EditQuizPage: React.FC = () => {
     };
 
     const handleOptionChange = (index: number, value: string) => {
-      const newOptions = [...(editedQuestion.options || [])];
+      const newOptions = [...(Array.isArray(editedQuestion.options) ? editedQuestion.options as string[] : [])];
       newOptions[index] = value;
       setEditedQuestion(prev => ({ ...prev, options: newOptions }));
     
@@ -682,14 +830,15 @@ const EditQuizPage: React.FC = () => {
       savedOptionsRef.current = newOptions;
     };
 
-    const handleTypeChange = (newType: 'single' | 'multiple' | 'text') => {
+    const handleTypeChange = (newType: 'single' | 'multiple' | 'text' | 'drag' | 'composite') => {
       setEditedQuestion(prev => {
         if (newType === 'text') {
           // Lưu options hiện tại vào ref trước khi ẩn
-          savedOptionsRef.current = prev.options || savedOptionsRef.current;
+          savedOptionsRef.current = Array.isArray(prev.options) ? (prev.options as string[]) : savedOptionsRef.current;
           
           // Nếu có đáp án đúng từ trắc nghiệm, chuyển sang text
-          const existingCorrectAnswer = prev.correctAnswers.length > 0 ? prev.correctAnswers[0] : '';
+          const caPrev = Array.isArray(prev.correctAnswers) ? (prev.correctAnswers as string[]) : [];
+          const existingCorrectAnswer = caPrev.length > 0 ? caPrev[0] : '';
           
           return {
             ...prev,
@@ -697,16 +846,33 @@ const EditQuizPage: React.FC = () => {
             correctAnswers: existingCorrectAnswer ? [existingCorrectAnswer] : [''], // Đảm bảo luôn có ít nhất 1 đáp án trống
             options: undefined // Xóa options khi chuyển sang text
           };
+        } else if (newType === 'drag') {
+          return {
+            ...prev,
+            type: 'drag',
+            // Khởi tạo cấu trúc kéo thả tối thiểu
+            options: { targets: [{ id: 't1', label: 'Nhóm A' }, { id: 't2', label: 'Nhóm B' }], items: [{ id: 'i1', label: 'Đáp án 1' }, { id: 'i2', label: 'Đáp án 2' }] },
+            correctAnswers: { i1: 't1', i2: 't2' } as any,
+          };
+        } else if (newType === 'composite') {
+          return {
+            ...prev,
+            type: 'composite',
+            options: undefined,
+            subQuestions: [],
+            correctAnswers: []
+          } as any;
         } else {
           // Khôi phục options từ ref hoặc từ chính question
           const optionsToRestore = prev.options || savedOptionsRef.current || ['', ''];
           // Đảm bảo có ít nhất 2 đáp án
-          const finalOptions = optionsToRestore.length >= 2 ? optionsToRestore : ['', ''];
+          const finalOptions = (Array.isArray(optionsToRestore) ? optionsToRestore : savedOptionsRef.current) as string[];
+          const fixed = finalOptions.length >= 2 ? finalOptions : ['', ''];
           
           return {
             ...prev,
             type: newType,
-            options: finalOptions,
+            options: fixed,
             correctAnswers: [] // Reset correctAnswers khi chuyển về trắc nghiệm
           };
         }
@@ -719,17 +885,18 @@ const EditQuizPage: React.FC = () => {
           // Với câu hỏi chọn 1 → chỉ chọn 1 đáp án
           return {
             ...prev,
-            correctAnswers: [option]
+            correctAnswers: [option] as any
           };
         } else {
           // Với chọn nhiều → toggle như cũ
-          const isSelected = prev.correctAnswers.includes(option);
+          const ca = Array.isArray(prev.correctAnswers) ? prev.correctAnswers as string[] : [];
+          const isSelected = ca.includes(option);
           const newCorrectAnswers = isSelected
-            ? prev.correctAnswers.filter(ans => ans !== option)
-            : [...prev.correctAnswers, option];
+            ? ca.filter((ans: string) => ans !== option)
+            : [...ca, option];
           return {
             ...prev,
-            correctAnswers: newCorrectAnswers
+            correctAnswers: newCorrectAnswers as any
           };
         }
       });
@@ -850,16 +1017,18 @@ const EditQuizPage: React.FC = () => {
             </label>
             <select
               value={editedQuestion.type}
-              onChange={(e) => handleTypeChange(e.target.value as 'single' | 'multiple' | 'text')}
+              onChange={(e) => handleTypeChange(e.target.value as 'single' | 'multiple' | 'text' | 'drag' | 'composite')}
               className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
             >
               <option value="single">Chọn 1 đáp án</option>
               <option value="multiple">Chọn nhiều đáp án</option>
               <option value="text">Điền đáp án</option>
+              <option value="drag">Kéo thả vào nhóm</option>
+              <option value="composite">Câu hỏi mẹ (nhiều câu con)</option>
             </select>
           </div>
 
-          {editedQuestion.type !== 'text' && (
+          {editedQuestion.type !== 'text' && editedQuestion.type !== 'drag' && editedQuestion.type !== 'composite' && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -868,7 +1037,7 @@ const EditQuizPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const newOptions = [...(editedQuestion.options || []), ''];
+                    const newOptions = [...(Array.isArray(editedQuestion.options) ? editedQuestion.options as string[] : []), ''];
                     setEditedQuestion(prev => ({ ...prev, options: newOptions }));
                     savedOptionsRef.current = newOptions;
                   }}
@@ -881,13 +1050,13 @@ const EditQuizPage: React.FC = () => {
                 </button>
               </div>
               <div className="space-y-4">
-                {(editedQuestion.options || []).map((option, index) => (
+                {(Array.isArray(editedQuestion.options) ? editedQuestion.options as string[] : []).map((option: string, index: number) => (
                   <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                     <div className="flex items-center space-x-3 mb-3">
                       <input
                         type={editedQuestion.type === 'single' ? 'radio' : 'checkbox'}
                         name={`correct-${editedQuestion.id}`}
-                        checked={editedQuestion.correctAnswers.includes(option)}
+                        checked={(Array.isArray(editedQuestion.correctAnswers) ? editedQuestion.correctAnswers as string[] : []).includes(option)}
                         onChange={() => handleCorrectAnswerToggle(option)}
                         disabled={!option.trim()}
                         className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
@@ -903,8 +1072,9 @@ const EditQuizPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            const newOptions = (editedQuestion.options || []).filter((_, i) => i !== index);
-                            const newCorrectAnswers = editedQuestion.correctAnswers.filter(ans => newOptions.includes(ans));
+                          const newOptions = (Array.isArray(editedQuestion.options) ? (editedQuestion.options as string[]) : []).filter((_: any, i: number) => i !== index);
+                          const ca = Array.isArray(editedQuestion.correctAnswers) ? (editedQuestion.correctAnswers as string[]) : [];
+                            const newCorrectAnswers = ca.filter((ans: string) => newOptions.includes(ans));
                             // Remove image for deleted option
                             const newOptionImages = { ...editedQuestion.optionImages };
                             delete newOptionImages[option];
@@ -997,18 +1167,110 @@ const EditQuizPage: React.FC = () => {
             </div>
           )}
 
+          {editedQuestion.type === 'drag' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nhóm/Ô đích</label>
+                {(() => {
+                  const dragOpt = (editedQuestion.options as any) || { targets: [], items: [] };
+                  const targets = dragOpt.targets as any[];
+                  return (
+                    <div className="space-y-2">
+                      {targets.map((t, i) => (
+                        <div key={t.id || i} className="flex items-center gap-2">
+                          <input className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" value={t.label || ''} placeholder={`Nhóm ${i+1}`}
+                            onChange={(e) => {
+                              const next = { ...(editedQuestion.options as any) };
+                              next.targets = [...(next.targets||[])];
+                              next.targets[i] = { id: t.id || `t${i+1}`, label: e.target.value };
+                              setEditedQuestion(prev => ({ ...prev, options: next }));
+                            }}
+                          />
+                          <button className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" onClick={() => {
+                            const next = { ...(editedQuestion.options as any) };
+                            next.targets = (next.targets||[]).filter((_: any, idx: number) => idx !== i);
+                            setEditedQuestion(prev => ({ ...prev, options: next }));
+                          }}>Xóa</button>
+                        </div>
+                      ))}
+                      <button className="btn-secondary" onClick={() => {
+                        const next = { ...(editedQuestion.options as any) };
+                        next.targets = [ ...(next.targets||[]), { id: `t${(next.targets?.length||0)+1}`, label: '' } ];
+                        setEditedQuestion(prev => ({ ...prev, options: next }));
+                      }}>+ Thêm nhóm</button>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Đáp án kéo thả</label>
+                {(() => {
+                  const dragOpt = (editedQuestion.options as any) || { targets: [], items: [] };
+                  const items = dragOpt.items as any[];
+                  const targets = (dragOpt.targets as any[]) || [];
+                  const mapping = (editedQuestion.correctAnswers as any) || {};
+                  return (
+                    <div className="space-y-2">
+                      {items.map((it, i) => (
+                        <div key={it.id || i} className="flex items-center gap-2">
+                          <input className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500" value={it.label || ''} placeholder={`Đáp án ${i+1}`}
+                            onChange={(e) => {
+                              const next = { ...(editedQuestion.options as any) };
+                              next.items = [...(next.items||[])];
+                              next.items[i] = { id: it.id || `i${i+1}`, label: e.target.value };
+                              setEditedQuestion(prev => ({ ...prev, options: next }));
+                            }}
+                          />
+                          <select className="p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white" value={mapping[it.id] || ''} onChange={(e) => {
+                            const nextMap = { ...(editedQuestion.correctAnswers as any) };
+                            const selectedValue = e.target.value;
+                            if (selectedValue === '') {
+                              // Không chọn nhóm nào → xóa khỏi mapping (undefined)
+                              delete nextMap[it.id || `i${i+1}`];
+                            } else {
+                              nextMap[it.id || `i${i+1}`] = selectedValue;
+                            }
+                            setEditedQuestion(prev => ({ ...prev, correctAnswers: nextMap as any }));
+                          }}>
+                            <option value="" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">-- Không thuộc nhóm nào --</option>
+                            {targets.map((t) => (
+                              <option key={t.id} value={t.id} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">{t.label || t.id}</option>
+                            ))}
+                          </select>
+                          <button className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" onClick={() => {
+                            const next = { ...(editedQuestion.options as any) };
+                            next.items = (next.items||[]).filter((_: any, idx: number) => idx !== i);
+                            const nextMap = { ...(editedQuestion.correctAnswers as any) };
+                            delete nextMap[it.id];
+                            setEditedQuestion(prev => ({ ...prev, options: next, correctAnswers: nextMap as any }));
+                          }}>Xóa</button>
+                        </div>
+                      ))}
+                      <button className="btn-secondary" onClick={() => {
+                        const next = { ...(editedQuestion.options as any) };
+                        next.items = [ ...(next.items||[]), { id: `i${(next.items?.length||0)+1}`, label: '' } ];
+                        setEditedQuestion(prev => ({ ...prev, options: next }));
+                      }}>+ Thêm đáp án</button>
+                    </div>
+                  );
+                })()}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Khi xuất bản, học sinh sẽ kéo thả từng đáp án vào nhóm đúng.</p>
+            </div>
+          )}
+
           {editedQuestion.type === 'text' && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Đáp án đúng
                 </label>
-                <button
+                      <button
                   type="button"
                   onClick={() => {
                     setEditedQuestion(prev => ({
                       ...prev,
-                      correctAnswers: [...prev.correctAnswers, '']
+                      correctAnswers: [...(prev.correctAnswers as string[]), ''] as any
                     }));
                   }}
                   className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
@@ -1020,13 +1282,13 @@ const EditQuizPage: React.FC = () => {
                 </button>
               </div>
               <div className="space-y-2">
-                {editedQuestion.correctAnswers.map((answer, index) => (
+                {(editedQuestion.correctAnswers as string[]).map((answer: string, index: number) => (
                   <div key={index} className="flex items-center space-x-2">
                     <input
                       type="text"
                       value={answer}
                       onChange={(e) => {
-                        const newAnswers = [...editedQuestion.correctAnswers];
+                        const newAnswers = [...(editedQuestion.correctAnswers as string[])];
                         newAnswers[index] = e.target.value;
                         setEditedQuestion(prev => ({ 
                           ...prev, 
@@ -1036,11 +1298,11 @@ const EditQuizPage: React.FC = () => {
                       className="flex-1 p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder={`Đáp án đúng ${index + 1}`}
                     />
-                    {editedQuestion.correctAnswers.length > 1 && (
+                    {Array.isArray(editedQuestion.correctAnswers) && (editedQuestion.correctAnswers as string[]).length > 1 && (
                       <button
                         type="button"
                         onClick={() => {
-                          const newAnswers = editedQuestion.correctAnswers.filter((_, i) => i !== index);
+                          const newAnswers = (editedQuestion.correctAnswers as string[]).filter((_: any, i: number) => i !== index);
                           setEditedQuestion(prev => ({ 
                             ...prev, 
                             correctAnswers: newAnswers.length > 0 ? newAnswers : ['']
@@ -1058,6 +1320,258 @@ const EditQuizPage: React.FC = () => {
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Có thể thêm nhiều đáp án đúng. Học sinh chỉ cần nhập một trong các đáp án này.
+              </p>
+            </div>
+          )}
+
+          {editedQuestion.type === 'composite' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Câu hỏi con
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSubQuestion: QuestionWithImages = {
+                      id: `sq-${Date.now()}-${Math.random()}`,
+                      question: '',
+                      type: 'single',
+                      options: ['', ''],
+                      correctAnswers: [],
+                      explanation: ''
+                    };
+                    setEditedQuestion(prev => ({
+                      ...prev,
+                      subQuestions: [...(prev.subQuestions || []), newSubQuestion]
+                    }));
+                  }}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Thêm câu hỏi con
+                </button>
+              </div>
+
+              {(editedQuestion.subQuestions || []).length === 0 && (
+                <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Chưa có câu hỏi con nào. Nhấn "Thêm câu hỏi con" để bắt đầu.
+                  </p>
+                </div>
+              )}
+
+              {(editedQuestion.subQuestions || []).map((subQ, subIndex) => (
+                <div key={subQ.id} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900 dark:text-white">
+                      Câu hỏi con {subIndex + 1}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditedQuestion(prev => ({
+                          ...prev,
+                          subQuestions: (prev.subQuestions || []).filter((_, i) => i !== subIndex)
+                        }));
+                      }}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Sub-question text */}
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Nội dung câu hỏi
+                    </label>
+                    <input
+                      type="text"
+                      value={subQ.question}
+                      onChange={(e) => {
+                        const updated = [...(editedQuestion.subQuestions || [])];
+                        updated[subIndex] = { ...subQ, question: e.target.value };
+                        setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                      }}
+                      className="w-full p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Nhập câu hỏi con..."
+                    />
+                  </div>
+
+                  {/* Sub-question type */}
+                  <div className="mb-3">
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Loại câu hỏi
+                    </label>
+                    <select
+                      value={subQ.type}
+                      onChange={(e) => {
+                        const newType = e.target.value as 'single' | 'multiple' | 'text';
+                        const updated = [...(editedQuestion.subQuestions || [])];
+                        if (newType === 'text') {
+                          updated[subIndex] = { 
+                            ...subQ, 
+                            type: newType,
+                            options: undefined,
+                            correctAnswers: ['']
+                          };
+                        } else {
+                          updated[subIndex] = {
+                            ...subQ,
+                            type: newType,
+                            options: subQ.options || ['', ''],
+                            correctAnswers: []
+                          };
+                        }
+                        setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                      }}
+                      className="w-full p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="single">Chọn 1 đáp án</option>
+                      <option value="multiple">Chọn nhiều đáp án</option>
+                      <option value="text">Điền đáp án</option>
+                    </select>
+                  </div>
+
+                  {/* Options for single/multiple choice */}
+                  {subQ.type !== 'text' && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                          Đáp án
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...(editedQuestion.subQuestions || [])];
+                            const currentOpts = Array.isArray(subQ.options) ? (subQ.options as string[]) : [];
+                            updated[subIndex] = {
+                              ...subQ,
+                              options: [...currentOpts, '']
+                            };
+                            setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                          }}
+                          className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                        >
+                          + Thêm đáp án
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {(Array.isArray(subQ.options) ? (subQ.options as string[]) : []).map((opt: string, optIdx: number) => (
+                          <div key={optIdx} className="flex items-center gap-2">
+                            <input
+                              type={subQ.type === 'single' ? 'radio' : 'checkbox'}
+                              name={`subq-${subQ.id}`}
+                              checked={Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]).includes(opt) : false}
+                              onChange={() => {
+                                const updated = [...(editedQuestion.subQuestions || [])];
+                                const currentCorrect = Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]) : [];
+                                if (subQ.type === 'single') {
+                                  updated[subIndex] = { ...subQ, correctAnswers: [opt] };
+                                } else {
+                                  const newCorrect = currentCorrect.includes(opt)
+                                    ? currentCorrect.filter((a: string) => a !== opt)
+                                    : [...currentCorrect, opt];
+                                  updated[subIndex] = { ...subQ, correctAnswers: newCorrect };
+                                }
+                                setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                              }}
+                              disabled={!opt.trim()}
+                              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            />
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const updated = [...(editedQuestion.subQuestions || [])];
+                                const currentOpts = Array.isArray(subQ.options) ? (subQ.options as string[]) : [];
+                                const newOptions = [...currentOpts];
+                                newOptions[optIdx] = e.target.value;
+                                updated[subIndex] = { ...subQ, options: newOptions };
+                                setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                              }}
+                              className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                              placeholder={`Đáp án ${String.fromCharCode(65 + optIdx)}`}
+                            />
+                            {(Array.isArray(subQ.options) ? (subQ.options as string[]) : []).length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...(editedQuestion.subQuestions || [])];
+                                  const currentOpts = Array.isArray(subQ.options) ? (subQ.options as string[]) : [];
+                                  const newOptions = currentOpts.filter((_: string, i: number) => i !== optIdx);
+                                  const currentCorrect = Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]) : [];
+                                  const newCorrect = currentCorrect.filter((a: string) => newOptions.includes(a));
+                                  updated[subIndex] = { ...subQ, options: newOptions, correctAnswers: newCorrect };
+                                  setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                                }}
+                                className="p-2 text-red-600 hover:text-red-700 dark:text-red-400"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text answer */}
+                  {subQ.type === 'text' && (
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                        Đáp án đúng
+                      </label>
+                      {(Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]) : ['']).map((ans: string, ansIdx: number) => (
+                        <div key={ansIdx} className="flex items-center gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={ans}
+                            onChange={(e) => {
+                              const updated = [...(editedQuestion.subQuestions || [])];
+                              const currentAnswers = Array.isArray(subQ.correctAnswers) ? (subQ.correctAnswers as string[]) : [''];
+                              const newAnswers = [...currentAnswers];
+                              newAnswers[ansIdx] = e.target.value;
+                              updated[subIndex] = { ...subQ, correctAnswers: newAnswers };
+                              setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                            }}
+                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            placeholder="Đáp án đúng"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Explanation */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Giải thích (tùy chọn)
+                    </label>
+                    <textarea
+                      value={subQ.explanation || ''}
+                      onChange={(e) => {
+                        const updated = [...(editedQuestion.subQuestions || [])];
+                        updated[subIndex] = { ...subQ, explanation: e.target.value };
+                        setEditedQuestion(prev => ({ ...prev, subQuestions: updated }));
+                      }}
+                      className="w-full p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      rows={2}
+                      placeholder="Giải thích đáp án..."
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Câu hỏi mẹ chứa nhiều câu hỏi con. Mỗi câu hỏi con có thể là trắc nghiệm hoặc tự luận.
               </p>
             </div>
           )}
@@ -1129,7 +1643,9 @@ const EditQuizPage: React.FC = () => {
               <span>
                 {question.type === 'text' 
                   ? 'Điền đáp án' 
-                  : `${question.options?.length || 0} đáp án`
+                  : question.type === 'drag' ? 'Kéo thả' 
+                  : question.type === 'composite' ? 'Câu hỏi mẹ' 
+                  : `${Array.isArray(question.options) ? (question.options?.length || 0) : 0} đáp án`
                 }
               </span>
               {(question.questionImage || (question.optionImages && Object.keys(question.optionImages).length > 0)) && (
@@ -1162,7 +1678,7 @@ const EditQuizPage: React.FC = () => {
           </div>
         </div>
 
-        {question.type !== 'text' && question.options && (
+        {question.type !== 'text' && question.type !== 'composite' && question.options && (
           <div className="space-y-3">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
               {question.type === 'single' 
@@ -1170,11 +1686,11 @@ const EditQuizPage: React.FC = () => {
                 : 'Chọn nhiều đáp án đúng'
               }
             </div>
-            {question.options.map((option, index) => (
+            {Array.isArray(question.options) && question.options.map((option: string, index: number) => (
               <div
                 key={index}
                 className={`p-3 rounded-lg border ${
-                  question.correctAnswers.includes(option)
+                  (Array.isArray(question.correctAnswers) ? question.correctAnswers as string[] : []).includes(option)
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                     : 'border-gray-200 dark:border-gray-600'
                 }`}
@@ -1184,7 +1700,7 @@ const EditQuizPage: React.FC = () => {
                     <span className="font-medium text-gray-600 dark:text-gray-300">
                       {String.fromCharCode(65 + index)}.
                     </span>
-                    {question.correctAnswers.includes(option) && (
+                    {(Array.isArray(question.correctAnswers) ? question.correctAnswers as string[] : []).includes(option) && (
                       <span className="ml-2 text-green-600 dark:text-green-400">✓</span>
                     )}
                   </div>
@@ -1209,13 +1725,78 @@ const EditQuizPage: React.FC = () => {
           </div>
         )}
 
+        {question.type === 'composite' && question.subQuestions && (
+          <div className="space-y-4">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Câu hỏi con ({question.subQuestions.length} câu):
+            </div>
+            {question.subQuestions.map((subQ, subIdx) => (
+              <div key={subQ.id} className="pl-4 border-l-4 border-primary-500 dark:border-primary-400">
+                <div className="mb-2">
+                  <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
+                    Câu {subIdx + 1}:
+                  </span>
+                  <span className="ml-2 text-gray-900 dark:text-white">
+                    {subQ.question}
+                  </span>
+                </div>
+                
+                {subQ.type !== 'text' && Array.isArray(subQ.options) && (
+                  <div className="space-y-2 ml-6">
+                    {(subQ.options as string[]).map((opt: string, optIdx: number) => (
+                      <div
+                        key={optIdx}
+                        className={`p-2 rounded-lg border text-sm ${
+                          Array.isArray(subQ.correctAnswers) && (subQ.correctAnswers as string[]).includes(opt)
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                            : 'border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <span className="font-medium text-gray-600 dark:text-gray-300">
+                          {String.fromCharCode(65 + optIdx)}.
+                        </span>
+                        {Array.isArray(subQ.correctAnswers) && (subQ.correctAnswers as string[]).includes(opt) && (
+                          <span className="ml-2 text-green-600 dark:text-green-400">✓</span>
+                        )}
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{opt}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {subQ.type === 'text' && (
+                  <div className="ml-6 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                    <span className="text-gray-600 dark:text-gray-300">Đáp án đúng: </span>
+                    {Array.isArray(subQ.correctAnswers) && (subQ.correctAnswers as string[]).filter((ans: string) => ans?.trim()).length > 0 ? (
+                      <span className="text-green-800 dark:text-green-300 font-medium">
+                        {(subQ.correctAnswers as string[]).filter((ans: string) => ans?.trim()).join(', ')}
+                      </span>
+                    ) : (
+                      <span className="text-red-600 dark:text-red-400 font-medium">
+                        Chưa có đáp án
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {subQ.explanation && (
+                  <div className="ml-6 mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-xs">
+                    <span className="font-medium text-blue-600 dark:text-blue-400">Giải thích: </span>
+                    <span className="text-blue-700 dark:text-blue-300">{subQ.explanation}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {question.type === 'text' && (
           <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <div className="mb-2">
               <span className="text-gray-600 dark:text-gray-300">Đáp án đúng: </span>
-              {question.correctAnswers.filter(ans => ans?.trim()).length > 0 ? (
+              {(Array.isArray(question.correctAnswers) ? (question.correctAnswers as string[]).filter((ans: string) => ans?.trim()).length > 0 : false) ? (
                 <div className="mt-1">
-                  {question.correctAnswers.filter(ans => ans?.trim()).map((answer, index) => (
+                  {(question.correctAnswers as string[]).filter((ans: string) => ans?.trim()).map((answer: string, index: number) => (
                     <span 
                       key={index}
                       className="inline-block bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 rounded text-sm mr-2 mb-1"

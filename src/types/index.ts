@@ -1,14 +1,21 @@
 // Định nghĩa các types cho dự án Quiz Website
 
+export interface DragTarget { id: string; label: string }
+export interface DragItem { id: string; label: string }
+
 export interface Question {
   id: string;
   question: string;
-  type: 'single' | 'multiple' | 'text'; // Loại câu hỏi: chọn 1, chọn nhiều, điền đáp án
-  options?: string[]; // Các lựa chọn cho câu hỏi trắc nghiệm
-  correctAnswers: string[]; // Đáp án đúng (có thể nhiều đáp án)
+  type: 'single' | 'multiple' | 'text' | 'drag' | 'composite'; // + kéo thả, câu hỏi mẹ
+  // Với trắc nghiệm: mảng string; với kéo thả: { targets, items }
+  options?: string[] | { targets: DragTarget[]; items: DragItem[]; [k: string]: any };
+  // Với trắc nghiệm/text: string[]; với kéo thả: map itemId -> targetId
+  correctAnswers: string[] | Record<string, string>;
   explanation?: string; // Giải thích đáp án
   questionImage?: string; // Ảnh cho câu hỏi (base64 hoặc url)
   optionImages?: { [key: string]: string }; // Ảnh cho từng đáp án (key là text đáp án)
+  // Với câu hỏi mẹ
+  subQuestions?: Question[];
 }
 
 export interface Quiz {
@@ -37,7 +44,7 @@ export interface ClassRoom {
 
 export interface UserAnswer {
   questionId: string;
-  answers: string[];
+  answers: any[]; // với kéo thả: [mapping]
   isCorrect?: boolean;
 }
 
