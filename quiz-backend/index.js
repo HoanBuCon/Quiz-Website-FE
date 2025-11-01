@@ -60,16 +60,19 @@ app.use(limiter);
 // Inject prisma to req
 app.use((req, _res, next) => { req.prisma = prisma; next(); });
 
-app.get('/health', (_req, res) => {
+// Base path for API
+const BASE_PATH = process.env.BASE_PATH || '';
+
+app.get(`${BASE_PATH}/health`, (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use('/auth', authRouter);
-app.use('/classes', classesRouter);
-app.use('/quizzes', quizzesRouter);
-app.use('/sessions', sessionsRouter);
-app.use('/files', filesRouter);
-app.use('/visibility', visibilityRouter);
+app.use(`${BASE_PATH}/auth`, authRouter);
+app.use(`${BASE_PATH}/classes`, classesRouter);
+app.use(`${BASE_PATH}/quizzes`, quizzesRouter);
+app.use(`${BASE_PATH}/sessions`, sessionsRouter);
+app.use(`${BASE_PATH}/files`, filesRouter);
+app.use(`${BASE_PATH}/visibility`, visibilityRouter);
 
 // Error handler
 app.use((err, _req, res, _next) => {
@@ -77,10 +80,15 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
 });
 
-const port = process.env.PORT || 4000;
-const host = '0.0.0.0';
-app.listen(port, host, () => {
-  console.log(`API listening on http://${host}:${port}`);
+// const port = process.env.PORT || 4000;vâ
+// const host = '0.0.0.0';
+// app.listen(port, host, () => {
+//   console.log(`API listening on http://${host}:${port}`);
+// });
+
+const port = process.env.PORT || 3000; // Passenger injects its own PORT
+app.listen(port, '127.0.0.1', () => {
+  console.log(`Server running via Passenger on port ${port}`);
 });
 
 process.on('SIGINT', async () => { await prisma.$disconnect(); process.exit(0); });
