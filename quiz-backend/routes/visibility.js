@@ -22,35 +22,39 @@ router.post('/public', authRequired, async (req, res) => {
   }
   if (ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
-  // ===== LOGIC MỚI: Xử lý theo yêu cầu =====
+  // ===== LOGIC MỚI - CHÍNH XÁC 100% =====
   if (targetType === 'class') {
     // ========== XỬ LÝ CLASS ==========
     
     if (enabled) {
-      // CASE 1: Class Private → Public
-      // → Class thành Public + TẤT CẢ Quiz thành Public
+      // ========== CASE 1: Class Private → Public ==========
+      // → Class Public + TẤT CẢ Quiz Public
       
-      // Step 1: Update class to Public
+      console.log('[CASE 1] Class Private → Public: Setting ALL Quizzes to Public');
+      
+      // Step 1: Set Class to Public
       await prisma.class.update({ 
         where: { id: targetId }, 
         data: { isPublic: true } 
       });
       
-      // Step 2: Add class to PublicItem
+      // Step 2: Add Class to PublicItem
       await prisma.publicItem.upsert({
         where: { targetType_targetId: { targetType: 'class', targetId } },
         create: { targetType: 'class', targetId },
         update: {},
       });
       
-      // Step 3: Get ALL quizzes in this class
-      const quizzes = await prisma.quiz.findMany({ 
+      // Step 3: Get ALL Quizzes in this Class
+      const allQuizzes = await prisma.quiz.findMany({ 
         where: { classId: targetId },
         select: { id: true }
       });
       
-      // Step 4: Set ALL quizzes to Public
-      for (const quiz of quizzes) {
+      console.log(`Found ${allQuizzes.length} quizzes in class`);
+      
+      // Step 4: Set ALL Quizzes to Public (published: true)
+      for (const quiz of allQuizzes) {
         await prisma.quiz.update({ 
           where: { id: quiz.id }, 
           data: { published: true } 
@@ -61,32 +65,41 @@ router.post('/public', authRequired, async (req, res) => {
           create: { targetType: 'quiz', targetId: quiz.id },
           update: {},
         });
+        
+        console.log(`  Quiz ${quiz.id} → Public`);
       }
       
-    } else {
-      // CASE 3: Class Public → Private
-      // → Class thành Private + TẤT CẢ Quiz Public thành Private (Quiz Private giữ nguyên)
+      console.log('[CASE 1] Complete: Class + ALL Quizzes are now Public');
       
-      // Step 1: Update class to Private
+    } else {
+      // ========== CASE 3: Class Public → Private ==========
+      // → Class Private + Quiz Public → Private + Quiz Private → giữ nguyên
+      
+      console.log('[CASE 3] Class Public → Private: Public Quizzes → Private, Private Quizzes → Keep');
+      
+      // Step 1: Set Class to Private
       await prisma.class.update({ 
         where: { id: targetId }, 
         data: { isPublic: false } 
       });
       
-      // Step 2: Remove class from PublicItem
+      // Step 2: Remove Class from PublicItem
       await prisma.publicItem.deleteMany({ 
         where: { targetType: 'class', targetId } 
       });
       
-      // Step 3: Get ALL quizzes in this class
-      const quizzes = await prisma.quiz.findMany({ 
+      // Step 3: Get ALL Quizzes with current published status
+      const allQuizzes = await prisma.quiz.findMany({ 
         where: { classId: targetId },
         select: { id: true, published: true }
       });
       
-      // Step 4: Set ALL PUBLIC quizzes to Private (giữ nguyên quizzes đã Private)
-      for (const quiz of quizzes) {
-        if (quiz.published) {  // Chỉ xử lý quiz đang Public
+      console.log(`Found ${allQuizzes.length} quizzes in class`);
+      
+      // Step 4: Only change PUBLIC Quizzes to Private (keep Private quizzes as-is)
+      for (const quiz of allQuizzes) {
+        if (quiz.published === true) {
+          // This quiz is Public → change to Private
           await prisma.quiz.update({ 
             where: { id: quiz.id }, 
             data: { published: false } 
@@ -95,8 +108,15 @@ router.post('/public', authRequired, async (req, res) => {
           await prisma.publicItem.deleteMany({ 
             where: { targetType: 'quiz', targetId: quiz.id } 
           });
+          
+          console.log(`  Quiz ${quiz.id}: Public → Private`);
+        } else {
+          // This quiz is already Private → keep as-is
+          console.log(`  Quiz ${quiz.id}: Private → Keep Private`);
         }
       }
+      
+      console.log('[CASE 3] Complete: Class Private, Public Quizzes → Private, Private Quizzes → Kept');
     }
     
   } else {
@@ -112,60 +132,75 @@ router.post('/public', authRequired, async (req, res) => {
       return res.status(404).json({ message: 'Quiz not found' });
     }
     
-    // Get class info to check current state
+    // Get class current state
     const cls = await prisma.class.findUnique({
       where: { id: quiz.classId },
-      select: { isPublic: true }
+      select: { id: true, isPublic: true }
     });
     
+    if (!cls) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+    
     if (enabled) {
-      // CASE 2: Quiz Private → Public
-      // → Class thành Public (nếu chưa) + CHỈ Quiz này thành Public (các quiz khác giữ Private)
+      // ========== CASE 2: Quiz Private → Public ==========
+      // → Class Public + CHỈ Quiz này Public + Quiz khác giữ nguyên
       
-      // Step 1: Make sure class is Public
-      if (!cls?.isPublic) {
+      console.log('[CASE 2] Quiz Private → Public: Class Public + ONLY this Quiz Public');
+      
+      // Step 1: If Class is Private, make it Public
+      if (!cls.isPublic) {
         await prisma.class.update({ 
           where: { id: quiz.classId }, 
           data: { isPublic: true } 
         });
         
-        // Step 2: Add class to PublicItem
         await prisma.publicItem.upsert({
           where: { targetType_targetId: { targetType: 'class', targetId: quiz.classId } },
           create: { targetType: 'class', targetId: quiz.classId },
           update: {},
         });
+        
+        console.log(`  Class ${quiz.classId}: Private → Public`);
+      } else {
+        console.log(`  Class ${quiz.classId}: Already Public`);
       }
       
-      // Step 3: Set this quiz to Public
+      // Step 2: Set THIS Quiz to Public
       await prisma.quiz.update({ 
         where: { id: targetId }, 
         data: { published: true } 
       });
       
-      // Step 4: Add quiz to PublicItem
       await prisma.publicItem.upsert({
         where: { targetType_targetId: { targetType: 'quiz', targetId } },
         create: { targetType: 'quiz', targetId },
         update: {},
       });
       
-    } else {
-      // CASE 4: Quiz Public → Private
-      // → CHỈ Quiz này thành Private (Class giữ nguyên Public)
+      console.log(`  Quiz ${targetId}: Private → Public`);
+      console.log('[CASE 2] Complete: Class Public + ONLY this Quiz Public (others unchanged)');
       
-      // Step 1: Set this quiz to Private
+    } else {
+      // ========== CASE 4: Quiz Public → Private ==========
+      // → CHỈ Quiz này Private + Class giữ nguyên Public
+      
+      console.log('[CASE 4] Quiz Public → Private: ONLY this Quiz Private, Class stays Public');
+      
+      // Step 1: Set THIS Quiz to Private
       await prisma.quiz.update({ 
         where: { id: targetId }, 
         data: { published: false } 
       });
       
-      // Step 2: Remove quiz from PublicItem
+      // Step 2: Remove THIS Quiz from PublicItem
       await prisma.publicItem.deleteMany({ 
         where: { targetType: 'quiz', targetId } 
       });
       
-      // Note: Class giữ nguyên trạng thái Public
+      console.log(`  Quiz ${targetId}: Public → Private`);
+      console.log(`  Class ${quiz.classId}: Stays Public`);
+      console.log('[CASE 4] Complete: ONLY this Quiz Private, Class stays Public');
     }
   }
 

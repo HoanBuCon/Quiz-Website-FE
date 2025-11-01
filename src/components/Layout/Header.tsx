@@ -84,7 +84,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden nav:flex space-x-8">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
@@ -105,7 +105,7 @@ const Header: React.FC = () => {
             </nav>
 
             {/* Desktop Theme Toggle and Music Player Buttons */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden nav:flex items-center space-x-4">
               {/* Music Player Toggle Button */}
               <button
                 onClick={toggleMusicPlayer}
@@ -192,7 +192,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Mobile menu button and controls */}
-            <div className="flex md:hidden items-center space-x-2">
+            <div className="flex nav:hidden items-center space-x-2">
               {/* Mobile Music Player Button */}
               <button
                 onClick={toggleMusicPlayer}
@@ -229,7 +229,7 @@ const Header: React.FC = () => {
               {/* Mobile menu toggle */}
               <button
                 onClick={toggleMobileMenu}
-                className="p-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all duration-300 flex items-center justify-center"
+                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9"
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? 
@@ -243,7 +243,7 @@ const Header: React.FC = () => {
       </header>
 
       {/* Mobile Navigation Menu */}
-      <div className={`md:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
+      <div className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
       }`}>
         <div className="max-w-7xl mx-auto">
@@ -312,7 +312,7 @@ const Header: React.FC = () => {
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="md:hidden fixed inset-0 z-30 bg-black/20 dark:bg-black/40"
+          className="nav:hidden fixed inset-0 z-30 bg-black/20 dark:bg-black/40"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

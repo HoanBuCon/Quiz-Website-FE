@@ -13,7 +13,6 @@ const QuizPage: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [markedQuestions, setMarkedQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(0); // Sẽ set sau khi load quiz
   const [quizTitle, setQuizTitle] = useState('');
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
   const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
@@ -64,30 +63,6 @@ const QuizPage: React.FC = () => {
 
     loadQuiz();
   }, [quizId, navigate]);
-
-  // Set timeout = 5 phút * số lượng câu hỏi sau khi load quiz
-  useEffect(() => {
-    if (questions.length > 0) {
-      setTimeLeft(questions.length * 5 * 60); // 5 phút mỗi câu hỏi
-    }
-  }, [questions]);
-
-  // Countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (timeLeft > 0) {
-        setTimeLeft(prev => prev - 1);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   // Xử lý khi người dùng chọn đáp án
   const handleAnswerSelect = (questionId: string, answer: string) => {
@@ -219,18 +194,10 @@ const QuizPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="flex-1 order-2 lg:order-1">
-          {/* Timer */}
-          <div className="card p-3 sm:p-4 mb-4 lg:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-            <span className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Thời gian còn lại:</span>
-            <span className="font-semibold text-lg sm:text-xl text-gray-900 dark:text-gray-100">
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-
           {/* Question */}
           <div className="card p-4 sm:p-6">
             {/* Question number */}
-            <div className="flex flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-4">
+            <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Câu {currentQuestionIndex + 1}/{questions.length} (ID: {currentQuestion.id})
@@ -249,7 +216,7 @@ const QuizPage: React.FC = () => {
                       : [...prev, currentQuestion.id]
                   );
                 }}
-                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit mt-0 sm:mt-0 ${
+                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit min-h-[1.75rem] max-h-[1.75rem] sm:min-h-[2rem] sm:max-h-[2rem] flex items-center shrink-0 ${
                   markedQuestions.includes(currentQuestion.id)
                     ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
