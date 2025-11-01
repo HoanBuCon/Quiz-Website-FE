@@ -54,18 +54,8 @@ export const VisibilityAPI = {
     payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean },
     token: string
   ) => {
-    // Prefer legacy-compatible update first to work with older backends (no /visibility route)
-    try {
-      if (payload.targetType === 'class') {
-        await ClassesAPI.update(payload.targetId, { isPublic: payload.enabled }, token);
-      } else {
-        await QuizzesAPI.update(payload.targetId, { published: payload.enabled }, token);
-      }
-      return { ok: true, fallback: true } as any;
-    } catch (_legacyErr) {
-      // If legacy path fails (or not permitted), try the newer consolidated endpoint
-      return await apiRequest<any>(`/visibility/public`, { method: 'POST', token, body: JSON.stringify(payload) });
-    }
+    // Always use consolidated endpoint to enforce cascading rules (Class ⇄ Quizzes)
+    return await apiRequest<any>(`/visibility/public`, { method: 'POST', token, body: JSON.stringify(payload) });
   },
   shareToggle: async (payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean }, token: string) => {
     try {
