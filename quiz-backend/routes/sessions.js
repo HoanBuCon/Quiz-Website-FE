@@ -50,7 +50,23 @@ router.post('/submit', authRequired, async (req, res) => {
       // Expect answer as { [itemId]: targetId }
       const mapping = ans && typeof ans === 'object' ? ans : {};
       const correctMap = q.correctAnswers || {};
-      const ok = Object.keys(correctMap).length > 0 && Object.keys(correctMap).every(k => mapping[k] === correctMap[k]);
+      
+      // Lấy tất cả items từ question.options để kiểm tra đầy đủ
+      const allItems = (q.options && q.options.items) ? q.options.items : [];
+      
+      // Kiểm tra từng item
+      const ok = allItems.length > 0 && allItems.every(item => {
+        const itemId = item.id;
+        const userTargetId = mapping[itemId];
+        const correctTargetId = correctMap[itemId];
+        
+        // Chuẩn hóa giá trị: undefined, null, '' đều được coi là "không thuộc nhóm nào"
+        const normalizedUserTarget = userTargetId || undefined;
+        const normalizedCorrectTarget = correctTargetId || undefined;
+        
+        return normalizedUserTarget === normalizedCorrectTarget;
+      });
+      
       if (ok) score += 1;
     } else {
       const arr = Array.isArray(ans) ? ans : [];

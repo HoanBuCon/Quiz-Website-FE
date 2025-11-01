@@ -103,23 +103,20 @@ const ResultsPage: React.FC = () => {
         const userTargetId = userMapping[itemId];
         const correctTargetId = correctMap[itemId];
         
+        // Chuẩn hóa giá trị: undefined, null, '' đều được coi là "không thuộc nhóm nào"
+        const normalizedUserTarget = userTargetId || undefined;
+        const normalizedCorrectTarget = correctTargetId || undefined;
+        
         console.log(`  Item "${item.label}" (${itemId}):`, {
           userTargetId,
           correctTargetId,
-          isMatch: correctTargetId === undefined 
-            ? (userTargetId === undefined || userTargetId === '')
-            : (userTargetId === correctTargetId)
+          normalizedUserTarget,
+          normalizedCorrectTarget,
+          isMatch: normalizedUserTarget === normalizedCorrectTarget
         });
         
-        // Nếu correctMap không có itemId này => đáp án đúng là không thuộc nhóm nào (undefined)
-        // Nếu correctMap có itemId => phải match với correctTargetId
-        if (correctTargetId === undefined) {
-          // Đáp án đúng là không thuộc nhóm nào
-          return userTargetId === undefined || userTargetId === '';
-        } else {
-          // Đáp án đúng là thuộc nhóm correctTargetId
-          return userTargetId === correctTargetId;
-        }
+        // So sánh sau khi chuẩn hóa
+        return normalizedUserTarget === normalizedCorrectTarget;
       });
     } else {
       const uaArr: string[] = Array.isArray(userAnsRaw) ? userAnsRaw : [];
