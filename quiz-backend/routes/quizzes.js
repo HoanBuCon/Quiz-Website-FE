@@ -13,12 +13,43 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   const hasPublicItem = await prisma.publicItem.findFirst({ where: { targetType: 'class', targetId: classId } });
   const isPublic = !!cls.isPublic || !!hasPublicItem; // accept legacy flag OR new table
   const hasShared = await prisma.sharedAccess.findFirst({ where: { userId: req.user.id, targetType: 'class', targetId: classId } });
+  
+  // ===== LOGIC MỚI - accessLevel check =====
+  // Allow access if:
+  // 1. Owner
+  // 2. Public class
+  // 3. Has SharedAccess for class (any accessLevel, vì đây là list quizzes, không phải access quiz content)
   if (!isOwner && !isPublic && !hasShared) return res.status(403).json({ message: 'Forbidden' });
 
   const quizzes = await prisma.quiz.findMany({ where: { classId }, include: { questions: true } });
   
+  // ===== FILTER QUIZZES DỰA TRÊN QUYỀN TRUY CẬP =====
+  let accessibleQuizzes = quizzes;
+  
+  if (!isOwner && !isPublic) {
+    // User is accessing via SharedAccess - need to filter quizzes
+    const classAccessLevel = hasShared?.accessLevel;
+    
+    if (classAccessLevel === 'full') {
+      // User claimed CLASS → has full access to ALL quizzes
+      accessibleQuizzes = quizzes;
+    } else if (classAccessLevel === 'navigationOnly') {
+      // User claimed individual QUIZzes → only show quizzes they have direct access to
+      const userQuizAccess = await prisma.sharedAccess.findMany({
+        where: {
+          userId: req.user.id,
+          targetType: 'quiz',
+          targetId: { in: quizzes.map(q => q.id) }
+        }
+      });
+      
+      const accessibleQuizIds = new Set(userQuizAccess.map(a => a.targetId));
+      accessibleQuizzes = quizzes.filter(q => accessibleQuizIds.has(q.id));
+    }
+  }
+  
   // Build nested structure for each quiz (support composite questions with subQuestions)
-  const quizzesWithNested = quizzes.map(quiz => {
+  const quizzesWithNested = accessibleQuizzes.map(quiz => {
     const allQs = quiz.questions;
     const byParent = new Map();
     for (const q of allQs) {
@@ -175,7 +206,21 @@ router.get('/:id', authRequired, async (req, res) => {
     // Also check legacy isPublic flag on class
     const isClassPublicLegacy = quiz.class.isPublic;
 
-    if (!isOwner && !quizPublic && !classPublic && !isClassPublicLegacy && !hasQuizShared && !hasClassShared) {
+    // ===== LOGIC MỚI - SỬ DỤNG accessLevel =====
+    // Access rules:
+    // 1. Owner always has access
+    // 2. Quiz is public (via PublicItem or class public)
+    // 3. User has direct quiz SharedAccess → access granted
+    // 4. User has class SharedAccess với accessLevel='full' → access ALL quizzes
+    // 5. User has class SharedAccess với accessLevel='navigationOnly' → NO access (chỉ để list class)
+    const hasAccess = isOwner 
+      || quizPublic 
+      || classPublic 
+      || isClassPublicLegacy 
+      || hasQuizShared 
+      || (hasClassShared && hasClassShared.accessLevel === 'full');  // ⭐ CHỈ full access mới được
+
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 

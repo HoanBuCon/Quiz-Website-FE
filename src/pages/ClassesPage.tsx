@@ -27,6 +27,9 @@ const ClassesPage: React.FC = () => {
   const [importInput, setImportInput] = useState('');
   const [importType, setImportType] = useState<'auto' | 'class' | 'quiz'>('auto');
 
+  // Share status tracking (classId/quizId -> isShareable)
+  const [shareStatus, setShareStatus] = useState<Record<string, boolean>>({});
+
   // Hàm xóa lớp học
   const handleDeleteClass = async (classId: string, className: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa lớp học "${className}"?\n\nLưu ý: Nếu là lớp được chia sẻ, thao tác này chỉ gỡ lớp khỏi danh sách của bạn.`)) {
@@ -151,6 +154,70 @@ const ClassesPage: React.FC = () => {
     setShareOpen(true);
   };
 
+  // Toggle share for class - GIỐNG LOGIC PUBLIC/PRIVATE
+  const handleToggleClassShare = async (classId: string, current: boolean) => {
+    const newState = !current;
+    const message = newState 
+      ? '🔗 Bật chia sẻ Class?\n\n✓ Class có thể chia sẻ\n✓ TẤT CẢ Quiz có thể chia sẻ\n\n🎯 Quy tắc truy cập:\n• Người nhập ID/Link CLASS → truy cập TẤT CẢ Quiz\n• Người nhập ID/Link QUIZ → chỉ truy cập Quiz đó'
+      : '🔒 Tắt chia sẻ Class?\n\n✓ Class không thể chia sẻ\n✓ Các Quiz đang chia sẻ → tắt\n✓ Các Quiz đã tắt → giữ nguyên\n\n⚠️ Người đã nhập ID/Link Class sẽ MẤT quyền truy cập';
+    
+    if (!window.confirm(message)) return;
+    
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { VisibilityAPI } = await import('../utils/api');
+      
+      // Toggle class share state - backend will sync quizzes accordingly
+      await VisibilityAPI.shareToggle({ targetType: 'class', targetId: classId, enabled: newState }, token);
+
+      // Reload classes to sync all quiz share states and icons
+      setLoading(true);
+      await loadMyClasses();
+      
+      const successMsg = newState 
+        ? '✅ Đã bật chia sẻ Class và TẤT CẢ Quiz\n\n🎯 Quyền truy cập:\n• Nhập ID/Link Class → ALL Quiz\n• Nhập ID/Link Quiz → CHỈ quiz đó' 
+        : '✅ Đã tắt chia sẻ Class\n\n• Quiz đang chia sẻ → tắt\n• Quiz đã tắt → giữ nguyên';
+      alert(successMsg);
+    } catch (e) {
+      console.error('toggle share failed', e);
+      alert('❌ Không thể cập nhật trạng thái chia sẻ');
+    }
+  };
+
+  // Toggle share for quiz - GIỐNG LOGIC PUBLIC/PRIVATE
+  const handleToggleQuizShare = async (quizId: string, current: boolean) => {
+    const newState = !current;
+    const message = newState
+      ? '🔗 Bật chia sẻ Quiz?\n\n✓ Quiz có thể chia sẻ\n✓ Class có thể chia sẻ (nếu đang tắt)\n✓ Quiz khác GIỮ NGUYÊN\n\n🎯 Quyền truy cập:\n• Người nhập ID/Link QUIZ này → CHỈ Quiz này\n• Người nhập ID/Link Class → TẤT CẢ Quiz'
+      : '🔒 Tắt chia sẻ Quiz?\n\n✓ CHỈ Quiz này tắt chia sẻ riêng lẻ\n✓ Class giữ nguyên có thể chia sẻ\n\n⚠️ LƯU Ý:\n• Người đã nhập ID/Link QUIZ này → MẤT quyền ✗\n• Người đã nhập ID/Link CLASS → VẪN truy cập được ✓\n\n💡 Muốn revoke hoàn toàn? Tắt share CLASS!';
+    
+    if (!window.confirm(message)) return;
+    
+    try {
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { alert('Vui lòng đăng nhập'); return; }
+      const { VisibilityAPI } = await import('../utils/api');
+
+      // Toggle share state for quiz via visibility API
+      await VisibilityAPI.shareToggle({ targetType: 'quiz', targetId: quizId, enabled: newState }, token);
+
+      // Reload classes to sync quiz and class states and update icons
+      setLoading(true);
+      await loadMyClasses();
+
+      const message = newState 
+        ? '✅ Đã bật chia sẻ Quiz\n\n🎯 Quyền truy cập:\n• Nhập ID/Link Quiz → CHỈ Quiz này\n• Nhập ID/Link Class → TẤT CẢ Quiz'
+        : '✅ Đã tắt chia sẻ Quiz riêng lẻ\n\n⚠️ LƯU Ý:\n• User đã claim Quiz này → MẤT quyền ✗\n• User đã claim Class → VẪN truy cập ✓';
+      alert(message);
+    } catch (e) {
+      console.error('toggle share failed', e);
+      alert('❌ Không thể cập nhật trạng thái chia sẻ');
+    }
+  };
+
   // Toggle publish for quiz: if publishing and class is private -> make class public, but only this quiz is published
   const handleToggleQuizPublished = async (quizId: string, current: boolean) => {
     const newState = !current;
@@ -206,6 +273,19 @@ const ClassesPage: React.FC = () => {
       const withQuizzes: ClassRoom[] = [] as any;
       for (const cls of myClasses) {
         const quizzes = await QuizzesAPI.byClass(cls.id, token);
+        
+        // ===== FILTER: Chỉ thêm class nếu có ít nhất 1 quiz accessible =====
+        // Backend đã filter quizzes dựa trên quyền truy cập
+        // Nếu user không có quyền truy cập quiz nào → quizzes = []
+        // Chỉ hiển thị class nếu:
+        // 1. User là owner (luôn thấy tất cả)
+        // 2. User có ít nhất 1 quiz accessible
+        const isOwner = (cls as any).accessType === 'owner';
+        if (!isOwner && quizzes.length === 0) {
+          // Skip class này - user không có quyền truy cập quiz nào
+          continue;
+        }
+        
         withQuizzes.push({
           id: cls.id,
           name: cls.name,
@@ -222,6 +302,29 @@ const ClassesPage: React.FC = () => {
         } as unknown as ClassRoom);
       }
       setClasses(withQuizzes);
+
+      // Load share status for all classes and quizzes
+      try {
+        const { VisibilityAPI } = await import('../utils/api');
+        const statusMap: Record<string, boolean> = {};
+        
+        for (const cls of withQuizzes) {
+          // Check class share status
+          const clsStatus = await VisibilityAPI.getShareStatus('class', cls.id, token);
+          statusMap[`class_${cls.id}`] = clsStatus.isShareable;
+          
+          // Check quiz share status
+          const quizzes = (cls.quizzes as Quiz[]) || [];
+          for (const q of quizzes) {
+            const qzStatus = await VisibilityAPI.getShareStatus('quiz', (q as any).id, token);
+            statusMap[`quiz_${(q as any).id}`] = qzStatus.isShareable;
+          }
+        }
+        
+        setShareStatus(statusMap);
+      } catch (e) {
+        console.error('Error loading share status:', e);
+      }
 
       // Compute statistics from sessions
       try {
@@ -706,16 +809,39 @@ const ClassesPage: React.FC = () => {
                         })()}
                         
                         <button
-                          onClick={() => handleShareClass(classRoom.id)}
+                          onClick={() => handleToggleClassShare(classRoom.id, shareStatus[`class_${classRoom.id}`] || false)}
                           disabled={(classRoom as any).accessType === 'shared'}
-                          className={`btn-secondary !bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title="Chia sẻ lớp học"
+                          className={`btn-secondary ${
+                            shareStatus[`class_${classRoom.id}`] 
+                              ? '!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700' 
+                              : '!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40'
+                          } ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={`Trạng thái: ${shareStatus[`class_${classRoom.id}`] ? 'Có thể chia sẻ' : 'Không thể chia sẻ'}\n\nNhấn để ${shareStatus[`class_${classRoom.id}`] ? 'tắt' : 'bật'} chia sẻ lớp học`}
                         >
-                          {/* Unified Share Icon */}
+                          {/* Share Toggle Icon */}
+                          {shareStatus[`class_${classRoom.id}`] ? (
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M13.5 3c-1.74 0-3.41.81-4.5 2.09C8.91 3.81 7.24 3 5.5 3 2.42 3 0 5.42 0 8.5c0 3.78 3.4 6.86 8.55 11.54L12 23.35l3.45-3.32C20.6 15.36 24 12.28 24 8.5 24 5.42 21.58 3 18.5 3c-1.74 0-3.41.81-4.5 2.09C13.09 3.81 11.42 3 9.5 3z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleShareClass(classRoom.id)}
+                          disabled={(classRoom as any).accessType === 'shared' || !shareStatus[`class_${classRoom.id}`]}
+                          className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${((classRoom as any).accessType === 'shared' || !shareStatus[`class_${classRoom.id}`]) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={shareStatus[`class_${classRoom.id}`] ? "Sao chép ID/Link chia sẻ" : "Bật chia sẻ trước để lấy ID/Link"}
+                        >
+                          {/* Copy Link Icon */}
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
+                        
                         <button
                           onClick={() => handleToggleClassPublic(classRoom.id, Boolean(classRoom.isPublic))}
                           disabled={(classRoom as any).accessType === 'shared'}
@@ -893,15 +1019,35 @@ const ClassesPage: React.FC = () => {
                             );
                           }
                         })()}
-                        {/* Nút chia sẻ & công khai cho mobile */}
+                        {/* Nút toggle chia sẻ & copy link cho mobile */}
+                        <button
+                          onClick={() => handleToggleClassShare(classRoom.id, shareStatus[`class_${classRoom.id}`] || false)}
+                          disabled={(classRoom as any).accessType === 'shared'}
+                          className={`w-9 h-9 rounded ${
+                            shareStatus[`class_${classRoom.id}`] 
+                              ? 'bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700' 
+                              : 'bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300'
+                          } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={`${shareStatus[`class_${classRoom.id}`] ? 'Tắt' : 'Bật'} chia sẻ lớp học`}
+                        >
+                          {shareStatus[`class_${classRoom.id}`] ? (
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M13.5 3c-1.74 0-3.41.81-4.5 2.09C8.91 3.81 7.24 3 5.5 3 2.42 3 0 5.42 0 8.5c0 3.78 3.4 6.86 8.55 11.54L12 23.35l3.45-3.32C20.6 15.36 24 12.28 24 8.5 24 5.42 21.58 3 18.5 3c-1.74 0-3.41.81-4.5 2.09C13.09 3.81 11.42 3 9.5 3z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                          )}
+                        </button>
                         <button
                           onClick={() => handleShareClass(classRoom.id)}
-                          disabled={(classRoom as any).accessType === 'shared'}
-                          className={`w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          title="Chia sẻ lớp học"
+                          disabled={(classRoom as any).accessType === 'shared' || !shareStatus[`class_${classRoom.id}`]}
+                          className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${((classRoom as any).accessType === 'shared' || !shareStatus[`class_${classRoom.id}`]) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={shareStatus[`class_${classRoom.id}`] ? 'Copy ID/Link' : 'Bật chia sẻ trước'}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
                         <button
@@ -981,14 +1127,31 @@ const ClassesPage: React.FC = () => {
                                     Làm bài
                                   </Link>
                                   <button
-                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    onClick={() => handleToggleQuizShare(quiz.id, shareStatus[`quiz_${quiz.id}`] || false)}
                                     disabled={(classRoom as any).accessType === 'shared'}
-                                    className={`text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-200 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Chia sẻ"
+                                    className={`${shareStatus[`quiz_${quiz.id}`] ? 'text-purple-600 dark:text-purple-400' : 'text-purple-400 dark:text-purple-600'} hover:text-purple-700 dark:hover:text-purple-300 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={`Trạng thái: ${shareStatus[`quiz_${quiz.id}`] ? 'Có thể chia sẻ' : 'Không thể chia sẻ'}\n\nNhấn để ${shareStatus[`quiz_${quiz.id}`] ? 'tắt' : 'bật'} chia sẻ quiz`}
                                   >
-                                    {/* Unified Share Icon */}
+                                    {/* Share Toggle Icon */}
+                                    {shareStatus[`quiz_${quiz.id}`] ? (
+                                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M13.5 3c-1.74 0-3.41.81-4.5 2.09C8.91 3.81 7.24 3 5.5 3 2.42 3 0 5.42 0 8.5c0 3.78 3.4 6.86 8.55 11.54L12 23.35l3.45-3.32C20.6 15.36 24 12.28 24 8.5 24 5.42 21.58 3 18.5 3c-1.74 0-3.41.81-4.5 2.09C13.09 3.81 11.42 3 9.5 3z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    disabled={(classRoom as any).accessType === 'shared' || !shareStatus[`quiz_${quiz.id}`]}
+                                    className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${((classRoom as any).accessType === 'shared' || !shareStatus[`quiz_${quiz.id}`]) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={shareStatus[`quiz_${quiz.id}`] ? "Sao chép ID/Link chia sẻ" : "Bật chia sẻ trước để lấy ID/Link"}
+                                  >
+                                    {/* Copy Link Icon */}
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                     </svg>
                                   </button>
                                   <button
@@ -1055,13 +1218,33 @@ const ClassesPage: React.FC = () => {
                                     Làm bài
                                   </Link>
                                   <button
-                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    onClick={() => handleToggleQuizShare(quiz.id, shareStatus[`quiz_${quiz.id}`] || false)}
                                     disabled={(classRoom as any).accessType === 'shared'}
-                                    className={`w-9 h-9 rounded bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Chia sẻ"
+                                    className={`w-9 h-9 rounded ${
+                                      shareStatus[`quiz_${quiz.id}`] 
+                                        ? 'bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700' 
+                                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40'
+                                    } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={`${shareStatus[`quiz_${quiz.id}`] ? 'Đang chia sẻ' : 'Chưa chia sẻ'}`}
+                                  >
+                                    {shareStatus[`quiz_${quiz.id}`] ? (
+                                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M13.5 3c-1.74 0-3.41.81-4.5 2.09C8.91 3.81 7.24 3 5.5 3 2.42 3 0 5.42 0 8.5c0 3.78 3.4 6.86 8.55 11.54L12 23.35l3.45-3.32C20.6 15.36 24 12.28 24 8.5 24 5.42 21.58 3 18.5 3c-1.74 0-3.41.81-4.5 2.09C13.09 3.81 11.42 3 9.5 3z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleShareQuiz(quiz.id)}
+                                    disabled={(classRoom as any).accessType === 'shared' || !shareStatus[`quiz_${quiz.id}`]}
+                                    className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${((classRoom as any).accessType === 'shared' || !shareStatus[`quiz_${quiz.id}`]) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={shareStatus[`quiz_${quiz.id}`] ? "Sao chép ID/Link" : "Bật chia sẻ trước"}
                                   >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM4 20s1-4 8-4 8 4 8 4" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                     </svg>
                                   </button>
                                   <button

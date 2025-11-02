@@ -65,6 +65,13 @@ export const VisibilityAPI = {
       return { ok: true, fallback: true } as any;
     }
   },
+  getShareStatus: async (targetType: 'class'|'quiz', targetId: string, token: string) => {
+    try {
+      return await apiRequest<{ isShareable: boolean }>(`/visibility/share/status?targetType=${targetType}&targetId=${targetId}`, { token });
+    } catch {
+      return { isShareable: false };
+    }
+  },
   claim: (payload: { classId?: string; quizId?: string; code?: string }, token: string) =>
     apiRequest<any>(`/visibility/claim`, { method: 'POST', token, body: JSON.stringify(payload) }),
   removeAccess: (payload: { classId?: string; quizId?: string }, token: string) =>
