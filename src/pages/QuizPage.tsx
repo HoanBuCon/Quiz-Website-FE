@@ -226,7 +226,7 @@ const QuizPage: React.FC = () => {
         {/* Left Section - Main Content */}
         <div className="flex-1 min-w-0 order-2 lg:order-1">
           {/* Question */}
-          <div className="card p-4 sm:p-6">
+          <div className="group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500">
             {/* Question number */}
             <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

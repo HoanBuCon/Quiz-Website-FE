@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ClassRoom, Quiz } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { formatDate } from '../utils/fileUtils';
 
 // Component trang chủ
 const HomePage: React.FC = () => {
@@ -164,7 +165,7 @@ const HomePage: React.FC = () => {
               {publicClasses.map((classRoom) => (
                 <div 
                   key={classRoom.id} 
-                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-primary-500"
+                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
                     <div className="flex-1">
@@ -187,7 +188,7 @@ const HomePage: React.FC = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          {classRoom.createdAt.toLocaleDateString('vi-VN')}
+                          {formatDate(classRoom.createdAt)}
                         </span>
                         <span className="text-gray-300 dark:text-gray-600">•</span>
                         <span className="inline-flex items-center gap-1.5">
@@ -275,7 +276,7 @@ const HomePage: React.FC = () => {
                         <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        Bài kiểm tra ({classRoom.quizzes.length})
+                        Bài kiểm tra trong lớp
                       </h4>
                       <div className="grid gap-3">
                         {(classRoom.quizzes as Quiz[]).map((quiz) => (
@@ -327,7 +328,7 @@ const HomePage: React.FC = () => {
                   Kho tài liệu học tập
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Truy cập ngay kho tài liệu phong phú
+                  Độ khó: Liemdaidary🔥
                 </p>
                 <a 
                   href="https://lms.liemsdai.is-best.net/" 

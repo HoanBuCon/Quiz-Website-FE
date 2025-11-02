@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClassRoom, Quiz } from '../types';
 import { buildShortId, isShortIdCode } from '../utils/share';
+import { formatDate } from '../utils/fileUtils';
 import {
   UserIcon,
   EyeIcon,
@@ -676,7 +677,7 @@ const ClassesPage: React.FC = () => {
                 return (
                   <div 
                     key={classRoom.id} 
-                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-emerald-500 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
+                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-emerald-500 dark:hover:border-l-emerald-500 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
@@ -687,10 +688,20 @@ const ClassesPage: React.FC = () => {
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
                           {classRoom.description}
                         </p>
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
-                          <span className="mx-2">•</span>
-                          <span>{quizCount} bài kiểm tra</span>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                          <span className="inline-flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {formatDate(classRoom.createdAt)}
+                          </span>
+                          <span className="text-gray-300 dark:text-gray-600">•</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {quizCount} bài kiểm tra
+                          </span>
                         </div>
                       </div>
                       
@@ -903,10 +914,20 @@ const ClassesPage: React.FC = () => {
                         <p className="text-gray-600 dark:text-gray-400 mb-2">
                           {classRoom.description}
                         </p>
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-                          <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
-                          <span className="mx-2">•</span>
-                          <span>{quizCount} bài kiểm tra</span>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                          <span className="inline-flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {formatDate(classRoom.createdAt)}
+                          </span>
+                          <span className="text-gray-300 dark:text-gray-600">•</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {quizCount} bài kiểm tra
+                          </span>
                         </div>
                       </div>
                       {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
@@ -1105,11 +1126,14 @@ const ClassesPage: React.FC = () => {
                     {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
                     {quizCount > 0 && (
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                          Bài kiểm tra trong lớp:
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          Bài kiểm tra trong lớp
                         </h4>
                         <div
-                          className="space-y-2 max-h-72 overflow-y-auto pr-2 quiz-scrollbar-container"
+                          className="space-y-3 max-h-72 overflow-y-auto pr-2 quiz-scrollbar-container"
                           style={{
                             scrollbarWidth: 'thin',
                             scrollbarColor: '#d1d5db #f3f4f6', // gray-300 thumb, gray-100 track
@@ -1118,7 +1142,7 @@ const ClassesPage: React.FC = () => {
                           {validQuizzes.map((quiz) => (
                             <div
                               key={quiz.id}
-                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative"
+                              className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
                             >
                               {/* Desktop Layout cho quiz items */}
                               <div className="hidden sm:flex items-center justify-between">

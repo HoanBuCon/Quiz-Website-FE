@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
-import { checkDuplicateFileName, showDuplicateModal, generateUniqueFileName } from '../utils/fileUtils';
+import { checkDuplicateFileName, showDuplicateModal, generateUniqueFileName, formatDate } from '../utils/fileUtils';
 
 // Component trang tạo lớp
 const CreateClassPage: React.FC = () => {
@@ -478,7 +478,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Class Selection/Creation Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500">
             <div className="p-6 space-y-6">
               {/* Toggle giữa tạo mới và chọn có sẵn */}
               <div className="flex space-x-4">
@@ -569,7 +569,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Manual Quiz Creation */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 group">
+          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500">
             <div className="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -657,7 +657,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Upload Area */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500">
             <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600 p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -790,7 +790,7 @@ const CreateClassPage: React.FC = () => {
                           {file.name}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {(file.size / 1024).toFixed(1)} KB • {file.uploadedAt.toLocaleDateString('vi-VN')}
+                          {(file.size / 1024).toFixed(1)} KB • {formatDate(file.uploadedAt)}
                         </p>
                       </div>
                     </div>

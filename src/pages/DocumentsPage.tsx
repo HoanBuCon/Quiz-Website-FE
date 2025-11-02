@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
-import { checkDuplicateFileName, showDuplicateModal } from '../utils/fileUtils';
+import { checkDuplicateFileName, showDuplicateModal, formatDate } from '../utils/fileUtils';
 import { useTheme } from '../context/ThemeContext';
 
 const DocumentsPage: React.FC = () => {
@@ -696,7 +696,7 @@ const DocumentsPage: React.FC = () => {
             // Danh sách tài liệu
             <div className="space-y-4">
               {documents.map((doc) => (
-                <div key={doc.id} className="card p-4 sm:p-6">
+                <div key={doc.id} className="group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="flex-shrink-0">
@@ -709,7 +709,7 @@ const DocumentsPage: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                           <span>{formatFileSize(doc.size)}</span>
                           <span>•</span>
-                          <span>Tải lên: {doc.uploadedAt.toLocaleDateString('vi-VN')}</span>
+                          <span>Tải lên: {formatDate(doc.uploadedAt)}</span>
                           <span>•</span>
                           <span className="uppercase">{doc.type}</span>
                         </div>
@@ -794,7 +794,7 @@ const DocumentsPage: React.FC = () => {
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Tài liệu mới nhất</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {documents.length > 0 ? documents[0].uploadedAt.toLocaleDateString('vi-VN') : 'N/A'}
+                    {documents.length > 0 ? formatDate(documents[0].uploadedAt) : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -812,7 +812,7 @@ const DocumentsPage: React.FC = () => {
                   Kho tài liệu học tập
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Truy cập ngay kho tài liệu phong phú
+                  Độ khó: Liemdaidary🔥
                 </p>
                 <a 
                   href="https://lms.liemsdai.is-best.net/" 
