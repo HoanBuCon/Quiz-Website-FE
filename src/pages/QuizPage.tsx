@@ -208,7 +208,7 @@ const QuizPage: React.FC = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header with title and submit button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4 sm:gap-0">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -224,7 +224,7 @@ const QuizPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="flex-1 order-2 lg:order-1">
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
           {/* Question */}
           <div className="card p-4 sm:p-6">
             {/* Question number */}
@@ -434,7 +434,7 @@ const QuizPage: React.FC = () => {
         </div>
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-1/3 order-1 lg:order-2">
+        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
           <div className="card p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
               Danh sách câu hỏi
@@ -489,6 +489,8 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
   const items = (question.options && (question.options as any).items) as DragItem[] || [];
 
   const [mapping, setMapping] = useState<Record<string, string>>(() => ({ ...(value || {}) }));
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   useEffect(() => { onChange(mapping); }, [mapping]);
 
@@ -508,19 +510,67 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
     });
   };
 
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    setDraggedItem(itemId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', itemId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverTarget(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetId?: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverTarget(targetId || 'pool');
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTarget(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId?: string) => {
+    e.preventDefault();
+    if (draggedItem) {
+      assign(draggedItem, targetId);
+    }
+    setDraggedItem(null);
+    setDragOverTarget(null);
+  };
+
   return (
     <div className="space-y-4">
       {/* Kho đáp án */}
-      <div className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30">
+      <div 
+        className={`border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-all duration-200 ${
+          dragOverTarget === 'pool' ? 'ring-2 ring-yellow-500 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : ''
+        }`}
+        onDragOver={(e) => handleDragOver(e)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e)}
+      >
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-center">Kho đáp án</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {poolItems.map(it => (
             <button 
-              key={it.id} 
-              className="p-3 rounded-lg bg-yellow-500 text-white font-medium border-2 border-yellow-500 shadow-md shadow-yellow-500/20 text-left hover:bg-yellow-600 transition-all duration-200 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30"
+              key={it.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, it.id)}
+              onDragEnd={handleDragEnd}
+              className={`p-3 rounded-lg bg-yellow-500 text-white font-medium border-2 border-yellow-500 shadow-md shadow-yellow-500/20 text-left hover:bg-yellow-600 transition-all duration-200 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30 cursor-move ${
+                draggedItem === it.id ? 'opacity-50 scale-95' : ''
+              }`}
               onClick={() => assign(it.id, undefined)}
             >
-              {it.label}
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                </svg>
+                {it.label}
+              </span>
             </button>
           ))}
           {poolItems.length === 0 && (
@@ -534,7 +584,15 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
       {/* Các nhóm/ô đích */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {targets.map(t => (
-          <div key={t.id} className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30">
+          <div 
+            key={t.id} 
+            className={`border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-all duration-200 ${
+              dragOverTarget === t.id ? 'ring-2 ring-primary-500 border-primary-500 bg-primary-50 dark:bg-primary-900/20' : ''
+            }`}
+            onDragOver={(e) => handleDragOver(e, t.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, t.id)}
+          >
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white">{t.label}</h3>
               <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
@@ -565,11 +623,21 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
             <div className="space-y-2 min-h-[60px]">
               {(itemsByTarget[t.id] || []).map(it => (
                 <button 
-                  key={it.id} 
-                  className="w-full p-3 rounded-lg bg-primary-500 text-white font-medium border-2 border-primary-500 shadow-md shadow-primary-500/20 text-left hover:bg-primary-600 transition-all duration-200 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60"
+                  key={it.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, it.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`w-full p-3 rounded-lg bg-primary-500 text-white font-medium border-2 border-primary-500 shadow-md shadow-primary-500/20 text-left hover:bg-primary-600 transition-all duration-200 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60 cursor-move ${
+                    draggedItem === it.id ? 'opacity-50 scale-95' : ''
+                  }`}
                   onClick={() => assign(it.id, undefined)}
                 >
-                  ✓ {it.label}
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                    </svg>
+                    {it.label}
+                  </span>
                 </button>
               ))}
               {(itemsByTarget[t.id] || []).length === 0 && (
@@ -584,7 +652,7 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
 
       {/* Hướng dẫn */}
       <div className="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-3">
-        <p><strong>Hướng dẫn:</strong> Chọn đáp án từ dropdown để thêm vào nhóm. Nhấn vào đáp án đã chọn để đưa về kho.</p>
+        <p><strong>Hướng dẫn:</strong> Kéo thả đáp án từ kho vào nhóm tương ứng, hoặc chọn từ dropdown. Nhấn vào đáp án đã chọn để đưa về kho.</p>
       </div>
     </div>
   );

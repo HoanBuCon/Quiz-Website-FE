@@ -487,7 +487,7 @@ const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Mobile: Statistics Box First */}
       <div className="lg:hidden mb-6">
         <div className="card p-4 sm:p-6">

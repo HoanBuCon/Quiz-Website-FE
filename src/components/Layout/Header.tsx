@@ -64,7 +64,7 @@ const Header: React.FC = () => {
   return (
     <>
   <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-screen-2xl mx-auto relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <div className="flex items-center min-w-0">
@@ -246,7 +246,7 @@ const Header: React.FC = () => {
       <div className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
       }`}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
             {navItems.map((item) => (
               <Link
