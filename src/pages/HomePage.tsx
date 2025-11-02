@@ -90,191 +90,267 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+      {/* Hero Section */}
+      <div className="mb-8 lg:mb-12">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          
+          <div className="relative z-10">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
+              LiemDai Website 🐧
+            </h1>
+            <p className="text-lg sm:text-xl text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+              Nền tảng học tập trực tuyến hiện đại với hàng trăm bài kiểm tra chất lượng cao
+            </p>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 max-w-2xl">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{totalClasses}</div>
+                <div className="text-sm text-blue-100">Lớp học công khai</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{totalQuizzes}</div>
+                <div className="text-sm text-blue-100">Bài kiểm tra công khai</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="flex-1 order-2 lg:order-1">
-          <div className="mb-6 lg:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 lg:mb-4">
-              LiemDai (Đại Liêm) Website🐧
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
-              Website làm bài tập trắc nghiệm cực chất!
+          <div className="mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Lớp học công khai
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Khám phá và tham gia các lớp học được chia sẻ công khai
             </p>
           </div>
 
-          {/* Danh sách lớp học public */}
-          <div className="space-y-4 lg:space-y-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4 lg:mb-6 text-center">
-              Lớp học công khai
-            </h2>
-
-            {loading ? (
-              // Loading skeleton
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="card p-6 animate-pulse">
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                  </div>
-                ))}
+          {loading ? (
+            // Loading skeleton
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card p-6 animate-pulse">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : publicClasses.length === 0 ? (
+            // Empty state
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
               </div>
-            ) : (
-              // Danh sách lớp học
-              <div className="space-y-3 lg:space-y-4">
-                {publicClasses.map((classRoom) => (
-                  <div key={classRoom.id} className="card p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3 sm:gap-0">
-                      <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          {classRoom.name}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
-                          {classRoom.description}
-                        </p>
-                        <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 gap-1 sm:gap-0">
-                          <span>Tạo ngày: {classRoom.createdAt.toLocaleDateString('vi-VN')}</span>
-                          <span className="hidden sm:inline mx-2">•</span>
-                          <span>{classRoom.quizzes?.length || 0} bài kiểm tra</span>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Chưa có lớp học công khai
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Hãy quay lại sau để khám phá các lớp học mới
+              </p>
+            </div>
+          ) : (
+            // Danh sách lớp học
+            <div className="space-y-4">
+              {publicClasses.map((classRoom) => (
+                <div 
+                  key={classRoom.id} 
+                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-primary-500"
+                >
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                          {classRoom.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                            {classRoom.name}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {classRoom.description}
+                          </p>
                         </div>
                       </div>
-                      <div className="relative dropdown-container">
-                        <button 
-                          className="btn-primary flex items-center px-3 py-2 sm:px-4 sm:py-2 text-sm w-full sm:w-auto justify-center"
-                          onClick={() => {
-                            if (classRoom.quizzes && classRoom.quizzes.length === 1) {
-                              // Nếu chỉ có 1 quiz, vào luôn
-                              const firstQuiz = (classRoom.quizzes as Quiz[])[0];
-                              navigate(`/quiz/${firstQuiz.id}`);
-                            } else {
-                              // Nếu có nhiều quiz, mở dropdown
-                              setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
-                            }
-                          }}
-                        >
-                          Tham gia
-                          {classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                            <svg 
-                              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                                openDropdown === classRoom.id ? 'rotate-180' : ''
-                              }`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          )}
-                        </button>
-                        
-                        {/* Dropdown Menu */}
-                        {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                          <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-1 w-full sm:w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-10">
-                            <div className="p-2">
-                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                Chọn bài kiểm tra:
-                              </div>
-                              {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                                <button
-                                  key={quiz.id}
-                                  onClick={() => {
-                                    navigate(`/quiz/${quiz.id}`);
-                                    setOpenDropdown(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
-                                >
-                                  <div className="font-medium text-gray-900 dark:text-white">
-                                    {quiz.title}
-                                  </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    {quiz.questions.length} câu hỏi
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                      
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {classRoom.createdAt.toLocaleDateString('vi-VN')}
+                        </span>
+                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          {classRoom.quizzes?.length || 0} bài kiểm tra
+                        </span>
                       </div>
                     </div>
                     
-                    {/* Danh sách quiz trong lớp */}
-                    {classRoom.quizzes && classRoom.quizzes.length > 0 && (
-                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                          Bài kiểm tra trong lớp:
-                        </h4>
-                        <div className="space-y-2">
-                          {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                            <div key={quiz.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
-                              {/* Desktop layout: horizontal */}
-                              <div className="hidden sm:flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-white">
-                                    {quiz.title}
-                                  </p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {quiz.description}
-                                  </p>
+                    <div className="relative dropdown-container flex-shrink-0">
+                      <button 
+                        className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-shadow"
+                        onClick={() => {
+                          if (classRoom.quizzes && classRoom.quizzes.length === 1) {
+                            const firstQuiz = (classRoom.quizzes as Quiz[])[0];
+                            navigate(`/quiz/${firstQuiz.id}`);
+                          } else {
+                            setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
+                          }
+                        }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Tham gia ngay
+                        {classRoom.quizzes && classRoom.quizzes.length > 1 && (
+                          <svg 
+                            className={`w-4 h-4 transition-transform duration-200 ${
+                              openDropdown === classRoom.id ? 'rotate-180' : ''
+                            }`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        )}
+                      </button>
+                      
+                      {/* Dropdown Menu */}
+                      {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
+                        <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-10 overflow-hidden">
+                          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                            <p className="text-sm font-semibold text-white">
+                              Chọn bài kiểm tra
+                            </p>
+                          </div>
+                          <div className="p-2 max-h-80 overflow-y-auto">
+                            {(classRoom.quizzes as Quiz[]).map((quiz, idx) => (
+                              <button
+                                key={quiz.id}
+                                onClick={() => {
+                                  navigate(`/quiz/${quiz.id}`);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                    {idx + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                      {quiz.title}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {quiz.questions.length} câu hỏi
+                                    </div>
+                                  </div>
                                 </div>
-                                <button
-                                  onClick={() => navigate(`/quiz/${quiz.id}`)}
-                                  className="btn-secondary text-sm"
-                                >
-                                  Làm bài
-                                </button>
-                              </div>
-                              {/* Mobile layout: vertical */}
-                              <div className="sm:hidden pr-0">
-                                <p className="font-medium text-gray-900 dark:text-white mb-1">
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Danh sách quiz trong lớp */}
+                  {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                    <div className="border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Bài kiểm tra ({classRoom.quizzes.length})
+                      </h4>
+                      <div className="grid gap-3">
+                        {(classRoom.quizzes as Quiz[]).map((quiz) => (
+                          <div 
+                            key={quiz.id} 
+                            className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
                                   {quiz.title}
                                 </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                                   {quiz.description}
                                 </p>
-                                <div className="flex flex-col gap-2">
-                                  <button
-                                    onClick={() => navigate(`/quiz/${quiz.id}`)}
-                                    className="btn-secondary text-sm text-center w-full"
-                                  >
-                                    Làm bài
-                                  </button>
-                                </div>
                               </div>
+                              <button
+                                onClick={() => navigate(`/quiz/${quiz.id}`)}
+                                className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 group-hover/quiz:bg-primary-500 group-hover/quiz:text-white transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                </svg>
+                                Làm bài
+                              </button>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-1/3 order-1 lg:order-2">
-          <div className="card p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Kho tài liệu học tập
-            </h3>
-            <h4 className="text-lg font-mono text-gray-900 dark:text-white mb-4 text-center">
-              <a href="https://lms.liemsdai.is-best.net/" target="_blank" rel="noopener noreferrer">
-                https://lms.liemsdai.is-best.net/
-              </a>
-            </h4>
-            <div className="flex items-center justify-center">
-                <div className="perspective-1000" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
+          <div className="lg:sticky lg:top-20">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">
+                  <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Kho tài liệu học tập
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Truy cập ngay kho tài liệu phong phú
+                </p>
+                <a 
+                  href="https://lms.liemsdai.is-best.net/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-block text-sm font-mono text-primary-600 dark:text-primary-400 hover:underline break-all"
+                >
+                  lms.liemsdai.is-best.net
+                </a>
+              </div>
+              
+              <div className="flex items-center justify-center">
+                <div className="perspective-1000 w-full" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                   <a
                     href="https://lms.liemsdai.is-best.net/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative group"
-                    style={{ display: 'inline-block' }}
+                    className="relative group block"
                   >
                     <img
                       src={isDarkMode ? require('../assets/liemdai_dark.png') : require('../assets/liemdai_light.png')}
                       alt={isDarkMode ? 'liemdai_dark' : 'liemdai_light'}
-                      className="max-w-full h-auto rounded-xl shadow-lg transition-all duration-300 ease-out cursor-pointer"
+                      className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                       style={{
                         maxHeight: 280,
                         transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1}deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0 ? '20px' : '0px'})`,
@@ -290,13 +366,13 @@ const HomePage: React.FC = () => {
                     />
                     {/* Tooltip */}
                     <div
-                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs rounded px-3 py-2 shadow-lg transition-opacity duration-200 z-20 whitespace-nowrap ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border border-gray-300'}`}
-                      style={{ minWidth: 160 }}
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200'}`}
                     >
-                      Click để chuyển đến trang
+                      Click để chuyển đến trang →
                     </div>
                   </a>
                 </div>
+              </div>
             </div>
           </div>
         </div>
