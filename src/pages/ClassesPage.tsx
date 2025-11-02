@@ -632,7 +632,7 @@ const ClassesPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="flex-1 min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1">
           {/* Desktop Header */}
           <div className="hidden lg:block mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -677,17 +677,26 @@ const ClassesPage: React.FC = () => {
                 return (
                   <div 
                     key={classRoom.id} 
-                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-emerald-500 dark:hover:border-l-emerald-500 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
+                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 relative ${openDropdown === classRoom.id ? 'z-50' : 'z-0'}`}
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          {classRoom.name}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-2">
-                          {classRoom.description}
-                        </p>
+                        <div className="flex items-start gap-3 mb-3">
+                          {/* Avatar với chữ cái đầu tiên */}
+                          <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                            {classRoom.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                              {classRoom.name}
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                              {classRoom.description}
+                            </p>
+                          </div>
+                        </div>
+                        
                         <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                           <span className="inline-flex items-center gap-1.5">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -908,12 +917,20 @@ const ClassesPage: React.FC = () => {
                     {/* Mobile Layout - flex dọc, nút xóa cùng hàng với Vào lớp */}
                     <div className="sm:hidden mb-4">
                       <div className="pr-8">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          {classRoom.name}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-2">
-                          {classRoom.description}
-                        </p>
+                        <div className="flex items-start gap-3 mb-3">
+                          {/* Avatar với chữ cái đầu tiên */}
+                          <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                            {classRoom.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                              {classRoom.name}
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                              {classRoom.description}
+                            </p>
+                          </div>
+                        </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
                           <span className="inline-flex items-center gap-1.5">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1359,7 +1376,7 @@ const ClassesPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only (Statistics + Guidance) */}
-        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-20 space-y-6">
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">

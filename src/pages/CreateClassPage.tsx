@@ -458,7 +458,7 @@ const CreateClassPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="flex-1 min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1">
           {/* Desktop Header */}
           <div className="hidden lg:block mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -520,7 +520,7 @@ const CreateClassPage: React.FC = () => {
                       value={className}
                       onChange={(e) => setClassName(e.target.value)}
                       placeholder="Ví dụ: Lớp KHMT K69A - Machine Learning"
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all"
                     />
                   </div>
                   
@@ -533,7 +533,7 @@ const CreateClassPage: React.FC = () => {
                       onChange={(e) => setClassDescription(e.target.value)}
                       placeholder="Nhập mô tả chi tiết về lớp học, mục tiêu học tập..."
                       rows={4}
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white resize-none transition-all"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white resize-none transition-all"
                     />
                   </div>
                 </div>
@@ -546,7 +546,7 @@ const CreateClassPage: React.FC = () => {
                   <select
                     value={selectedClassId}
                     onChange={(e) => setSelectedClassId(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all"
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all"
                   >
                     <option value="">-- Chọn lớp học --</option>
                     {existingClasses.map((cls) => (
@@ -569,22 +569,19 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Manual Quiz Creation */}
-          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500">
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-600 dark:to-amber-600 p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Tạo Quiz thủ công</h3>
-                  <p className="text-sm text-orange-50">Tự nhập câu hỏi và đáp án</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tạo Quiz thủ công</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Tự nhập câu hỏi và đáp án</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="p-6">
               {!isFormValid() && (
                 <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -602,7 +599,7 @@ const CreateClassPage: React.FC = () => {
               <div className={`border-2 border-solid rounded-xl p-8 text-center transition-all duration-300 ${
                 !isFormValid()
                   ? 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-orange-400 dark:hover:border-orange-500'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
               }`}>
                 <div className="space-y-4">
                   <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
@@ -632,7 +629,7 @@ const CreateClassPage: React.FC = () => {
                       disabled={!isFormValid()}
                       className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
                         isFormValid() 
-                          ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg' 
+                          ? 'bg-primary-500 hover:bg-primary-600 text-white shadow-lg' 
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
                       }`}
                     >
@@ -657,22 +654,19 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Upload Area */}
-          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500">
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600 p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Tải lên File câu hỏi</h3>
-                  <p className="text-sm text-blue-50">Hỗ trợ .docx và .txt</p>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tải lên File câu hỏi</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Hỗ trợ .docx và .txt</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="p-6">
               {!isFormValid() && (
                 <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -692,8 +686,8 @@ const CreateClassPage: React.FC = () => {
                   !isFormValid()
                     ? 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50 cursor-not-allowed'
                     : dragActive
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-105 shadow-lg'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105 shadow-lg'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
                 }`}
                 onDragEnter={isFormValid() ? handleDrag : undefined}
                 onDragLeave={isFormValid() ? handleDrag : undefined}
@@ -810,7 +804,7 @@ const CreateClassPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only, Sticky Sidebar */}
-        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-20 space-y-6">
             {/* Hướng dẫn - Desktop */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">

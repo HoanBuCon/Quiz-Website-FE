@@ -581,7 +581,7 @@ const DocumentsPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="flex-1 min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1">
           {/* Desktop Header */}
           <div className="hidden lg:block mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -752,7 +752,7 @@ const DocumentsPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only */}
-        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-20 space-y-6">
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">

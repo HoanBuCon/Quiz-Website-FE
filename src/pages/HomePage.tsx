@@ -100,10 +100,10 @@ const HomePage: React.FC = () => {
           
           <div className="relative z-10">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
-              LiemDai Website 🐧
+              LiemDai (Đại Liêm) Website 🐧
             </h1>
             <p className="text-lg sm:text-xl text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Nền tảng học tập trực tuyến hiện đại với hàng trăm bài kiểm tra chất lượng cao
+              Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
             </p>
             
             {/* Stats */}
@@ -123,7 +123,7 @@ const HomePage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="flex-1 order-2 lg:order-1">
+        <div className="lg:w-[70%] order-2 lg:order-1">
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Lớp học công khai
@@ -170,7 +170,7 @@ const HomePage: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
                     <div className="flex-1">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
                           {classRoom.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -315,7 +315,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
+        <div className="w-full lg:w-[30%] lg:flex-shrink-0 order-1 lg:order-2">
           <div className="lg:sticky lg:top-20">
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
               <div className="text-center mb-6">
