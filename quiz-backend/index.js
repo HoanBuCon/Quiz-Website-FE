@@ -54,7 +54,7 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 1000 }); // 1000 requests per minute
 app.use(limiter);
 
 // Inject prisma to req
