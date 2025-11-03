@@ -406,28 +406,29 @@ const CreateClassPage: React.FC = () => {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section Mobile */}
       <div className="mb-8 lg:hidden">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-600 via-amber-700 to-yellow-900 dark:from-orange-900 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-4 tracking-tight">
               Tạo lớp học mới
             </h1>
-            <p className="text-base sm:text-lg text-orange-100 dark:text-orange-200">
+            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nhập thông tin và chọn cách tạo bài kiểm tra
             </p>
           </div>
         </div>
       </div>
 
-      {/* Dropdown Menu - Mobile Only */}
+      {/* Quick Navigation Buttons - Mobile Only */}
       <div className="mb-6 lg:hidden">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg shadow-md transition-all duration-200 font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg shadow-md transition-all duration-200 font-medium"
             onClick={() => {
-              const guideSection = document.getElementById('guidance-section');
+              const guideSection = document.getElementById('mobile-guidance-section');
               if (guideSection) {
                 guideSection.scrollIntoView({ behavior: 'smooth' });
               }
@@ -439,9 +440,9 @@ const CreateClassPage: React.FC = () => {
             <span className="text-sm">Hướng dẫn</span>
           </button>
           <button
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg shadow-md transition-all duration-200 font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg shadow-md transition-all duration-200 font-medium"
             onClick={() => {
-              const previewSection = document.getElementById('preview-section');
+              const previewSection = document.getElementById('mobile-preview-section');
               if (previewSection) {
                 previewSection.scrollIntoView({ behavior: 'smooth' });
               }
@@ -459,21 +460,29 @@ const CreateClassPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="lg:w-[70%] min-w-0 order-1">
-          {/* Desktop Header */}
-          <div className="hidden lg:block mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Tạo lớp học mới
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-              Nhập thông tin lớp học và chọn cách tạo bài kiểm tra
-            </p>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
-                Tạo lớp học mới hoặc chọn lớp học có sẵn
-              </p>
+          {/* Desktop Banner - Only visible on lg and above */}
+          <div className="hidden lg:block mb-8">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+              
+              <div className="relative z-10">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                  Tạo lớp học mới
+                </h1>
+                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed mb-4">
+                  Nhập thông tin lớp học và chọn cách tạo bài kiểm tra
+                </p>
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-orange-200 font-medium">
+                    Tạo lớp học mới hoặc chọn lớp học có sẵn
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -491,7 +500,7 @@ const CreateClassPage: React.FC = () => {
                     className="mr-3 w-5 h-5 text-orange-600 border-gray-300 focus:ring-orange-500"
                   />
                   <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                    🆕 Tạo lớp học mới
+                    Tạo lớp học mới
                   </span>
                 </label>
                 <label className="flex items-center cursor-pointer group">
@@ -503,7 +512,7 @@ const CreateClassPage: React.FC = () => {
                     className="mr-3 w-5 h-5 text-orange-600 border-gray-300 focus:ring-orange-500"
                   />
                   <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                    📚 Chọn lớp học có sẵn
+                    Chọn lớp học có sẵn
                   </span>
                 </label>
               </div>
@@ -923,15 +932,15 @@ const CreateClassPage: React.FC = () => {
               
               <div className="mt-4 space-y-2 text-xs text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="flex items-start gap-2">
-                  <span className="text-green-600 dark:text-green-400 font-bold">*</span>
-                  Dấu * đánh dấu đáp án đúng
+                  <span className="text-green-600 dark:text-green-400 font-bold">Dấu *</span>
+                  đánh dấu đáp án đúng
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-blue-600 dark:text-blue-400 font-bold">ID:</span>
                   Mã câu hỏi trong LMS hoặc tự đặt
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-purple-600 dark:text-purple-400 font-bold">A-D:</span>
+                  <span className="text-purple-600 dark:text-purple-400 font-bold">A B C D:</span>
                   Các đáp án (để trống nếu câu hỏi điền đáp án)
                 </p>
               </div>
@@ -940,80 +949,136 @@ const CreateClassPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Guidance Section */}
-      <div className="lg:hidden mt-8" id="guidance-section">
-        <div className="card p-4 sm:p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center flex items-center justify-center gap-2">
-            <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            Hướng dẫn
-          </h3>
-          <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Định dạng file hỗ trợ:</h4>
-              <ul className="space-y-1">
-                <li>• Text files (.txt) - Khuyến nghị</li>
-                <li>• JSON files (.json)</li>
-                <li>• Word files (.doc, .docx)</li>
+      {/* Mobile Right Section - Hướng dẫn và Preview */}
+      <div className="lg:hidden mt-8 space-y-6">
+        {/* Hướng dẫn Card - Mobile */}
+        <div id="mobile-guidance-section" className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-3">
+              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Hướng dẫn
+            </h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                Định dạng file hỗ trợ:
+              </h4>
+              <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400 ml-3.5">
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Text files (.txt) - Khuyến nghị
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  JSON files (.json)
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Word files (.doc, .docx)
+                </li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Kích thước tối đa:</h4>
-              <p>10 MB mỗi file</p>
+            
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                Kích thước tối đa:
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 ml-3.5">10 MB mỗi file</p>
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Lưu ý:</h4>
-              <p>File sẽ được xử lý tự động để tạo câu hỏi trắc nghiệm</p>
-              <p className="text-xs mt-2">• File Word (.docx) hiện đã được hỗ trợ trực tiếp</p>
-              <p className="text-xs">• Sử dụng font đơn giản (Times New Roman, Arial)</p>
-              <p className="text-xs">• Không sử dụng bullet points, chỉ dùng A. B. C. D.</p>
-              <p className="text-xs">• Xem hướng dẫn để biết định dạng chuẩn</p>
-              <p className="text-xs">• Đảm bảo File tài liệu được đặt theo đúng định dạng</p>
+            
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                Lưu ý quan trọng:
+              </h4>
+              <ul className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 ml-3.5">
+                <li>• File sẽ được xử lý tự động</li>
+                <li>• File Word (.docx) đã được hỗ trợ</li>
+                <li>• Sử dụng font đơn giản (Times New Roman, Arial)</li>
+                <li>• Không sử dụng bullet points</li>
+                <li>• Chỉ dùng A. B. C. D. cho đáp án</li>
+                <li>• Xem preview để biết định dạng chuẩn</li>
+              </ul>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Preview Section */}
-      <div className="lg:hidden mt-6" id="preview-section">
-        <div className="card p-4 sm:p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-            Preview định dạng chuẩn
-          </h3>
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-1">
-              <div className="text-gray-500 dark:text-gray-400">ID: 101</div>
-              <div>Câu 1: Thủ đô của Việt Nam là ?</div>
-              <div className="ml-4">*A. Hà Nội</div>
+        {/* Preview Card - Mobile */}
+        <div id="mobile-preview-section" className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Preview định dạng
+            </h3>
+          </div>
+          
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-2">
+              <div className="text-gray-500 dark:text-gray-400 font-semibold">ID: 101</div>
+              <div className="font-medium">Câu 1: Thủ đô của Việt Nam là ?</div>
+              <div className="ml-4 text-green-600 dark:text-green-400">*A. Hà Nội</div>
               <div className="ml-4">B. TP. Hồ Chí Minh</div>
               <div className="ml-4">C. Đà Nẵng</div>
               <div className="ml-4">D. Huế</div>
-              <br />
-              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 261</div>
-              <div>Câu 2: Ngôn ngữ lập trình nào phổ biến nhất ?</div>
+              
+              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              
+              <div className="text-gray-500 dark:text-gray-400 font-semibold">ID: 261</div>
+              <div className="font-medium">Câu 2: Ngôn ngữ lập trình nào phổ biến nhất ?</div>
               <div className="ml-4">A. Python</div>
-              <div className="ml-4">*B. JavaScript</div>
+              <div className="ml-4 text-green-600 dark:text-green-400">*B. JavaScript</div>
               <div className="ml-4">C. Java</div>
               <div className="ml-4">D. C++</div>
-              <br />
-              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 168</div>
-              <div>Câu 3: Ngôn ngữ nào phù hợp cho lập trình thi đấu ?</div>
+              
+              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              
+              <div className="text-gray-500 dark:text-gray-400 font-semibold">ID: 168</div>
+              <div className="font-medium">Câu 3: Ngôn ngữ nào phù hợp cho lập trình thi đấu ?</div>
               <div className="ml-4">A. Python</div>
-              <div className="ml-4">*B. C</div>
-              <div className="ml-4">*C. C++</div>
+              <div className="ml-4 text-green-600 dark:text-green-400">*B. C</div>
+              <div className="ml-4 text-green-600 dark:text-green-400">*C. C++</div>
               <div className="ml-4">D. Java</div>
-              <br />
-              <div className="mt-2 text-gray-500 dark:text-gray-400">ID: 421</div>
-              <div>Câu 4: Generative AI - GenAI là gì ?</div>
-              <div className="ml-4">(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)</div>
+              
+              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              
+              <div className="text-gray-500 dark:text-gray-400 font-semibold">ID: 421</div>
+              <div className="font-medium">Câu 4: Generative AI - GenAI là gì ?</div>
+              <div className="ml-4 text-amber-600 dark:text-amber-400 italic">(Câu hỏi "Điền đáp án đúng" - Giáo viên nhập đáp án thủ công)</div>
             </div>
           </div>
-          <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-            <p>• Câu hỏi có dấu * là đáp án đúng.</p>
-            <p>• ID: Mã hỏi trong LMS. Hoặc tự đặt ID nếu bạn làm đề thủ công.</p>
-            <p>• A. B. C. D. = các đáp án.</p>
-            <p>• Nếu câu hỏi yêu cầu điền đáp án, hãy để trống phần đáp án.</p>
+          
+          <div className="mt-4 space-y-2 text-xs text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="flex items-start gap-2">
+              <span className="text-green-600 dark:text-green-400 font-bold">Dấu *</span>
+              đánh dấu đáp án đúng
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-blue-600 dark:text-blue-400 font-bold">ID:</span>
+              Mã câu hỏi trong LMS hoặc tự đặt
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-purple-600 dark:text-purple-400 font-bold">A B C D:</span>
+              Các đáp án (để trống nếu câu hỏi điền đáp án)
+            </p>
           </div>
         </div>
       </div>

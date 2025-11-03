@@ -382,7 +382,9 @@ const QuizPage: React.FC = () => {
                                   : 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700'
                               }`}
                             >
-                              <span className="font-medium">{String.fromCharCode(65 + oidx)}.</span> {opt}
+                              <div className="text-left w-full">
+                                <span className="font-medium">{String.fromCharCode(65 + oidx)}.</span> {opt}
+                              </div>
                             </button>
                           ))}
                         </div>

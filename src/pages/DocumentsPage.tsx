@@ -490,90 +490,80 @@ const DocumentsPage: React.FC = () => {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section Mobile */}
       <div className="mb-8 lg:hidden">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-700 to-blue-900 dark:from-purple-900 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-4 tracking-tight">
               Tài liệu của tôi
             </h1>
-            <p className="text-base sm:text-lg text-purple-100 dark:text-purple-200">
+            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Quản lý và tạo bài kiểm tra từ tài liệu
             </p>
-            
-            {/* Stats Mobile */}
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{documents.length}</div>
-                <div className="text-xs sm:text-sm text-purple-100">Tài liệu</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">
-                  {formatFileSize(documents.reduce((total, doc) => total + doc.size, 0))}
-                </div>
-                <div className="text-xs sm:text-sm text-purple-100">Dung lượng</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{totalClasses}</div>
-                <div className="text-xs sm:text-sm text-purple-100">Lớp học</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{totalQuizzes}</div>
-                <div className="text-xs sm:text-sm text-purple-100">Bài kiểm tra</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Kho tài liệu học tập */}
-      <div className="lg:hidden mb-6">
-        <div className="card p-4 sm:p-6">
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
-              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Mobile Right Section - Kho tài liệu (chỉ hiển thị Kho tài liệu ở đây) */}
+      <div className="lg:hidden mb-6 space-y-6">
+        {/* Kho tài liệu học tập - Mobile */}
+        <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
+              <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               Kho tài liệu học tập
             </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Độ khó: Liemdaidary🔥
+            </p>
             <a 
               href="https://lms.liemsdai.is-best.net/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-block text-sm font-mono text-purple-600 dark:text-purple-400 hover:underline"
+              className="inline-block text-sm font-mono text-indigo-600 dark:text-indigo-400 hover:underline break-all"
             >
               lms.liemsdai.is-best.net
             </a>
           </div>
+          
           <div className="flex items-center justify-center">
-            <div 
-              className="perspective-1000"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
-              <img
-                src={isDarkMode 
-                  ? require('../assets/liemdai_dark.png')
-                  : require('../assets/liemdai_light.png')
-                }
-                alt={isDarkMode ? 'liemdai_dark' : 'liemdai_light'}
-                className="max-w-full h-auto rounded-xl shadow-lg transition-all duration-300 ease-out cursor-pointer"
-                style={{ 
-                  maxHeight: 240, // Nhỏ hơn một chút cho mobile
-                  transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1}deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0 ? '20px' : '0px'})`,
-                  border: '2px solid transparent',
-                  backgroundImage: isDarkMode 
-                    ? 'linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)'
-                    : 'linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)',
-                  backgroundSize: '400% 400%',
-                  animation: 'neonBorder 3s ease-in-out infinite',
-                  backgroundClip: 'border-box',
-                  borderRadius: '12px'
-                }}
-              />
+            <div className="perspective-1000 w-full" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+              <a
+                href="https://lms.liemsdai.is-best.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative group block"
+              >
+                <img
+                  src={isDarkMode ? require('../assets/liemdai_dark.png') : require('../assets/liemdai_light.png')}
+                  alt={isDarkMode ? 'liemdai_dark' : 'liemdai_light'}
+                  className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
+                  style={{
+                    maxHeight: 280,
+                    transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1}deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0 ? '20px' : '0px'})`,
+                    border: '2px solid transparent',
+                    backgroundImage: isDarkMode
+                      ? 'linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)'
+                      : 'linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)',
+                    backgroundSize: '400% 400%',
+                    animation: 'neonBorder 3s ease-in-out infinite',
+                    backgroundClip: 'border-box',
+                    borderRadius: '12px',
+                  }}
+                />
+                {/* Tooltip */}
+                <div
+                  className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200'}`}
+                >
+                  Click để chuyển đến trang →
+                </div>
+              </a>
             </div>
           </div>
         </div>
@@ -582,14 +572,22 @@ const DocumentsPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="lg:w-[70%] min-w-0 order-1">
-          {/* Desktop Header */}
-          <div className="hidden lg:block mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Tài liệu của tôi
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Quản lý và sử dụng các tài liệu đã tải lên
-            </p>
+          {/* Desktop Banner - Only visible on lg and above */}
+          <div className="hidden lg:block mb-8">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+              
+              <div className="relative z-10">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                  Tài liệu của tôi
+                </h1>
+                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed">
+                  Quản lý và sử dụng các tài liệu đã tải lên
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Upload Area */}
@@ -749,6 +747,54 @@ const DocumentsPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Stats Card - Mobile Only (hiển thị ở cuối) */}
+          <div className="lg:hidden mt-6">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+                  <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  Thống kê tài liệu
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Tổng quan tài liệu của bạn
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Số lượng tài liệu</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    {documents.length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Tổng dung lượng</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    {formatFileSize(documents.reduce((total, doc) => total + doc.size, 0))}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <span className="text-sm text-green-700 dark:text-green-400">Lớp đã tạo</span>
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">{totalClasses}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <span className="text-sm text-blue-700 dark:text-blue-400">Bài kiểm tra</span>
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{totalQuizzes}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Tài liệu mới nhất</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {documents.length > 0 ? formatDate(documents[0].uploadedAt) : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Section - Desktop Only */}

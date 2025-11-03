@@ -99,22 +99,22 @@ const HomePage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 tracking-tight">
               LiemDai (Đại Liêm) Website 🐧
             </h1>
-            <p className="text-lg sm:text-xl text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-base sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
             </p>
             
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 max-w-2xl">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{totalClasses}</div>
-                <div className="text-sm text-blue-100">Lớp học công khai</div>
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{totalClasses}</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Lớp học công khai</div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl sm:text-3xl font-bold text-white mb-1">{totalQuizzes}</div>
-                <div className="text-sm text-blue-100">Bài kiểm tra công khai</div>
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{totalQuizzes}</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Bài kiểm tra công khai</div>
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@ const HomePage: React.FC = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        Tham gia ngay
+                        Tham gia
                         {classRoom.quizzes && classRoom.quizzes.length > 1 && (
                           <svg 
                             className={`w-4 h-4 transition-transform duration-200 ${
@@ -295,7 +295,7 @@ const HomePage: React.FC = () => {
                               </div>
                               <button
                                 onClick={() => navigate(`/quiz/${quiz.id}`)}
-                                className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 group-hover/quiz:bg-primary-500 group-hover/quiz:text-white transition-all"
+                                className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />

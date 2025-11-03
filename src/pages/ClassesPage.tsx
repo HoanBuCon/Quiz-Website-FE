@@ -593,37 +593,37 @@ const ClassesPage: React.FC = () => {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section */}
       <div className="mb-8 lg:hidden">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-900 dark:from-emerald-900 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
               Lớp học của tôi
             </h1>
-            <p className="text-base sm:text-lg text-emerald-100 dark:text-emerald-200">
+            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200">
               Chọn lớp học để bắt đầu làm bài trắc nghiệm
             </p>
             
             {/* Stats Mobile */}
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{classes.length}</div>
-                <div className="text-xs sm:text-sm text-emerald-100">Lớp học</div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-8">
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{classes.length}</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Lớp học</div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">
                   {classes.reduce((total, cls) => total + getValidQuizzes(cls).length, 0)}
                 </div>
-                <div className="text-xs sm:text-sm text-emerald-100">Bài kiểm tra</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Bài kiểm tra</div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{statsCompleted}</div>
-                <div className="text-xs sm:text-sm text-emerald-100">Đã hoàn thành</div>
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{statsCompleted}</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Đã hoàn thành</div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1">{statsAverage}</div>
-                <div className="text-xs sm:text-sm text-emerald-100">Điểm TB</div>
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{statsAverage}</div>
+                <div className="text-sm text-blue-600 dark:text-blue-100">Điểm TB</div>
               </div>
             </div>
           </div>
@@ -633,20 +633,28 @@ const ClassesPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="lg:w-[70%] min-w-0 order-1">
-          {/* Desktop Header */}
-          <div className="hidden lg:block mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Lớp học của tôi
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Chọn lớp học để bắt đầu làm bài trắc nghiệm
-            </p>
+          {/* Desktop Banner - Only visible on lg and above */}
+          <div className="hidden lg:block mb-8">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+              
+              <div className="relative z-10">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                  Lớp học của tôi
+                </h1>
+                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed">
+                  Chọn lớp học để bắt đầu làm bài trắc nghiệm
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setImportOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-blue-600 dark:text-white bg-white dark:bg-gradient-to-r dark:from-sky-500 dark:to-blue-500 border-2 border-blue-500 dark:border-transparent hover:bg-blue-50 dark:hover:brightness-110 shadow-lg hover:shadow-xl transition-all duration-300"
               title="Nhập ID/Link lớp học hoặc quiz"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -725,6 +733,9 @@ const ClassesPage: React.FC = () => {
                                   className="btn-primary flex items-center"
                                   onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
                                   Tham gia ({quizCount})
                                   <svg 
                                     className={`w-4 h-4 ml-1 transition-transform duration-200 ${
@@ -739,25 +750,34 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                                    <div className="p-2">
-                                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                        Tất cả bài kiểm tra:
-                                      </div>
-                                      {validQuizzes.map((quiz) => (
+                                  <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                                      <p className="text-sm font-semibold text-white">
+                                        Chọn bài kiểm tra
+                                      </p>
+                                    </div>
+                                    <div className="p-2 max-h-80 overflow-y-auto">
+                                      {validQuizzes.map((quiz, idx) => (
                                         <button
                                           key={quiz.id}
                                           onClick={() => {
                                             navigate(`/quiz/${quiz.id}`);
                                             setOpenDropdown(null);
                                           }}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                          className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
                                         >
-                                          <div className="font-medium text-gray-900 dark:text-white">
-                                            {quiz.title}
-                                          </div>
-                                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {quiz.questions.length} câu hỏi
+                                          <div className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                              {idx + 1}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                                {quiz.title}
+                                              </div>
+                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {quiz.questions.length} câu hỏi
+                                              </div>
+                                            </div>
                                           </div>
                                         </button>
                                       ))}
@@ -771,12 +791,15 @@ const ClassesPage: React.FC = () => {
                             if (quizCount === 1) {
                               return (
                                 <button 
-                                  className="btn-primary"
+                                  className="btn-primary flex items-center"
                                   onClick={() => {
                                     const firstQuiz = validQuizzes[0];
                                     navigate(`/quiz/${firstQuiz.id}`);
                                   }}
                                 >
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
                                   Tham gia
                                 </button>
                               );
@@ -787,6 +810,9 @@ const ClassesPage: React.FC = () => {
                                     className="btn-primary flex items-center"
                                     onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
                                     Tham gia ({quizCount})
                                     <svg 
                                       className={`w-4 h-4 ml-1 transition-transform duration-200 ${
@@ -801,25 +827,34 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   {/* Dropdown Menu */}
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                                      <div className="p-2">
-                                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                          Tất cả bài kiểm tra:
-                                        </div>
-                                        {validQuizzes.map((quiz) => (
+                                    <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                      <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                                        <p className="text-sm font-semibold text-white">
+                                          Chọn bài kiểm tra
+                                        </p>
+                                      </div>
+                                      <div className="p-2 max-h-80 overflow-y-auto">
+                                        {validQuizzes.map((quiz, idx) => (
                                           <button
                                             key={quiz.id}
                                             onClick={() => {
                                               navigate(`/quiz/${quiz.id}`);
                                               setOpenDropdown(null);
                                             }}
-                                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
                                           >
-                                            <div className="font-medium text-gray-900 dark:text-white">
-                                              {quiz.title}
-                                            </div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                              {quiz.questions.length} câu hỏi
+                                            <div className="flex items-start gap-3">
+                                              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                                {idx + 1}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                                  {quiz.title}
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                  {quiz.questions.length} câu hỏi
+                                                </div>
+                                              </div>
                                             </div>
                                           </button>
                                         ))}
@@ -957,6 +992,9 @@ const ClassesPage: React.FC = () => {
                                   className="btn-primary flex items-center justify-center w-full"
                                   onClick={() => handleDropdownToggle(classRoom.id)}
                                 >
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
                                   Tham gia ({quizCount})
                                   <svg
                                     className={`w-4 h-4 ml-1 transition-transform duration-200 ${
@@ -971,25 +1009,34 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz (mobile) */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                                    <div className="p-2">
-                                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                        Tất cả bài kiểm tra:
-                                      </div>
-                                      {validQuizzes.map((quiz) => (
+                                  <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                                      <p className="text-sm font-semibold text-white">
+                                        Chọn bài kiểm tra
+                                      </p>
+                                    </div>
+                                    <div className="p-2 max-h-80 overflow-y-auto">
+                                      {validQuizzes.map((quiz, idx) => (
                                         <button
                                           key={quiz.id}
                                           onClick={() => {
                                             navigate(`/quiz/${quiz.id}`);
                                             setOpenDropdown(null);
                                           }}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                          className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
                                         >
-                                          <div className="font-medium text-gray-900 dark:text-white">
-                                            {quiz.title}
-                                          </div>
-                                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {quiz.questions.length} câu hỏi
+                                          <div className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                              {idx + 1}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                                {quiz.title}
+                                              </div>
+                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                {quiz.questions.length} câu hỏi
+                                              </div>
+                                            </div>
                                           </div>
                                         </button>
                                       ))}
@@ -1002,12 +1049,15 @@ const ClassesPage: React.FC = () => {
                             if (quizCount === 1) {
                               return (
                                 <button
-                                  className="btn-primary flex-1"
+                                  className="btn-primary flex-1 flex items-center justify-center"
                                   onClick={() => {
                                     const firstQuiz = validQuizzes[0];
                                     navigate(`/quiz/${firstQuiz.id}`);
                                   }}
                                 >
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
                                   Tham gia
                                 </button>
                               );
@@ -1019,6 +1069,9 @@ const ClassesPage: React.FC = () => {
                                     className="btn-primary flex items-center justify-center w-full"
                                     onClick={() => handleDropdownToggle(classRoom.id)}
                                   >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
                                     Tham gia ({quizCount})
                                     <svg
                                       className={`w-4 h-4 ml-1 transition-transform duration-200 ${
@@ -1032,25 +1085,34 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 border border-stone-300 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                                      <div className="p-2">
-                                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
-                                          Tất cả bài kiểm tra:
-                                        </div>
-                                        {validQuizzes.map((quiz) => (
+                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                      <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                                        <p className="text-sm font-semibold text-white">
+                                          Chọn bài kiểm tra
+                                        </p>
+                                      </div>
+                                      <div className="p-2 max-h-80 overflow-y-auto">
+                                        {validQuizzes.map((quiz, idx) => (
                                           <button
                                             key={quiz.id}
                                             onClick={() => {
                                               navigate(`/quiz/${quiz.id}`);
                                               setOpenDropdown(null);
                                             }}
-                                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                                            className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
                                           >
-                                            <div className="font-medium text-gray-900 dark:text-white">
-                                              {quiz.title}
-                                            </div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                              {quiz.questions.length} câu hỏi
+                                            <div className="flex items-start gap-3">
+                                              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                                {idx + 1}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                                  {quiz.title}
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                  {quiz.questions.length} câu hỏi
+                                                </div>
+                                              </div>
                                             </div>
                                           </button>
                                         ))}
@@ -1159,12 +1221,12 @@ const ClassesPage: React.FC = () => {
                           {validQuizzes.map((quiz) => (
                             <div
                               key={quiz.id}
-                              className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                              className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
                             >
                               {/* Desktop Layout cho quiz items */}
                               <div className="hidden sm:flex items-center justify-between">
                                 <div>
-                                  <p className="font-medium text-gray-900 dark:text-white">
+                                  <p className="font-medium text-gray-900 dark:text-white group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
                                     {quiz.title}
                                   </p>
                                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1174,8 +1236,11 @@ const ClassesPage: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
-                                    className="btn-secondary text-sm"
+                                    className="btn-secondary text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
                                   >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
                                     Làm bài
                                   </Link>
                                   <button
@@ -1256,7 +1321,7 @@ const ClassesPage: React.FC = () => {
 
                               {/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
                               <div className="sm:hidden">
-                                <p className="font-medium text-gray-900 dark:text-white mb-1">
+                                <p className="font-medium text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
                                   {quiz.title}
                                 </p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -1265,8 +1330,11 @@ const ClassesPage: React.FC = () => {
                                 <div className="flex flex-row gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
-                                    className="btn-secondary text-sm text-center w-full"
+                                    className="btn-secondary text-sm text-center w-full hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
                                   >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
                                     Làm bài
                                   </Link>
                                   <button

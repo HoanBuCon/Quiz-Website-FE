@@ -429,6 +429,65 @@
   }
 }
 
+/* Layout dọc cho các nút ở breakpoint 570px */
+@media (max-width: 570px) {
+  /* Container nút cho QUIZ items - trong danh sách quiz */
+  .card .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Container nút cho CLASS - nút Tham gia/Vào lớp và action buttons */
+  .card > .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Nút chính cho QUIZ (Làm bài) - chiếm full width hàng đầu */
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary:first-child,
+  .card .sm\:hidden .flex.flex-row.gap-2 > .btn-primary:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Nút chính cho CLASS (Tham gia) hoặc dropdown (Vào lớp) - chiếm full width */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .btn-primary:first-child,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary:first-child,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .relative:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Button trong dropdown container */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .relative > button {
+    width: 100%;
+  }
+  
+  /* Các nút action cho QUIZ (icon buttons) - xếp ngang ở hàng dưới, chia đều không gian */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.w-9,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.rounded {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: 40px;
+  }
+  
+  /* Các nút action cho CLASS (icon buttons) - xếp ngang ở hàng dưới, chia đều không gian */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > button.w-9,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > button.rounded {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: 40px;
+  }
+}
+
 /* Toast notifications responsive */
 @media (max-width: 768px) {
   .toast-container {
