@@ -17,6 +17,7 @@ const quizzesRouter = require('./routes/quizzes');
 const sessionsRouter = require('./routes/sessions');
 const filesRouter = require('./routes/files');
 const visibilityRouter = require('./routes/visibility');
+const imagesRouter = require('./routes/images');
 
 const app = express();
 
@@ -51,14 +52,24 @@ app.use(cors({
 }));
 
 app.use(morgan('dev'));
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '50mb' })); // Tăng lên 50MB để xử lý ảnh base64
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 1000 }); // 1000 requests per minute
 app.use(limiter);
 
 // Inject prisma to req
 app.use((req, _res, next) => { req.prisma = prisma; next(); });
+
+// Serve static files từ thư mục public/uploads với CORS headers
+const path = require('path');
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, 'public/uploads')));
 
 // Base path for API
 const BASE_PATH = process.env.BASE_PATH || '';
@@ -73,6 +84,7 @@ app.use(`${BASE_PATH}/quizzes`, quizzesRouter);
 app.use(`${BASE_PATH}/sessions`, sessionsRouter);
 app.use(`${BASE_PATH}/files`, filesRouter);
 app.use(`${BASE_PATH}/visibility`, visibilityRouter);
+app.use(`${BASE_PATH}/images`, imagesRouter);
 
 // Error handler
 app.use((err, _req, res, _next) => {
@@ -86,7 +98,7 @@ app.use((err, _req, res, _next) => {
 //   console.log(`API listening on http://${host}:${port}`);
 // });
 
-const port = process.env.PORT || 3000; // Passenger injects its own PORT
+const port = process.env.PORT || 4000; // Passenger injects its own PORT
 app.listen(port, '127.0.0.1', () => {
   console.log(`Server running via Passenger on port ${port}`);
 });

@@ -136,6 +136,33 @@
   }
 }
 
+/* Breakpoint 710px-640px: Fix overflow - nút "Làm bài" co lại, cụm action giữ nguyên */
+@media (min-width: 641px) and (max-width: 710px) {
+  /* Override tỉ lệ 60-40: Nút chính co lại tự động thay vì cố định 60% */
+  .card .sm\:hidden .flex.flex-row.gap-2 .btn-primary,
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary.w-full,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.btn-primary {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  
+  /* Dropdown container cũng co lại tự động */
+  .card .sm\:hidden .flex.flex-row.gap-2 > .relative {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  
+  /* Các nút icon - giữ kích thước cố định 36px */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button[class*="w-9"] {
+    flex: 0 0 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    width: 36px !important;
+  }
+}
+
 /* Global responsive improvements */
 @media (max-width: 640px) {
   /* Small screens - phones */
@@ -368,6 +395,11 @@
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
   }
+  
+  /* Fix button alignment in mobile menu - override justify-content: center */
+  button[class*="text-red-"].w-full {
+    justify-content: flex-start !important;
+  }
 }
 
 /* Form and input responsive */
@@ -426,6 +458,65 @@
     width: 36px;
     height: 36px;
     padding: 0.375rem;
+  }
+}
+
+/* Layout dọc cho các nút ở breakpoint 570px */
+@media (max-width: 570px) {
+  /* Container nút cho QUIZ items - trong danh sách quiz */
+  .card .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Container nút cho CLASS - nút Tham gia/Vào lớp và action buttons */
+  .card > .sm\:hidden .flex.flex-row.gap-2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* Nút chính cho QUIZ (Làm bài) - chiếm full width hàng đầu */
+  .card .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary:first-child,
+  .card .sm\:hidden .flex.flex-row.gap-2 > .btn-primary:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Nút chính cho CLASS (Tham gia) hoặc dropdown (Vào lớp) - chiếm full width */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .btn-primary:first-child,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > a.btn-secondary:first-child,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .relative:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Button trong dropdown container */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > .relative > button {
+    width: 100%;
+  }
+  
+  /* Các nút action cho QUIZ (icon buttons) - xếp ngang ở hàng dưới, chia đều không gian */
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.w-9,
+  .card .sm\:hidden .flex.flex-row.gap-2 > button.rounded {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: 40px;
+  }
+  
+  /* Các nút action cho CLASS (icon buttons) - xếp ngang ở hàng dưới, chia đều không gian */
+  .card > .sm\:hidden .flex.flex-row.gap-2 > button.w-9,
+  .card > .sm\:hidden .flex.flex-row.gap-2 > button.rounded {
+    flex: 1 1 0;
+    min-width: 36px;
+    max-width: none;
+    width: auto;
+    height: 40px;
   }
 }
 

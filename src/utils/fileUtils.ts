@@ -12,6 +12,16 @@ export interface DuplicateAction {
 }
 
 /**
+ * Format date to DD/MM/YYYY
+ */
+export const formatDate = (date: Date): string => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/**
  * Kiểm tra xem tên file có bị trùng không và đề xuất tên mới
  */
 export const checkDuplicateFileName = (

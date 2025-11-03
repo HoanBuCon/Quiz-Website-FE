@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useMusic } from '../../context/MusicContext';
-import { FaMusic, FaBars, FaTimes, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaMusic, FaBars, FaTimes, FaSignOutAlt, FaUser, FaHome, FaBook, FaPlus, FaGraduationCap } from 'react-icons/fa';
 import { getToken, clearToken } from '../../utils/auth';
 import { toast } from 'react-hot-toast';
 
@@ -14,6 +14,32 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  // Load user info when logged in
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const { AuthAPI } = await import('../../utils/api');
+          const response = await AuthAPI.me(token);
+          setUserName(response.user.name || response.user.email.split('@')[0]);
+        } catch (error) {
+          console.error('Failed to load user info:', error);
+          // Fallback to email prefix if name not available
+          setUserName(null);
+        }
+      } else {
+        setUserName(null);
+      }
+    };
+    
+    if (isLoggedIn) {
+      loadUserInfo();
+    }
+  }, [isLoggedIn]);
 
   // Update auth state when token changes
   useEffect(() => {
@@ -35,6 +61,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     clearToken();
     setIsLoggedIn(false);
+    setUserName(null);
     toast.success('Đã đăng xuất thành công!');
     // Trigger Header update
     window.dispatchEvent(new Event('authChange'));
@@ -43,10 +70,10 @@ const Header: React.FC = () => {
 
   // Danh sách các trang navigation
   const navItems = [
-    { path: '/', label: 'Trang chủ' },
-    { path: '/classes', label: 'Lớp học' },
-    { path: '/create', label: 'Tạo lớp' },
-    { path: '/documents', label: 'Tài liệu' },
+    { path: '/', label: 'Trang chủ', icon: FaHome },
+    { path: '/classes', label: 'Lớp học', icon: FaGraduationCap },
+    { path: '/create', label: 'Tạo lớp', icon: FaPlus },
+    { path: '/documents', label: 'Tài liệu', icon: FaBook },
   ];
 
   // Kiểm tra xem link có active không
@@ -57,14 +84,53 @@ const Header: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
+  // Thanh highlight trượt
+  const navRef = useRef<HTMLDivElement>(null);
+  const [highlightStyle, setHighlightStyle] = useState<React.CSSProperties>({});
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isUserMenuOpen && !target.closest('.user-menu-container')) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
+  // Hiệu ứng highlight trượt giữa các nút nav
+  useEffect(() => {
+    const navEl = navRef.current;
+    if (!navEl) return;
+
+    const activeLink = navEl.querySelector(".nav-item-active");
+    if (activeLink) {
+      const rect = (activeLink as HTMLElement).getBoundingClientRect();
+      const parentRect = navEl.getBoundingClientRect();
+
+      setHighlightStyle({
+        transform: `translateX(${rect.left - parentRect.left}px)`,
+        width: `${rect.width}px`,
+        opacity: 1,
+      });
+    } else {
+      setHighlightStyle({ opacity: 0 });
+    }
+  }, [location.pathname]);
+
   return (
     <>
   <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-screen-2xl mx-auto relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <div className="flex items-center min-w-0">
@@ -84,24 +150,48 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden nav:flex space-x-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium relative overflow-hidden group ${
-                    isActive(item.path)
-                      ? `${isDarkMode
-                          ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
-                          : 'header-nav-active border-0'} `
-                      : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/50 dark:hover:bg-slate-800/50 border-0'
-                  }`}
-                >
-                  {item.label}
-                  {/* Thanh loading shimmer effect cho tất cả items */}
-                  <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                </Link>
-              ))}
+            <nav ref={navRef} className="hidden nav:flex space-x-8 relative">
+              {/* Highlight nền trượt (luôn nằm dưới các nút) */}
+              <div
+                className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
+                  ${isDarkMode
+                    ? 'bg-gradient-to-r from-primary-900/40 to-primary-700/40'
+                    : 'bg-transparent' /* để light mode giữ màu nền nút cũ (tránh đè màu) */}
+                `}
+                style={highlightStyle}
+              ></div>
+
+              {navItems.map((item) => {
+                const IconComponent = item.icon;
+                const active = isActive(item.path);
+
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
+                      border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
+                      transition-colors transition-shadow duration-300 ease-out overflow-hidden
+                      ${
+                        active
+                          ? `${
+                              isDarkMode
+                                ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
+                                : 'header-nav-active border-0 shadow-md' /* KHÔI PHỤC màu lightmode cũ */
+                            }`
+                          : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0'
+                      }`}
+                  >
+                    <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
+                    <span className="transition-colors duration-300 ease-out">{item.label}</span>
+
+                    {/* shimmer: inner animate div + z trên (đảm bảo hiển thị) */}
+                    <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-400/80 to-transparent animate-shimmer" />
+                    </div>
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* Desktop Theme Toggle and Music Player Buttons */}
@@ -157,21 +247,51 @@ const Header: React.FC = () => {
 
               {/* Auth Buttons */}
               {isLoggedIn ? (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/classes"
+                <div className="relative user-menu-container">
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
                   >
                     <FaUser className="w-4 h-4" />
-                    <span>Tài khoản</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/20 hover:from-red-200 hover:to-red-300 dark:hover:from-red-800/40 dark:hover:to-red-700/40 transition-all duration-300 shadow-sm hover:shadow-md text-red-700 dark:text-red-400"
-                    title="Đăng xuất"
-                  >
-                    <FaSignOutAlt className="w-4 h-4" />
+                    <span>{userName || 'Tài khoản'}</span>
+                    <svg 
+                      className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
+
+                  {/* Dropdown Menu */}
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                      <div className="py-1">
+                        <Link
+                          to="/classes"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                        >
+                          <FaGraduationCap className="w-4 h-4 mr-3" />
+                          <span>Lớp học của tôi</span>
+                        </Link>
+                        
+                        <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                        
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setIsUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                        >
+                          <FaSignOutAlt className="w-4 h-4 mr-3" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
@@ -196,15 +316,16 @@ const Header: React.FC = () => {
               {/* Mobile Music Player Button */}
               <button
                 onClick={toggleMusicPlayer}
-                className={`p-2 rounded-lg transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9 ${
+                className={`p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center ${
                   showMusicPlayer
-                    ? 'bg-primary-200 dark:bg-primary-800 text-primary-700 dark:text-primary-300'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    ? 'bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300'
+                    : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600'
                 }`}
                 aria-label="Toggle Music Player"
+                title={showMusicPlayer ? 'Ẩn Music Player' : 'Hiện Music Player'}
               >
                 {React.createElement(FaMusic as React.ComponentType<any>, {
-                  className: `w-5 h-5 ${isPlaying ? 'animate-spin' : ''}`,
+                  className: `w-5 h-5 ${isPlaying ? 'animate-spin' : ''} ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}`,
                   style: isPlaying ? { animationDuration: '2s' } : undefined
                 })}
               </button>
@@ -212,7 +333,7 @@ const Header: React.FC = () => {
               {/* Mobile Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9"
+                className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center"
                 aria-label="Toggle theme"
               >
                 {isDarkMode ? (
@@ -229,7 +350,7 @@ const Header: React.FC = () => {
               {/* Mobile menu toggle */}
               <button
                 onClick={toggleMobileMenu}
-                className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all duration-300 flex items-center justify-center aspect-square w-9 h-9"
+                className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-600 dark:text-slate-400 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center aspect-square w-10 h-10"
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? 
@@ -246,22 +367,26 @@ const Header: React.FC = () => {
       <div className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
         isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
       }`}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen-2xl mx-auto">
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                  isActive(item.path)
-                    ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
+                    isActive(item.path)
+                      ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
             
             {/* Mobile Auth Links */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4">
@@ -270,20 +395,20 @@ const Header: React.FC = () => {
                   <Link
                     to="/classes"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                   >
-                    <FaUser className="inline w-4 h-4 mr-2" />
-                    Tài khoản
+                    <FaUser className="w-4 h-4 mr-2" />
+                    <span>{userName || 'Tài khoản'}</span>
                   </Link>
                   <button
                     onClick={() => {
                       handleLogout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 flex items-center"
                   >
-                    <FaSignOutAlt className="inline w-4 h-4 mr-2" />
-                    Đăng xuất
+                    <FaSignOutAlt className="w-4 h-4 mr-2" />
+                    <span>Đăng xuất</span>
                   </button>
                 </div>
               ) : (

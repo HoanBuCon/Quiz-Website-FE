@@ -61,9 +61,9 @@ model Question {
   optionImages   Json?
   quizId         String
   parentId       String?
-  quiz           Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
   parent         Question?    @relation("QuestionChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children       Question[]   @relation("QuestionChildren")
+  quiz           Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model QuizSession {
@@ -113,12 +113,13 @@ model ShareItem {
 }
 
 model SharedAccess {
-  id         String     @id @default(cuid())
-  userId     String
-  targetType TargetType
-  targetId   String
-  createdAt  DateTime   @default(now())
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String      @id @default(cuid())
+  userId      String
+  targetType  TargetType
+  targetId    String
+  accessLevel AccessLevel @default(full)
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, targetType, targetId])
 }
@@ -127,8 +128,8 @@ enum QuestionType {
   single
   multiple
   text
-  drag     // Kéo thả vào nhóm/ô đích
-  composite // Câu hỏi mẹ có câu hỏi con
+  drag
+  composite
 }
 
 enum FileType {
@@ -140,4 +141,9 @@ enum FileType {
 enum TargetType {
   class
   quiz
+}
+
+enum AccessLevel {
+  full
+  navigationOnly
 }

@@ -207,7 +207,7 @@ router.post('/public', authRequired, async (req, res) => {
   res.json({ ok: true });
 });
 
-// Toggle share (enable/disable) for class/quiz
+// Toggle share (enable/disable) for class/quiz - LOGIC MỚI GIỐNG PUBLIC/PRIVATE
 router.post('/share', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const { targetType, targetId, enabled } = req.body || {};
@@ -227,20 +227,173 @@ router.post('/share', authRequired, async (req, res) => {
   }
   if (ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
-  if (enabled) {
-    // Create if not exists
-    await prisma.shareItem.upsert({
-      where: { targetType_targetId: { targetType, targetId } },
-      create: { targetType, targetId, ownerId: req.user.id },
-      update: {},
-    });
+  // ===== LOGIC MỚI - GIỐNG PUBLIC/PRIVATE =====
+  if (targetType === 'class') {
+    // ========== XỬ LÝ CLASS ==========
+    
+    if (enabled) {
+      // ========== CASE 1: Enable Share Class ==========
+      // → Class Shareable + TẤT CẢ Quiz Shareable
+      
+      console.log('[SHARE CASE 1] Enable Share Class: Setting ALL Quizzes to Shareable');
+      
+      // Step 1: Create ShareItem for Class
+      await prisma.shareItem.upsert({
+        where: { targetType_targetId: { targetType: 'class', targetId } },
+        create: { targetType: 'class', targetId, ownerId: req.user.id },
+        update: {},
+      });
+      
+      // Step 2: Get ALL Quizzes in this Class
+      const allQuizzes = await prisma.quiz.findMany({ 
+        where: { classId: targetId },
+        select: { id: true }
+      });
+      
+      console.log(`Found ${allQuizzes.length} quizzes in class`);
+      
+      // Step 3: Create ShareItem for ALL Quizzes
+      for (const quiz of allQuizzes) {
+        await prisma.shareItem.upsert({
+          where: { targetType_targetId: { targetType: 'quiz', targetId: quiz.id } },
+          create: { targetType: 'quiz', targetId: quiz.id, ownerId: req.user.id },
+          update: {},
+        });
+        
+        console.log(`  Quiz ${quiz.id} → Shareable`);
+      }
+      
+      console.log('[SHARE CASE 1] Complete: Class + ALL Quizzes are now Shareable');
+      
+    } else {
+      // ========== CASE 3: Disable Share Class ==========
+      // → Class Not Shareable + Quiz Shareable → Not Shareable + Quiz Not Shareable → giữ nguyên
+      // → XÓA TẤT CẢ SharedAccess của class + các quiz shareable
+      
+      console.log('[SHARE CASE 3] Disable Share Class: Remove ShareItems + Remove ALL SharedAccess');
+      
+      // Step 1: Remove ALL SharedAccess for this Class
+      await prisma.sharedAccess.deleteMany({
+        where: { targetType: 'class', targetId }
+      });
+      console.log('  Removed all SharedAccess for class');
+      
+      // Step 2: Remove ShareItem for Class
+      await prisma.shareItem.deleteMany({ 
+        where: { targetType: 'class', targetId } 
+      });
+      
+      // Step 2: Get ALL Quizzes and check if they are shareable
+      const allQuizzes = await prisma.quiz.findMany({ 
+        where: { classId: targetId },
+        select: { id: true }
+      });
+      
+      console.log(`Found ${allQuizzes.length} quizzes in class`);
+      
+      // Step 3: Only remove ShareItem for quizzes that are currently shareable
+      for (const quiz of allQuizzes) {
+        const shareItem = await prisma.shareItem.findFirst({
+          where: { targetType: 'quiz', targetId: quiz.id }
+        });
+        
+        if (shareItem) {
+          // This quiz is Shareable → remove ShareItem + remove ALL SharedAccess
+          await prisma.shareItem.deleteMany({ 
+            where: { targetType: 'quiz', targetId: quiz.id } 
+          });
+          
+          await prisma.sharedAccess.deleteMany({
+            where: { targetType: 'quiz', targetId: quiz.id }
+          });
+          
+          console.log(`  Quiz ${quiz.id}: Shareable → Not Shareable (ShareItem + SharedAccess removed)`);
+        } else {
+          // This quiz is already Not Shareable → keep as-is
+          console.log(`  Quiz ${quiz.id}: Not Shareable → Keep Not Shareable`);
+        }
+      }
+      
+      console.log('[SHARE CASE 3] Complete: Class Not Shareable + ALL SharedAccess removed');
+    }
+    
   } else {
-    await prisma.shareItem.deleteMany({ where: { targetType, targetId } });
-  }
-  res.json({ ok: true });
+    // ========== XỬ LÝ QUIZ ==========
+    
+    // Get quiz info
+    const quiz = await prisma.quiz.findUnique({ 
+      where: { id: targetId },
+      select: { id: true, classId: true }
+    });
+    
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    
+    // Check if class is shareable
+    const classShareItem = await prisma.shareItem.findFirst({
+      where: { targetType: 'class', targetId: quiz.classId }
+    });
+    
+    if (enabled) {
+      // ========== CASE 2: Enable Share Quiz ==========
+      // → Class Shareable + CHỈ Quiz này Shareable + Quiz khác giữ nguyên
+      
+      console.log('[SHARE CASE 2] Enable Share Quiz: Class Shareable + ONLY this Quiz Shareable');
+      
+      // Step 1: If Class is Not Shareable, make it Shareable
+      if (!classShareItem) {
+        await prisma.shareItem.upsert({
+          where: { targetType_targetId: { targetType: 'class', targetId: quiz.classId } },
+          create: { targetType: 'class', targetId: quiz.classId, ownerId: req.user.id },
+          update: {},
+        });
+        
+        console.log(`  Class ${quiz.classId}: Not Shareable → Shareable`);
+      } else {
+        console.log(`  Class ${quiz.classId}: Already Shareable`);
+      }
+      
+      // Step 2: Make THIS Quiz Shareable
+      await prisma.shareItem.upsert({
+        where: { targetType_targetId: { targetType: 'quiz', targetId } },
+        create: { targetType: 'quiz', targetId, ownerId: req.user.id },
+        update: {},
+      });
+      
+      console.log(`  Quiz ${targetId}: Not Shareable → Shareable`);
+      console.log('[SHARE CASE 2] Complete: Class Shareable + ONLY this Quiz Shareable (others unchanged)');
+      
+    } else {
+      // ========== CASE 4: Disable Share Quiz ==========
+      // → CHỈ Quiz này Not Shareable + Class giữ nguyên Shareable
+      // → XÓA TẤT CẢ SharedAccess của quiz này
+      
+      console.log('[SHARE CASE 4] Disable Share Quiz: Remove ShareItem + Remove SharedAccess for this Quiz');
+      
+      // Step 1: Remove ALL SharedAccess for THIS Quiz
+      await prisma.sharedAccess.deleteMany({
+        where: { targetType: 'quiz', targetId }
+      });
+      console.log(`  Removed all SharedAccess for quiz ${targetId}`);
+      
+      // Step 2: Remove ShareItem for THIS Quiz
+      await prisma.shareItem.deleteMany({
+        where: { targetType: 'quiz', targetId }
+      });
+      
+      console.log(`  Quiz ${targetId}: Shareable → Not Shareable (ShareItem removed)`);
+      console.log(`  Class ${quiz.classId}: Stays Shareable`);
+      console.log('[SHARE CASE 4] Complete: ONLY this Quiz Not Shareable + SharedAccess removed');
+    }
+  }  res.json({ ok: true });
 });
 
 // Claim access by id or share code (adds to user's list without edit rights)
+// LOGIC MỚI - SỬ DỤNG accessLevel:
+// - Claim Class → tạo SharedAccess(class, accessLevel='full') → User có FULL quyền truy cập TẤT CẢ quiz
+// - Claim Quiz → tạo SharedAccess(class, accessLevel='navigationOnly') + SharedAccess(quiz, accessLevel='full')
+//              → User CHỈ truy cập quiz đó, class access chỉ để navigation/listing
 router.post('/claim', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const { classId, quizId, code } = req.body || {};
@@ -271,11 +424,70 @@ router.post('/claim', authRequired, async (req, res) => {
     return res.status(400).json({ message: 'classId or quizId or code required' });
   }
 
-  await prisma.sharedAccess.upsert({
-    where: { userId_targetType_targetId: { userId: req.user.id, targetType, targetId } },
-    create: { userId: req.user.id, targetType, targetId },
-    update: {},
-  });
+  // ===== LOGIC MỚI =====
+  if (targetType === 'class') {
+    // CLAIM CLASS → Grant FULL access to CLASS (all quizzes)
+    console.log(`[CLAIM CLASS] User ${req.user.id} claiming class ${targetId}`);
+    
+    // Step 0: Verify class is shareable (has ShareItem)
+    const classShareItem = await prisma.shareItem.findFirst({
+      where: { targetType: 'class', targetId }
+    });
+    
+    if (!classShareItem) {
+      console.log(`[CLAIM CLASS] REJECTED: Class ${targetId} is not shareable`);
+      return res.status(403).json({ message: 'Lớp học không được chia sẻ hoặc đã bị khóa chia sẻ' });
+    }
+    
+    // Step 1: Create SharedAccess for Class with FULL access
+    await prisma.sharedAccess.upsert({
+      where: { userId_targetType_targetId: { userId: req.user.id, targetType: 'class', targetId } },
+      create: { userId: req.user.id, targetType: 'class', targetId, accessLevel: 'full' },
+      update: { accessLevel: 'full' },
+    });
+    
+    console.log(`[CLAIM CLASS] Complete: User has FULL access to class (all quizzes)`);
+    
+  } else {
+    // CLAIM QUIZ → Grant navigationOnly access to CLASS + full access to THIS QUIZ
+    console.log(`[CLAIM QUIZ] User ${req.user.id} claiming quiz ${targetId}`);
+    
+    // Step 0: Verify quiz is shareable (has ShareItem)
+    const quizShareItem = await prisma.shareItem.findFirst({
+      where: { targetType: 'quiz', targetId }
+    });
+    
+    if (!quizShareItem) {
+      console.log(`[CLAIM QUIZ] REJECTED: Quiz ${targetId} is not shareable`);
+      return res.status(403).json({ message: 'Quiz không được chia sẻ hoặc đã bị khóa chia sẻ' });
+    }
+    
+    // Get quiz's classId
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: targetId },
+      select: { classId: true }
+    });
+    
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    
+    // Step 1: Create SharedAccess for CLASS with navigationOnly access
+    await prisma.sharedAccess.upsert({
+      where: { userId_targetType_targetId: { userId: req.user.id, targetType: 'class', targetId: quiz.classId } },
+      create: { userId: req.user.id, targetType: 'class', targetId: quiz.classId, accessLevel: 'navigationOnly' },
+      update: { accessLevel: 'navigationOnly' },
+    });
+    
+    // Step 2: Create SharedAccess for THIS QUIZ with full access
+    await prisma.sharedAccess.upsert({
+      where: { userId_targetType_targetId: { userId: req.user.id, targetType: 'quiz', targetId } },
+      create: { userId: req.user.id, targetType: 'quiz', targetId, accessLevel: 'full' },
+      update: { accessLevel: 'full' },
+    });
+    
+    console.log(`[CLAIM QUIZ] Complete: User has navigationOnly access to class + full access to this quiz only`);
+  }
 
   res.status(201).json({ targetType, targetId });
 });
@@ -336,6 +548,25 @@ router.get('/shared/quizzes', authRequired, async (req, res) => {
   if (ids.length === 0) return res.json([]);
   const quizzes = await prisma.quiz.findMany({ where: { id: { in: ids } }, include: { questions: true, class: true } });
   res.json(quizzes);
+});
+
+// Check if class or quiz is shareable (has ShareItem)
+router.get('/share/status', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const { targetType, targetId } = req.query;
+  
+  if (!['class', 'quiz'].includes(targetType)) {
+    return res.status(400).json({ message: 'Invalid targetType' });
+  }
+  if (!targetId) {
+    return res.status(400).json({ message: 'targetId required' });
+  }
+
+  const shareItem = await prisma.shareItem.findFirst({
+    where: { targetType, targetId }
+  });
+
+  res.json({ isShareable: !!shareItem });
 });
 
 module.exports = router;

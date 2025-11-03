@@ -1,7 +1,23 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { authRequired } = require('../middleware/auth');
 const router = express.Router();
+
+// Get current user info
+router.get('/me', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  try {
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.user.id },
+      select: { id: true, email: true, name: true }
+    });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ user });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 router.post('/signup', async (req, res) => {
   const prisma = req.prisma;
