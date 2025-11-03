@@ -131,6 +131,7 @@ export const FilesAPI = {
 };
 
 export const AuthAPI = {
+  me: (token: string) => apiRequest<{ user: { id: string; email: string; name: string } }>(`/auth/me`, { token }),
   forgot: (email: string) => apiRequest<{ resetToken: string; resetLink: string }>(`/auth/forgot`, { method: 'POST', body: JSON.stringify({ email }) }),
   reset: (token: string, newPassword: string) => apiRequest<void>(`/auth/reset`, { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
 };

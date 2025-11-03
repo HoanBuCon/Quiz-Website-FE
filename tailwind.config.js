@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       screens: {
-        'nav': '900px', // Custom breakpoint cho navigation menu
+        'nav': '1024px', // Custom breakpoint cho navigation menu
       },
       colors: {
         primary: {
