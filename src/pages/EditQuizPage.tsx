@@ -4,6 +4,7 @@ import { Question, Quiz } from '../types';
 import { ParsedQuestion } from '../utils/docsParser';
 import { toast } from 'react-hot-toast';
 import QuizPreview from '../components/QuizPreview';
+import { ImagesAPI } from '../utils/api';
 import {
   DndContext,
   closestCenter,
@@ -62,7 +63,7 @@ const ImageUpload: React.FC<{
     }
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Vui lòng chọn file ảnh');
       return;
@@ -73,12 +74,19 @@ const ImageUpload: React.FC<{
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      onImageUpload(result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Upload ảnh lên server và nhận URL
+      toast.loading('Đang upload ảnh...');
+      const { ImagesAPI } = await import('../utils/api');
+      const imageUrl = await ImagesAPI.upload(file);
+      toast.dismiss();
+      toast.success('Upload ảnh thành công!');
+      onImageUpload(imageUrl);
+    } catch (error) {
+      toast.dismiss();
+      console.error('Upload error:', error);
+      toast.error('Lỗi khi upload ảnh: ' + (error as Error).message);
+    }
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -201,6 +209,9 @@ const EditQuizPage: React.FC = () => {
       if (line.startsWith('ID:')) {
         // Lưu câu hỏi trước đó nếu có
         if (currentQuestion.question) {
+          // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID
+          const existingQuestion = questions.find(q => q.id === currentQuestion.id);
+          
           parsedQuestions.push({
             id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
             question: currentQuestion.question,
@@ -208,8 +219,8 @@ const EditQuizPage: React.FC = () => {
             options: currentOptions.length > 0 ? currentOptions : undefined,
             correctAnswers: currentCorrectAnswers,
             explanation: currentQuestion.explanation || '',
-            questionImage: currentQuestion.questionImage,
-            optionImages: currentQuestion.optionImages
+            questionImage: existingQuestion?.questionImage, // GIỮ LẠI ẢNH CŨ
+            optionImages: existingQuestion?.optionImages // GIỮ LẠI ẢNH ĐÁP ÁN CŨ
           } as QuestionWithImages);
         }
         
@@ -236,6 +247,9 @@ const EditQuizPage: React.FC = () => {
     
     // Thêm câu hỏi cuối cùng
     if (currentQuestion.question) {
+      // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID
+      const existingQuestion = questions.find(q => q.id === currentQuestion.id);
+      
       parsedQuestions.push({
         id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
         question: currentQuestion.question,
@@ -243,8 +257,8 @@ const EditQuizPage: React.FC = () => {
         options: currentOptions.length > 0 ? currentOptions : undefined,
         correctAnswers: currentCorrectAnswers,
         explanation: currentQuestion.explanation || '',
-        questionImage: currentQuestion.questionImage,
-        optionImages: currentQuestion.optionImages
+        questionImage: existingQuestion?.questionImage, // GIỮ LẠI ẢNH CŨ
+        optionImages: existingQuestion?.optionImages // GIỮ LẠI ẢNH ĐÁP ÁN CŨ
       } as QuestionWithImages);
     }
     
@@ -278,6 +292,89 @@ const EditQuizPage: React.FC = () => {
         return reorderedQuestions;
       });
     }
+  };
+
+  // Helper: Convert base64 to File object
+  const base64ToFile = (base64: string, filename: string): File => {
+    const arr = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Helper: Upload base64 images and replace with URLs
+  const uploadImagesInQuestions = async (questions: any[]): Promise<any[]> => {
+    const processedQuestions = [];
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = { ...questions[i] };
+      
+      // Upload questionImage if base64
+      if (q.questionImage && q.questionImage.startsWith('data:image/')) {
+        try {
+          const file = base64ToFile(q.questionImage, `question-${i}.png`);
+          const url = await ImagesAPI.upload(file);
+          q.questionImage = url;
+          console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
+        } catch (error) {
+          console.error(`✗ Failed to upload questionImage for Q${i + 1}:`, error);
+          toast.error(`Không thể upload ảnh câu hỏi ${i + 1}`);
+        }
+      }
+
+      // Upload optionImages if base64
+      if (q.optionImages) {
+        const newOptionImages: any = Array.isArray(q.optionImages) ? [] : {};
+        
+        if (Array.isArray(q.optionImages)) {
+          // Array format
+          for (let j = 0; j < q.optionImages.length; j++) {
+            const img = q.optionImages[j];
+            if (img && img.startsWith('data:image/')) {
+              try {
+                const file = base64ToFile(img, `question-${i}-option-${j}.png`);
+                const url = await ImagesAPI.upload(file);
+                newOptionImages[j] = url;
+                console.log(`✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`);
+              } catch (error) {
+                console.error(`✗ Failed to upload optionImage for Q${i + 1} option ${j}:`, error);
+                newOptionImages[j] = img; // Keep original on error
+              }
+            } else {
+              newOptionImages[j] = img; // Already URL or null
+            }
+          }
+        } else {
+          // Object format {optionText: imageData}
+          for (const [key, img] of Object.entries(q.optionImages)) {
+            if (img && typeof img === 'string' && img.startsWith('data:image/')) {
+              try {
+                const file = base64ToFile(img, `question-${i}-${key}.png`);
+                const url = await ImagesAPI.upload(file);
+                newOptionImages[key] = url;
+                console.log(`✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`);
+              } catch (error) {
+                console.error(`✗ Failed to upload optionImage for Q${i + 1} "${key}":`, error);
+                newOptionImages[key] = img; // Keep original on error
+              }
+            } else {
+              newOptionImages[key] = img; // Already URL or null
+            }
+          }
+        }
+        
+        q.optionImages = newOptionImages;
+      }
+
+      processedQuestions.push(q);
+    }
+
+    return processedQuestions;
   };
 
   const handlePublish = async () => {
@@ -373,6 +470,11 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
+      // Upload all base64 images first and replace with URLs
+      console.log('Uploading images before publishing...');
+      const questionsWithUrls = await uploadImagesInQuestions(cleanedQuestions);
+      console.log('All images uploaded successfully!');
+
       // Nếu có token, ưu tiên lưu về backend
       const { getToken } = await import('../utils/auth');
       const token = getToken();
@@ -384,7 +486,7 @@ const EditQuizPage: React.FC = () => {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
           // giữ nguyên trạng thái published hiện tại (không thay đổi khi chỉnh sửa)
-          questions: cleanedQuestions,
+          questions: questionsWithUrls,
         }, token);
         toast.success('Cập nhật quiz thành công!');
         navigate('/classes');
@@ -426,7 +528,7 @@ const EditQuizPage: React.FC = () => {
           title: quizTitle || `Quiz từ file ${state.fileName}`,
           description: quizDescription || 'Bài trắc nghiệm từ tài liệu đã tải lên',
           published: false, // mặc định Private khi tạo mới
-          questions: cleanedQuestions,
+          questions: questionsWithUrls,
         }, token);
         toast.success('Xuất bản thành công!');
         navigate('/classes');
@@ -479,8 +581,8 @@ const EditQuizPage: React.FC = () => {
       correctAnswers: q.correctAnswers,
       explanation: q.explanation,
       subQuestions: q.subQuestions, // Giữ lại subQuestions nếu có
-      questionImage: undefined,
-      optionImages: undefined
+      questionImage: (q as any).questionImage, // Giữ lại ảnh câu hỏi nếu có
+      optionImages: (q as any).optionImages // Giữ lại ảnh đáp án nếu có
     }));
     setQuestions(convertedQuestions);
     

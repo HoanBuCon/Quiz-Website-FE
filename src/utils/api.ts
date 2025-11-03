@@ -49,6 +49,43 @@ export const QuizzesAPI = {
   remove: (id: string, token: string) => apiRequest<void>(`/quizzes/${id}`, { method: 'DELETE', token }),
 };
 
+// Images API
+export const ImagesAPI = {
+  /**
+   * Upload một ảnh lên server
+   * @param file File ảnh (từ input[type="file"])
+   * @returns Promise với URL của ảnh đã upload
+   */
+  upload: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const res = await fetch(`${API_BASE_URL}/images/upload`, {
+      method: 'POST',
+      body: formData,
+      // Không set Content-Type header - để browser tự set với boundary
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `Upload failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.url;
+  },
+
+  /**
+   * Xóa một ảnh từ server (optional)
+   * @param filename Tên file cần xóa
+   */
+  delete: async (filename: string): Promise<void> => {
+    await fetch(`${API_BASE_URL}/images/${filename}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export const VisibilityAPI = {
   publicToggle: async (
     payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean },

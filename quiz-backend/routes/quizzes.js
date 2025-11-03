@@ -178,8 +178,54 @@ router.put('/:id', authRequired, async (req, res) => {
 router.delete('/:id', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const id = req.params.id;
-  const found = await prisma.quiz.findUnique({ where: { id } });
+  const found = await prisma.quiz.findUnique({ where: { id }, include: { questions: true } });
   if (!found || found.ownerId !== req.user.id) return res.status(404).json({ message: 'Not found' });
+  
+  // ===== XÓA ẢNH TRƯỚC KHI XÓA QUIZ =====
+  const fs = require('fs');
+  const path = require('path');
+  const isProd = process.env.NODE_ENV === 'production';
+  const uploadDir = isProd 
+    ? path.join(__dirname, '../../uploads/images')  // cPanel: public_html/uploads/images
+    : path.join(__dirname, '../public/uploads/images');
+  
+  // Helper function: Xóa ảnh từ URL
+  const deleteImageFromUrl = (imageUrl) => {
+    if (!imageUrl || !imageUrl.includes('/uploads/images/')) return;
+    
+    try {
+      // Lấy filename từ URL: http://localhost:4000/uploads/images/abc.png → abc.png
+      const filename = imageUrl.split('/uploads/images/').pop();
+      const filePath = path.join(uploadDir, filename);
+      
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`✓ Deleted image: ${filename}`);
+      }
+    } catch (err) {
+      console.error(`✗ Failed to delete image from URL ${imageUrl}:`, err);
+    }
+  };
+  
+  // Xóa tất cả ảnh trong quiz
+  for (const question of found.questions) {
+    // Xóa ảnh câu hỏi
+    if (question.questionImage) {
+      deleteImageFromUrl(question.questionImage);
+    }
+    
+    // Xóa ảnh options (nếu có)
+    if (question.optionImages && typeof question.optionImages === 'object') {
+      const optionImages = Array.isArray(question.optionImages) 
+        ? question.optionImages 
+        : Object.values(question.optionImages);
+      
+      for (const imgUrl of optionImages) {
+        if (imgUrl) deleteImageFromUrl(imgUrl);
+      }
+    }
+  }
+  
   await prisma.quiz.delete({ where: { id } });
   res.status(204).end();
 });
