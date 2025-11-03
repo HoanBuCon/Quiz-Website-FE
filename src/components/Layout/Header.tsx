@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useMusic } from '../../context/MusicContext';
@@ -84,6 +84,10 @@ const Header: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
+  // Thanh highlight trượt
+  const navRef = useRef<HTMLDivElement>(null);
+  const [highlightStyle, setHighlightStyle] = useState<React.CSSProperties>({});
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -102,6 +106,26 @@ const Header: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUserMenuOpen]);
+
+  // Hiệu ứng highlight trượt giữa các nút nav
+  useEffect(() => {
+    const navEl = navRef.current;
+    if (!navEl) return;
+
+    const activeLink = navEl.querySelector(".nav-item-active");
+    if (activeLink) {
+      const rect = (activeLink as HTMLElement).getBoundingClientRect();
+      const parentRect = navEl.getBoundingClientRect();
+
+      setHighlightStyle({
+        transform: `translateX(${rect.left - parentRect.left}px)`,
+        width: `${rect.width}px`,
+        opacity: 1,
+      });
+    } else {
+      setHighlightStyle({ opacity: 0 });
+    }
+  }, [location.pathname]);
 
   return (
     <>
@@ -126,25 +150,45 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden nav:flex space-x-8">
+            <nav ref={navRef} className="hidden nav:flex space-x-8 relative">
+              {/* Highlight nền trượt (luôn nằm dưới các nút) */}
+              <div
+                className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
+                  ${isDarkMode
+                    ? 'bg-gradient-to-r from-primary-900/40 to-primary-700/40'
+                    : 'bg-transparent' /* để light mode giữ màu nền nút cũ (tránh đè màu) */}
+                `}
+                style={highlightStyle}
+              ></div>
+
               {navItems.map((item) => {
                 const IconComponent = item.icon;
+                const active = isActive(item.path);
+
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium relative overflow-hidden group flex items-center gap-2 ${
-                      isActive(item.path)
-                        ? `${isDarkMode
-                            ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
-                            : 'header-nav-active border-0'} `
-                        : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/50 dark:hover:bg-slate-800/50 border-0'
-                    }`}
+                    className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
+                      border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
+                      transition-colors transition-shadow duration-300 ease-out overflow-hidden
+                      ${
+                        active
+                          ? `${
+                              isDarkMode
+                                ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
+                                : 'header-nav-active border-0 shadow-md' /* KHÔI PHỤC màu lightmode cũ */
+                            }`
+                          : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0'
+                      }`}
                   >
-                    <IconComponent className="w-4 h-4" />
-                    <span>{item.label}</span>
-                    {/* Thanh loading shimmer effect cho tất cả items */}
-                    <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                    <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
+                    <span className="transition-colors duration-300 ease-out">{item.label}</span>
+
+                    {/* shimmer: inner animate div + z trên (đảm bảo hiển thị) */}
+                    <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-400/80 to-transparent animate-shimmer" />
+                    </div>
                   </Link>
                 );
               })}
