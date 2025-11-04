@@ -95,11 +95,24 @@ router.post('/submit', authRequired, async (req, res) => {
   });
 });
 
-// Get my results for a quiz
+// Get my results for a quiz (privacy-safe: no answers payload)
 router.get('/by-quiz/:quizId', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const quizId = req.params.quizId;
-  const sessions = await prisma.quizSession.findMany({ where: { quizId, userId: req.user.id }, orderBy: { completedAt: 'desc' } });
+  const sessions = await prisma.quizSession.findMany({
+    where: { quizId, userId: req.user.id },
+    orderBy: { completedAt: 'desc' },
+    select: {
+      id: true,
+      quizId: true,
+      score: true,
+      totalQuestions: true,
+      timeSpent: true,
+      startedAt: true,
+      completedAt: true,
+      // answers is intentionally omitted
+    }
+  });
   res.json(sessions);
 });
 
