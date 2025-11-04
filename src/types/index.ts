@@ -22,7 +22,8 @@ export interface Quiz {
   id: string;
   title: string;
   description?: string;
-  questions: Question[];
+  questions: Question[]; // Chỉ được load đầy đủ khi vào trang Quiz/Edit
+  questionCount?: number; // Dùng cho listing để tránh tải câu hỏi
   createdAt: Date;
   updatedAt: Date;
   accessType?: 'owner' | 'shared' | 'public'; // runtime-only: FE permissions

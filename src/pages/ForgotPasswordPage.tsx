@@ -46,7 +46,7 @@ const ForgotPasswordPage: React.FC = () => {
           </button>
         </form>
 
-        {resetLink && (
+        {resetLink && process.env.NODE_ENV !== 'production' && (
           <div className="p-3 rounded bg-blue-50 dark:bg-blue-900/20 text-sm text-blue-800 dark:text-blue-200">
             <p className="mb-1">Link đặt lại (demo):</p>
             <p className="break-all">{resetLink}</p>

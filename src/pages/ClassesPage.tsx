@@ -775,7 +775,7 @@ const ClassesPage: React.FC = () => {
                                                 {quiz.title}
                                               </div>
                                               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {quiz.questions.length} câu hỏi
+                                                {(quiz as any).questionCount ?? ((quiz as any).questions?.length ?? 0)} câu hỏi
                                               </div>
                                             </div>
                                           </div>
@@ -852,7 +852,7 @@ const ClassesPage: React.FC = () => {
                                                   {quiz.title}
                                                 </div>
                                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                  {quiz.questions.length} câu hỏi
+                                                  {(quiz as any).questionCount ?? ((quiz as any).questions?.length ?? 0)} câu hỏi
                                                 </div>
                                               </div>
                                             </div>
