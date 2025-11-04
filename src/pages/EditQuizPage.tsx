@@ -615,9 +615,38 @@ const EditQuizPage: React.FC = () => {
     }
   }, [state, navigate]);
 
+  // Track and restore scroll position/anchor when closing editor
+  const restoreTargetId = useRef<string | null>(null);
+  const restoreScrollY = useRef<number>(0);
+
   const handleQuestionEdit = (questionId: string) => {
+    restoreTargetId.current = questionId;
+    restoreScrollY.current = window.scrollY || window.pageYOffset || 0;
     setIsEditing(questionId);
+    // Ensure the editor opens with the question anchored in view (prevent jump)
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-qid="${questionId}"]`) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
+      }
+    });
   };
+
+  // When closing editor, restore back to the question element (robust to DOM reflow)
+  useEffect(() => {
+    if (isEditing === null && restoreTargetId.current) {
+      const id = restoreTargetId.current;
+      // wait for DOM updates
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-qid="${id}"]`) as HTMLElement | null;
+        if (el) {
+          el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
+        } else {
+          window.scrollTo({ top: restoreScrollY.current, behavior: 'instant' as any });
+        }
+      });
+    }
+  }, [isEditing]);
 
   const handleQuestionSave = (questionId: string, updatedQuestion: Partial<QuestionWithImages>) => {
     console.log('Saving question:', questionId, updatedQuestion); // Debug log
@@ -625,6 +654,8 @@ const EditQuizPage: React.FC = () => {
     setQuestions(prev => {
       const updated = prev.map(q => {
         if (q.id === questionId) {
+          // ensure restore target follows saved question id
+          restoreTargetId.current = questionId;
           const result = { ...q, ...updatedQuestion };
           
           // Đảm bảo câu hỏi text không có options
@@ -789,7 +820,7 @@ const EditQuizPage: React.FC = () => {
     };
 
     return (
-      <div ref={setNodeRef} style={style} className="relative group">
+      <div ref={setNodeRef} className="relative group" data-qid={question.id} style={{ ...style, scrollMarginTop: 96 }}>
         {/* Drag handle - hiển thị khi hover */}
         <div
           {...attributes}
