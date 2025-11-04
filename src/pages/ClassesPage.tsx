@@ -775,7 +775,7 @@ const ClassesPage: React.FC = () => {
                                                 {quiz.title}
                                               </div>
                                               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {quiz.questions.length} câu hỏi
+                                                {(quiz as any).questionCount ?? ((quiz as any).questions?.length ?? 0)} câu hỏi
                                               </div>
                                             </div>
                                           </div>
@@ -852,7 +852,7 @@ const ClassesPage: React.FC = () => {
                                                   {quiz.title}
                                                 </div>
                                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                  {quiz.questions.length} câu hỏi
+                                                  {(quiz as any).questionCount ?? ((quiz as any).questions?.length ?? 0)} câu hỏi
                                                 </div>
                                               </div>
                                             </div>
@@ -1291,14 +1291,25 @@ const ClassesPage: React.FC = () => {
                                     )}
                                   </button>
                                   <button
-                                    onClick={() => navigate('/edit-quiz', { state: {
-                                      questions: quiz.questions,
-                                      fileName: quiz.title,
-                                      fileId: quiz.id,
-                                      quizTitle: quiz.title,
-                                      quizDescription: quiz.description,
-                                      isEdit: true
-                                    } })}
+                                    onClick={async () => {
+                                      try {
+                                        const { getToken } = await import('../utils/auth');
+                                        const token = getToken();
+                                        if (!token) { alert('Vui lòng đăng nhập'); return; }
+                                        const { QuizzesAPI } = await import('../utils/api');
+                                        const full = await QuizzesAPI.getById(quiz.id, token);
+                                        navigate('/edit-quiz', { state: {
+                                          questions: full.questions,
+                                          fileName: full.title,
+                                          fileId: full.id,
+                                          quizTitle: full.title,
+                                          quizDescription: full.description,
+                                          isEdit: true
+                                        } });
+                                      } catch (e) {
+                                        alert('Không thể tải nội dung quiz để chỉnh sửa.');
+                                      }
+                                    }}
                                     disabled={(classRoom as any).accessType === 'shared'}
                                     className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chỉnh sửa bài kiểm tra"
@@ -1386,16 +1397,27 @@ const ClassesPage: React.FC = () => {
                                     )}
                                   </button>
                                   <button
-                                    onClick={() => navigate('/edit-quiz', { state: {
-                                      questions: quiz.questions,
-                                      fileName: quiz.title,
-                                      fileId: quiz.id,
-                                      quizTitle: quiz.title,
-                                      quizDescription: quiz.description,
-                                      isEdit: true
-                                    } })}
+                                    onClick={async () => {
+                                      try {
+                                        const { getToken } = await import('../utils/auth');
+                                        const token = getToken();
+                                        if (!token) { alert('Vui lòng đăng nhập'); return; }
+                                        const { QuizzesAPI } = await import('../utils/api');
+                                        const full = await QuizzesAPI.getById(quiz.id, token);
+                                        navigate('/edit-quiz', { state: {
+                                          questions: full.questions,
+                                          fileName: full.title,
+                                          fileId: full.id,
+                                          quizTitle: full.title,
+                                          quizDescription: full.description,
+                                          isEdit: true
+                                        } });
+                                      } catch (e) {
+                                        alert('Không thể tải nội dung quiz để chỉnh sửa.');
+                                      }
+                                    }}
                                     disabled={(classRoom as any).accessType === 'shared'}
-                                    className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === 'shared' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Chỉnh sửa bài kiểm tra"
                                   >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -2,10 +2,23 @@ const express = require('express');
 const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
+// Simple in-memory cache for quiz listings
+// Keyed by `${userId}:${classId}` with TTL 30s
+const listCache = new Map();
+const CACHE_TTL_MS = 30 * 1000;
+
 // Get quizzes by class
 router.get('/by-class/:classId', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const classId = req.params.classId;
+
+  // Serve from cache if fresh
+  const cacheKey = `${req.user.id}:${classId}`;
+  const cached = listCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return res.json(cached.data);
+  }
+
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (!cls) return res.status(404).json({ message: 'Class not found' });
 
@@ -21,7 +34,20 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   // 3. Has SharedAccess for class (any accessLevel, vì đây là list quizzes, không phải access quiz content)
   if (!isOwner && !isPublic && !hasShared) return res.status(403).json({ message: 'Forbidden' });
 
-  const quizzes = await prisma.quiz.findMany({ where: { classId }, include: { questions: true } });
+  // Only fetch minimal quiz metadata for listing; do NOT include questions for performance
+  const quizzes = await prisma.quiz.findMany({
+    where: { classId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      published: true,
+      createdAt: true,
+      updatedAt: true,
+      ownerId: true,
+      _count: { select: { questions: true } },
+    }
+  });
   
   // ===== FILTER QUIZZES DỰA TRÊN QUYỀN TRUY CẬP =====
   let accessibleQuizzes = quizzes;
@@ -48,24 +74,21 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
     }
   }
   
-  // Build nested structure for each quiz (support composite questions with subQuestions)
-  const quizzesWithNested = accessibleQuizzes.map(quiz => {
-    const allQs = quiz.questions;
-    const byParent = new Map();
-    for (const q of allQs) {
-      const pid = q.parentId || null;
-      if (!byParent.has(pid)) byParent.set(pid, []);
-      byParent.get(pid).push(q);
-    }
-    const roots = (byParent.get(null) || []).map(p => ({ 
-      ...p, 
-      subQuestions: (byParent.get(p.id) || []) 
-    }));
-    
-    return { ...quiz, questions: roots };
-  });
+  // Map to lightweight payload with questionCount
+  const payload = accessibleQuizzes.map(q => ({
+    id: q.id,
+    title: q.title,
+    description: q.description,
+    published: q.published,
+    createdAt: q.createdAt,
+    updatedAt: q.updatedAt,
+    questionCount: q._count?.questions || 0,
+  }));
   
-  res.json(quizzesWithNested);
+  // Update cache
+  listCache.set(cacheKey, { data: payload, expiresAt: Date.now() + CACHE_TTL_MS });
+  
+  res.json(payload);
 });
 
 // Create quiz with questions (supports composite and drag)

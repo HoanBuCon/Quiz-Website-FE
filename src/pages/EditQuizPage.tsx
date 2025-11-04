@@ -78,7 +78,10 @@ const ImageUpload: React.FC<{
       // Upload ảnh lên server và nhận URL
       toast.loading('Đang upload ảnh...');
       const { ImagesAPI } = await import('../utils/api');
-      const imageUrl = await ImagesAPI.upload(file);
+      const { getToken } = await import('../utils/auth');
+      const token = getToken();
+      if (!token) { throw new Error('Vui lòng đăng nhập để upload ảnh'); }
+      const imageUrl = await ImagesAPI.upload(file, token);
       toast.dismiss();
       toast.success('Upload ảnh thành công!');
       onImageUpload(imageUrl);
@@ -318,7 +321,9 @@ const EditQuizPage: React.FC = () => {
       if (q.questionImage && q.questionImage.startsWith('data:image/')) {
         try {
           const file = base64ToFile(q.questionImage, `question-${i}.png`);
-          const url = await ImagesAPI.upload(file);
+          const { getToken } = await import('../utils/auth');
+          const token = getToken();
+          const url = await ImagesAPI.upload(file, token!);
           q.questionImage = url;
           console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
         } catch (error) {
@@ -338,7 +343,9 @@ const EditQuizPage: React.FC = () => {
             if (img && img.startsWith('data:image/')) {
               try {
                 const file = base64ToFile(img, `question-${i}-option-${j}.png`);
-                const url = await ImagesAPI.upload(file);
+                const { getToken } = await import('../utils/auth');
+                const token = getToken();
+                const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[j] = url;
                 console.log(`✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`);
               } catch (error) {
@@ -355,7 +362,9 @@ const EditQuizPage: React.FC = () => {
             if (img && typeof img === 'string' && img.startsWith('data:image/')) {
               try {
                 const file = base64ToFile(img, `question-${i}-${key}.png`);
-                const url = await ImagesAPI.upload(file);
+                const { getToken } = await import('../utils/auth');
+                const token = getToken();
+                const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[key] = url;
                 console.log(`✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`);
               } catch (error) {

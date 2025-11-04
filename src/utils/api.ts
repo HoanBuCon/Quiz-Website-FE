@@ -54,14 +54,16 @@ export const ImagesAPI = {
   /**
    * Upload một ảnh lên server
    * @param file File ảnh (từ input[type="file"])
+   * @param token JWT token
    * @returns Promise với URL của ảnh đã upload
    */
-  upload: async (file: File): Promise<string> => {
+  upload: async (file: File, token: string): Promise<string> => {
     const formData = new FormData();
     formData.append('image', file);
 
     const res = await fetch(`${API_BASE_URL}/images/upload`, {
       method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } as any : undefined,
       body: formData,
       // Không set Content-Type header - để browser tự set với boundary
     });
@@ -78,10 +80,12 @@ export const ImagesAPI = {
   /**
    * Xóa một ảnh từ server (optional)
    * @param filename Tên file cần xóa
+   * @param token JWT token
    */
-  delete: async (filename: string): Promise<void> => {
+  delete: async (filename: string, token: string): Promise<void> => {
     await fetch(`${API_BASE_URL}/images/${filename}`, {
       method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } as any : undefined,
     });
   },
 };

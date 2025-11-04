@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { authRequired } = require('../middleware/auth');
 
 // Tạo thư mục uploads nếu chưa có
 // Local: quiz-backend/public/uploads/images
@@ -18,10 +19,10 @@ if (!fs.existsSync(uploadDir)) {
 
 // Cấu hình multer để lưu file
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     // Tạo tên file unique: timestamp-random-originalname
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
@@ -44,7 +45,7 @@ const upload = multer({
   limits: {
     fileSize: 30 * 1024 * 1024 // 30MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     // Chỉ chấp nhận file ảnh
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -57,9 +58,9 @@ const upload = multer({
 /**
  * @route   POST /images/upload
  * @desc    Upload một ảnh và trả về URL
- * @access  Public (có thể thêm auth sau)
+ * @access  Private (yêu cầu JWT)
  */
-router.post('/upload', upload.single('image'), (req, res) => {
+router.post('/upload', authRequired, upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Không có file được tải lên' });
@@ -86,17 +87,34 @@ router.post('/upload', upload.single('image'), (req, res) => {
 
 /**
  * @route   DELETE /images/:filename
- * @desc    Xóa một ảnh (optional - để cleanup)
- * @access  Public (nên thêm auth)
+ * @desc    Xóa một ảnh nếu ảnh thuộc quiz do Owner hiện tại sở hữu
+ * @access  Private (yêu cầu JWT)
  */
-router.delete('/:filename', (req, res) => {
+router.delete('/:filename', authRequired, async (req, res) => {
   try {
+    const prisma = req.prisma;
     const filename = req.params.filename;
     const filePath = path.join(uploadDir, filename);
 
     // Kiểm tra file có tồn tại không
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'File không tồn tại' });
+    }
+
+    // Xác minh quyền sở hữu: chỉ cho phép xóa nếu ảnh đang được tham chiếu bởi câu hỏi thuộc quiz của owner
+    const likeExpr = filename; // so khớp theo phần đuôi tên file
+    const referenced = await prisma.question.findFirst({
+      where: {
+        OR: [
+          { questionImage: { contains: likeExpr } },
+          { optionImages: { contains: likeExpr } },
+        ],
+      },
+      include: { quiz: true },
+    });
+
+    if (referenced && referenced.quiz && referenced.quiz.ownerId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden: Bạn không có quyền xóa ảnh này' });
     }
 
     // Xóa file
