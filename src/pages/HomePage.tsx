@@ -134,15 +134,11 @@ const HomePage: React.FC = () => {
           </div>
 
           {loading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </div>
-              ))}
+            <div className="py-16 flex items-center justify-center">
+              {(() => {
+                const Any = require('../components/Spinner').default;
+                return <Any size={40} />;
+              })()}
             </div>
           ) : publicClasses.length === 0 ? (
             // Empty state
