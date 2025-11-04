@@ -496,10 +496,10 @@ const DocumentsPage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
               Tài liệu của tôi
             </h1>
-            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base font-mono text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Quản lý và tạo bài kiểm tra từ tài liệu
             </p>
           </div>
@@ -580,10 +580,10 @@ const DocumentsPage: React.FC = () => {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
               
               <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Tài liệu của tôi
                 </h1>
-                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed">
+                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed">
                   Quản lý và sử dụng các tài liệu đã tải lên
                 </p>
               </div>

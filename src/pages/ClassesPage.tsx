@@ -760,47 +760,47 @@ const ClassesPage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
 
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-2 tracking-tight">
               Lớp học của tôi
             </h1>
-            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200">
+            <p className="text-sm font-mono sm:text-base text-blue-100 dark:text-blue-200">
               Chọn lớp học để bắt đầu làm bài trắc nghiệm
             </p>
 
             {/* Stats Mobile */}
             <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-8">
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
                   {classes.length}
                 </div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
                   Lớp học
                 </div>
               </div>
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
                   {classes.reduce(
                     (total, cls) => total + getValidQuizzes(cls).length,
                     0
                   )}
                 </div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
                   Bài kiểm tra
                 </div>
               </div>
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
                   {statsCompleted}
                 </div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
                   Đã hoàn thành
                 </div>
               </div>
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
                   {statsAverage}
                 </div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
                   Điểm TB
                 </div>
               </div>
@@ -820,10 +820,10 @@ const ClassesPage: React.FC = () => {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
 
               <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Lớp học của tôi
                 </h1>
-                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed">
+                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed">
                   Chọn lớp học để bắt đầu làm bài trắc nghiệm
                 </p>
               </div>
