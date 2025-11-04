@@ -33,32 +33,27 @@ const ResultsPage: React.FC = () => {
           navigate('/');
           return;
         }
-        const { SessionsAPI, ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const { SessionsAPI, QuizzesAPI } = await import('../utils/api');
         const sessions = await SessionsAPI.byQuiz(quizId, token);
         if (!sessions || sessions.length === 0) {
           navigate('/');
           return;
         }
-        const latest = sessions[0];
+        const latestMeta = sessions[0];
+        // Fetch full session (includes answers)
+        const latest = await SessionsAPI.getOne(latestMeta.id, token);
+        // Fetch full quiz (includes questions)
+        const fullQuiz = await QuizzesAPI.getById(quizId, token);
+        setQuiz(fullQuiz);
         setResult({
           quizId: latest.quizId,
-          quizTitle: '',
+          quizTitle: fullQuiz?.title || '',
           userAnswers: latest.answers || {},
           score: latest.score,
           totalQuestions: latest.totalQuestions,
           timeSpent: latest.timeSpent,
           completedAt: new Date(latest.completedAt),
         });
-        // Load quiz details by scanning classes (mine + public)
-        const mine = await ClassesAPI.listMine(token);
-        const pub = await ClassesAPI.listPublic(token);
-        let found: any = null;
-        for (const cls of [...mine, ...pub]) {
-          const qzs = await QuizzesAPI.byClass(cls.id, token);
-          const q = qzs.find((qq: any) => qq.id === quizId);
-          if (q) { found = q; break; }
-        }
-        if (found) setQuiz(found);
       } catch (e) {
         console.error('Failed to load results:', e);
       } finally {

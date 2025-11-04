@@ -122,9 +122,10 @@ export const VisibilityAPI = {
 };
 export const SessionsAPI = {
   start: (quizId: string, token: string) => apiRequest<any>(`/sessions/start`, { method: 'POST', token, body: JSON.stringify({ quizId }) }),
-submit: (payload: { quizId: string; answers: Record<string, any>; timeSpent: number }, token: string) =>
+  submit: (payload: { quizId: string; answers: Record<string, any>; timeSpent: number }, token: string) =>
     apiRequest<any>(`/sessions/submit`, { method: 'POST', token, body: JSON.stringify(payload) }),
   byQuiz: (quizId: string, token: string) => apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
+  getOne: (id: string, token: string) => apiRequest<any>(`/sessions/${id}`, { token }),
 };
 
 export const FilesAPI = {

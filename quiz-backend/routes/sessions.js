@@ -116,5 +116,14 @@ router.get('/by-quiz/:quizId', authRequired, async (req, res) => {
   res.json(sessions);
 });
 
+// Get a session by id (includes answers; only owner can access)
+router.get('/:id', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const id = req.params.id;
+  const s = await prisma.quizSession.findUnique({ where: { id } });
+  if (!s || s.userId !== req.user.id) return res.status(404).json({ message: 'Not found' });
+  res.json(s);
+});
+
 module.exports = router;
 
