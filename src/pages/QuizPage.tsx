@@ -192,15 +192,10 @@ const QuizPage: React.FC = () => {
 
   // Render loading state
   if (loading) {
+    const Spinner = require('../components/Spinner').default;
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="card p-6 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          </div>
-        </div>
+      <div className="max-w-3xl mx-auto px-4 py-16 flex items-center justify-center">
+        <Spinner size={48} />
       </div>
     );
   }
