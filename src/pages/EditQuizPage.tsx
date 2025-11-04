@@ -615,9 +615,38 @@ const EditQuizPage: React.FC = () => {
     }
   }, [state, navigate]);
 
+  // Track and restore scroll position/anchor when closing editor
+  const restoreTargetId = useRef<string | null>(null);
+  const restoreScrollY = useRef<number>(0);
+
   const handleQuestionEdit = (questionId: string) => {
+    restoreTargetId.current = questionId;
+    restoreScrollY.current = window.scrollY || window.pageYOffset || 0;
     setIsEditing(questionId);
+    // Ensure the editor opens with the question anchored in view (prevent jump)
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-qid="${questionId}"]`) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
+      }
+    });
   };
+
+  // When closing editor, restore back to the question element (robust to DOM reflow)
+  useEffect(() => {
+    if (isEditing === null && restoreTargetId.current) {
+      const id = restoreTargetId.current;
+      // wait for DOM updates
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-qid="${id}"]`) as HTMLElement | null;
+        if (el) {
+          el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
+        } else {
+          window.scrollTo({ top: restoreScrollY.current, behavior: 'instant' as any });
+        }
+      });
+    }
+  }, [isEditing]);
 
   const handleQuestionSave = (questionId: string, updatedQuestion: Partial<QuestionWithImages>) => {
     console.log('Saving question:', questionId, updatedQuestion); // Debug log
@@ -625,6 +654,8 @@ const EditQuizPage: React.FC = () => {
     setQuestions(prev => {
       const updated = prev.map(q => {
         if (q.id === questionId) {
+          // ensure restore target follows saved question id
+          restoreTargetId.current = questionId;
           const result = { ...q, ...updatedQuestion };
           
           // Đảm bảo câu hỏi text không có options
@@ -724,6 +755,30 @@ const EditQuizPage: React.FC = () => {
     });
   };
 
+  // Floating scroll buttons
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const body = document.documentElement;
+      const viewH = window.innerHeight;
+      const docH = Math.max(body.scrollHeight, body.offsetHeight);
+      setAtTop(scrollY < 80);
+      setAtBottom(viewH + scrollY >= docH - 80);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToBottom = () => {
+    const body = document.documentElement;
+    const docH = Math.max(body.scrollHeight, body.offsetHeight);
+    window.scrollTo({ top: docH, behavior: 'smooth' });
+  };
+
   const handleAddQuestion = () => {
     const newQuestion: QuestionWithImages = {
       id: `q-${Date.now()}-${Math.random()}`,
@@ -765,7 +820,7 @@ const EditQuizPage: React.FC = () => {
     };
 
     return (
-      <div ref={setNodeRef} style={style} className="relative group">
+      <div ref={setNodeRef} className="relative group" data-qid={question.id} style={{ ...style, scrollMarginTop: 96 }}>
         {/* Drag handle - hiển thị khi hover */}
         <div
           {...attributes}
@@ -2146,6 +2201,25 @@ const EditQuizPage: React.FC = () => {
               </button>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Floating scroll buttons */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+        {(!atTop && !atBottom) && (
+          <button onClick={scrollToTop} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+          </button>
+        )}
+        {atTop && (
+          <button onClick={scrollToBottom} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+        )}
+        {atBottom && (
+          <button onClick={scrollToTop} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+          </button>
         )}
       </div>
     </div>

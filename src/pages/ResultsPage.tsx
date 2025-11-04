@@ -33,32 +33,27 @@ const ResultsPage: React.FC = () => {
           navigate('/');
           return;
         }
-        const { SessionsAPI, ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const { SessionsAPI, QuizzesAPI } = await import('../utils/api');
         const sessions = await SessionsAPI.byQuiz(quizId, token);
         if (!sessions || sessions.length === 0) {
           navigate('/');
           return;
         }
-        const latest = sessions[0];
+        const latestMeta = sessions[0];
+        // Fetch full session (includes answers)
+        const latest = await SessionsAPI.getOne(latestMeta.id, token);
+        // Fetch full quiz (includes questions)
+        const fullQuiz = await QuizzesAPI.getById(quizId, token);
+        setQuiz(fullQuiz);
         setResult({
           quizId: latest.quizId,
-          quizTitle: '',
+          quizTitle: fullQuiz?.title || '',
           userAnswers: latest.answers || {},
           score: latest.score,
           totalQuestions: latest.totalQuestions,
           timeSpent: latest.timeSpent,
           completedAt: new Date(latest.completedAt),
         });
-        // Load quiz details by scanning classes (mine + public)
-        const mine = await ClassesAPI.listMine(token);
-        const pub = await ClassesAPI.listPublic(token);
-        let found: any = null;
-        for (const cls of [...mine, ...pub]) {
-          const qzs = await QuizzesAPI.byClass(cls.id, token);
-          const q = qzs.find((qq: any) => qq.id === quizId);
-          if (q) { found = q; break; }
-        }
-        if (found) setQuiz(found);
       } catch (e) {
         console.error('Failed to load results:', e);
       } finally {
@@ -141,17 +136,10 @@ const ResultsPage: React.FC = () => {
   };
 
   if (loading) {
+    const Spinner = require('../components/Spinner').default;
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="card p-8 animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-8"></div>
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            ))}
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
+        <Spinner size={48} />
       </div>
     );
   }

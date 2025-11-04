@@ -2,22 +2,10 @@ const express = require('express');
 const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
-// Simple in-memory cache for quiz listings
-// Keyed by `${userId}:${classId}` with TTL 30s
-const listCache = new Map();
-const CACHE_TTL_MS = 30 * 1000;
-
 // Get quizzes by class
 router.get('/by-class/:classId', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const classId = req.params.classId;
-
-  // Serve from cache if fresh
-  const cacheKey = `${req.user.id}:${classId}`;
-  const cached = listCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return res.json(cached.data);
-  }
 
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (!cls) return res.status(404).json({ message: 'Class not found' });
@@ -84,9 +72,6 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
     updatedAt: q.updatedAt,
     questionCount: q._count?.questions || 0,
   }));
-  
-  // Update cache
-  listCache.set(cacheKey, { data: payload, expiresAt: Date.now() + CACHE_TTL_MS });
   
   res.json(payload);
 });

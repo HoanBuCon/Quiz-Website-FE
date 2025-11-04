@@ -99,22 +99,22 @@ const HomePage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
               LiemDai (Đại Liêm) Website 🐧
             </h1>
-            <p className="text-base sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
             </p>
             
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 max-w-2xl">
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{totalClasses}</div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">Lớp học công khai</div>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">{totalClasses}</div>
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">Lớp học công khai</div>
               </div>
               <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-white mb-1">{totalQuizzes}</div>
-                <div className="text-sm text-blue-600 dark:text-blue-100">Bài kiểm tra công khai</div>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">{totalQuizzes}</div>
+                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">Bài kiểm tra công khai</div>
               </div>
             </div>
           </div>
@@ -134,15 +134,11 @@ const HomePage: React.FC = () => {
           </div>
 
           {loading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </div>
-              ))}
+            <div className="py-16 flex items-center justify-center">
+              {(() => {
+                const Any = require('../components/Spinner').default;
+                return <Any size={40} />;
+              })()}
             </div>
           ) : publicClasses.length === 0 ? (
             // Empty state

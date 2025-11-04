@@ -412,10 +412,10 @@ const CreateClassPage: React.FC = () => {
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
               Tạo lớp học mới
             </h1>
-            <p className="text-sm sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-sm font-mono sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nhập thông tin và chọn cách tạo bài kiểm tra
             </p>
           </div>
@@ -468,10 +468,10 @@ const CreateClassPage: React.FC = () => {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
               
               <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Tạo lớp học mới
                 </h1>
-                <p className="text-base text-blue-100 dark:text-blue-200 leading-relaxed mb-4">
+                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed mb-4">
                   Nhập thông tin lớp học và chọn cách tạo bài kiểm tra
                 </p>
                 <div className="flex items-center gap-2">
