@@ -1,0 +1,15 @@
+{
+  "watch": ["index.js", "routes", "middleware"],
+  "ext": "js,json",
+  "ignore": [
+    "node_modules",
+    "public/uploads",
+    "logs",
+    "tmp",
+    ".git"
+  ],
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "signal": "SIGUSR2"
+}

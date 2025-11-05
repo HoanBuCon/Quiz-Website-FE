@@ -672,23 +672,8 @@ const DocumentsPage: React.FC = () => {
           </div>
 
           {loading ? (
-            // Loading skeleton
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div className="flex-1">
-                      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-                    </div>
-                    <div className="space-x-2">
-                      <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                      <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="py-8 flex items-center justify-center">
+              {(() => { const Any = require('../components/Spinner').default; return <Any size={36} />; })()}
             </div>
           ) : (
             // Danh sách tài liệu

@@ -147,3 +147,16 @@ enum AccessLevel {
   full
   navigationOnly
 }
+
+model PasswordReset {
+  id         String   @id @default(cuid())
+  email      String
+  userId     String?
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([email, createdAt])
+}

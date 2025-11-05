@@ -1,6 +1,6 @@
 // Simple API client using fetch with JWT support
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api';
 
 export function getApiBaseUrl(): string {
   return API_BASE_URL;
@@ -137,6 +137,11 @@ export const FilesAPI = {
 
 export const AuthAPI = {
   me: (token: string) => apiRequest<{ user: { id: string; email: string; name: string } }>(`/auth/me`, { token }),
+  // New OTP-based endpoints
+  forgotOtp: (email: string) => apiRequest<void>(`/auth/forgot-otp`, { method: 'POST', body: JSON.stringify({ email }) }),
+  resetWithOtp: (email: string, otp: string, newPassword: string) =>
+    apiRequest<void>(`/auth/reset-with-otp`, { method: 'POST', body: JSON.stringify({ email, otp, newPassword }) }),
+  // Legacy (dev-only) endpoints
   forgot: (email: string) => apiRequest<{ resetToken: string; resetLink: string }>(`/auth/forgot`, { method: 'POST', body: JSON.stringify({ email }) }),
   reset: (token: string, newPassword: string) => apiRequest<void>(`/auth/reset`, { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
 };

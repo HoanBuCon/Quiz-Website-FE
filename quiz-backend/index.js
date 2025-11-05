@@ -1,16 +1,185 @@
+// ====== Load environment first ======
 require('dotenv').config();
+
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-
-// Prisma client (generated to ./generated/prisma)
 const { PrismaClient } = require('@prisma/client');
+
+// ====== Prevent multiple instances (IMPROVED) ======
+const LOCK_FILE = path.join(require('os').tmpdir(), 'quiz_api.lock');
+
+function acquireLock() {
+  try {
+    // Check if lock file exists
+    if (fs.existsSync(LOCK_FILE)) {
+      const pid = fs.readFileSync(LOCK_FILE, 'utf8').trim();
+      
+      // Check if that PID is still running
+      try {
+        process.kill(pid, 0); // Signal 0 just checks if process exists
+        console.log(`Another instance (PID: ${pid}) is running. Exiting...`);
+        process.exit(0);
+      } catch (e) {
+        // PID not running - stale lock file, remove it
+        console.log(`Removing stale lock file (PID ${pid} not found)`);
+        fs.unlinkSync(LOCK_FILE);
+      }
+    }
+    
+    // Create lock file with current PID
+    fs.writeFileSync(LOCK_FILE, process.pid.toString());
+    console.log(`Lock acquired (PID: ${process.pid})`);
+    return true;
+  } catch (err) {
+    console.error('Failed to acquire lock:', err);
+    return false;
+  }
+}
+
+function releaseLock() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      const lockPid = fs.readFileSync(LOCK_FILE, 'utf8').trim();
+      if (lockPid === process.pid.toString()) {
+        fs.unlinkSync(LOCK_FILE);
+        console.log(`Lock released (PID: ${process.pid})`);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to release lock:', err);
+  }
+}
+
+// Acquire lock at startup
+if (!acquireLock()) {
+  console.error('Cannot acquire lock. Exiting...');
+  process.exit(1);
+}
+
+// Release lock on exit
+process.on('exit', releaseLock);
+process.on('SIGINT', () => {
+  console.log('\nSIGINT received. Shutting down...');
+  releaseLock();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down...');
+  releaseLock();
+  process.exit(0);
+});
+
+// Nodemon restart signal
+if (process.env.NODE_ENV === 'development') {
+  process.on('SIGUSR2', () => {
+    console.log('Nodemon restart detected...');
+    releaseLock();
+    process.kill(process.pid, 'SIGTERM');
+  });
+}
+
+// ====== Check production requirements ======
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is required in production');
+  process.exit(1);
+}
+
+// ====== Initialize Prisma ======
 const prisma = new PrismaClient();
 
-// Routers
+// ====== Express app setup ======
+const app = express();
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
+
+// Security headers
+app.use(helmet());
+
+// CORS configuration
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+const devDefaults = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+app.use(cors({
+  origin: allowedOrigins.length ? allowedOrigins : devDefaults,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Logging
+app.use(morgan('dev'));
+
+// Body parsing
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Cookie parsing
+app.use(cookieParser());
+
+// Rate limiting
+app.use(rateLimit({ 
+  windowMs: 60 * 1000, 
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// Attach Prisma to request
+app.use((req, _res, next) => { 
+  req.prisma = prisma; 
+  next(); 
+});
+
+// ====== Static file serving ======
+const uploadPath = isProd
+  ? path.join(__dirname, '../../public_html/uploads')
+  : path.join(__dirname, 'public/uploads');
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+  console.log(`Created upload directory: ${uploadPath}`);
+}
+
+app.use('/uploads', express.static(uploadPath));
+
+// ====== Base path setup ======
+// Respect empty string (cPanel app URL already maps /api). If undefined, default to '/api' for dev.
+const BASE_PATH = (process.env.BASE_PATH !== undefined) ? process.env.BASE_PATH : '/api';
+const MOUNT_PREFIX = (!BASE_PATH || BASE_PATH === '/') ? '' : BASE_PATH;
+
+// ====== Health check ======
+// Expose at both root and MOUNT_PREFIX for easier diagnostics
+app.get(`/health`, (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    basePath: MOUNT_PREFIX || '', 
+    env: process.env.NODE_ENV,
+    pid: process.pid,
+    uptime: process.uptime()
+  });
+});
+app.get(`${MOUNT_PREFIX}/health`, (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    basePath: MOUNT_PREFIX || '', 
+    env: process.env.NODE_ENV,
+    pid: process.pid,
+    uptime: process.uptime()
+  });
+});
+
+// ====== Load routers ======
 const authRouter = require('./routes/auth');
 const classesRouter = require('./routes/classes');
 const quizzesRouter = require('./routes/quizzes');
@@ -19,90 +188,98 @@ const filesRouter = require('./routes/files');
 const visibilityRouter = require('./routes/visibility');
 const imagesRouter = require('./routes/images');
 
-const app = express();
+// ====== Mount routers ======
+console.log(`Mounting routers at base path: ${MOUNT_PREFIX || '(root)'}`);
+app.use(`${MOUNT_PREFIX}/auth`, authRouter);
+app.use(`${MOUNT_PREFIX}/classes`, classesRouter);
+app.use(`${MOUNT_PREFIX}/quizzes`, quizzesRouter);
+app.use(`${MOUNT_PREFIX}/sessions`, sessionsRouter);
+app.use(`${MOUNT_PREFIX}/files`, filesRouter);
+app.use(`${MOUNT_PREFIX}/visibility`, visibilityRouter);
+app.use(`${MOUNT_PREFIX}/images`, imagesRouter);
 
-// Enforce required secrets in production
-const isProd = process.env.NODE_ENV === 'production';
-if (isProd && !process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET is required in production');
+// ====== 404 handler ======
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: 'Not Found',
+    path: req.path,
+    method: req.method,
+    availablePaths: [
+      `${MOUNT_PREFIX || ''}/health`,
+      `${MOUNT_PREFIX || ''}/auth/*`,
+      `${MOUNT_PREFIX || ''}/classes/*`,
+      `${MOUNT_PREFIX || ''}/quizzes/*`,
+      `${MOUNT_PREFIX || ''}/sessions/*`,
+      `${MOUNT_PREFIX || ''}/files/*`,
+      `${MOUNT_PREFIX || ''}/visibility/*`,
+      `${MOUNT_PREFIX || ''}/images/*`,
+    ]
+  });
+});
+
+// ====== Global error handler ======
+app.use((err, req, res, _next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({ 
+    message: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// ====== Start server ======
+const port = Number(process.env.PORT || 4000);
+
+let server;
+try {
+server = app.listen(port, () => {
+    console.log(`Quiz API running on port ${port}`);
+    console.log(`Base path: ${MOUNT_PREFIX || '(root)'}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Health check: http://localhost:${port}${MOUNT_PREFIX}/health`);
+  });
+} catch (err) {
+  console.error('Failed to start server:', err);
+  releaseLock();
   process.exit(1);
 }
 
-app.set('trust proxy', 1);
-app.use(helmet());
-
-// CORS
-// - In production: set CORS_ORIGIN to a comma-separated list of allowed origins
-//   e.g. "https://quiz.yourdomain.com,https://admin.yourdomain.com"
-// - In development: default allow localhost:3000 if not specified
-const allowedOriginsFromEnv = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
-const devDefaults = ['http://localhost:3000', 'http://127.0.0.1:3000'];
-const corsOrigins = allowedOriginsFromEnv.length
-  ? allowedOriginsFromEnv
-  : (isProd ? [] : devDefaults);
-
-app.use(cors({
-  origin: corsOrigins,
-  credentials: corsOrigins.length > 0,
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(morgan('dev'));
-app.use(express.json({ limit: '50mb' })); // Tăng lên 50MB để xử lý ảnh base64
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cookieParser());
-
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 1000 }); // 1000 requests per minute
-app.use(limiter);
-
-// Inject prisma to req
-app.use((req, _res, next) => { req.prisma = prisma; next(); });
-
-// Serve static files từ thư mục public/uploads với CORS headers
-const path = require('path');
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-}, express.static(path.join(__dirname, 'public/uploads')));
-
-// Base path for API
-const BASE_PATH = process.env.BASE_PATH || '';
-
-app.get(`${BASE_PATH}/health`, (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// ====== Handle server errors ======
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use`);
+    console.error(`Try: killall node (or taskkill /F /IM node.exe on Windows)`);
+    releaseLock();
+    process.exit(1);
+  } else {
+    console.error('Server error:', err);
+    releaseLock();
+    throw err;
+  }
 });
 
-app.use(`${BASE_PATH}/auth`, authRouter);
-app.use(`${BASE_PATH}/classes`, classesRouter);
-app.use(`${BASE_PATH}/quizzes`, quizzesRouter);
-app.use(`${BASE_PATH}/sessions`, sessionsRouter);
-app.use(`${BASE_PATH}/files`, filesRouter);
-app.use(`${BASE_PATH}/visibility`, visibilityRouter);
-app.use(`${BASE_PATH}/images`, imagesRouter);
+// ====== Graceful shutdown ======
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  
+  // Stop accepting new connections
+  server.close(() => {
+    console.log('HTTP server closed');
+  });
+  
+  // Disconnect Prisma
+  try {
+    await prisma.$disconnect();
+    console.log('Database disconnected');
+  } catch (err) {
+    console.error('Error disconnecting database:', err);
+  }
+  
+  // Release lock
+  releaseLock();
+  
+  console.log('Graceful shutdown complete');
+  process.exit(0);
+}
 
-// Error handler
-app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
-});
-
-// const port = process.env.PORT || 4000;vâ
-// const host = '0.0.0.0';
-// app.listen(port, host, () => {
-//   console.log(`API listening on http://${host}:${port}`);
-// });
-
-const port = process.env.PORT || 4000; // Passenger injects its own PORT
-app.listen(port, '127.0.0.1', () => {
-  console.log(`Server running via Passenger on port ${port}`);
-});
-
-process.on('SIGINT', async () => { await prisma.$disconnect(); process.exit(0); });
-process.on('SIGTERM', async () => { await prisma.$disconnect(); process.exit(0); });
-
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon index.js",
-    "start": "node index.js",
+    "dev": "cross-env NODE_ENV=development nodemon index.js --exitcrash --delay 300ms",
+    "dev:clean": "node kill-port.js 6969 && npm run dev",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "start:pm2": "pm2 start index.js --name quiz-api --env production",
+    "kill:port": "node kill-port.js 6969",
+    "kill:all": "taskkill /F /IM node.exe || killall node",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
-    "prisma:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prisma:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "nodemailer": "^6.10.1",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
