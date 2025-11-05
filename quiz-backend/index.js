@@ -154,13 +154,25 @@ if (!fs.existsSync(uploadPath)) {
 app.use('/uploads', express.static(uploadPath));
 
 // ====== Base path setup ======
-const BASE_PATH = process.env.BASE_PATH || '/api';
+// Respect empty string (cPanel app URL already maps /api). If undefined, default to '/api' for dev.
+const BASE_PATH = (process.env.BASE_PATH !== undefined) ? process.env.BASE_PATH : '/api';
+const MOUNT_PREFIX = (!BASE_PATH || BASE_PATH === '/') ? '' : BASE_PATH;
 
 // ====== Health check ======
-app.get(`${BASE_PATH}/health`, (_req, res) => {
+// Expose at both root and MOUNT_PREFIX for easier diagnostics
+app.get(`/health`, (_req, res) => {
   res.json({ 
     status: 'ok', 
-    basePath: BASE_PATH, 
+    basePath: MOUNT_PREFIX || '', 
+    env: process.env.NODE_ENV,
+    pid: process.pid,
+    uptime: process.uptime()
+  });
+});
+app.get(`${MOUNT_PREFIX}/health`, (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    basePath: MOUNT_PREFIX || '', 
     env: process.env.NODE_ENV,
     pid: process.pid,
     uptime: process.uptime()
@@ -177,14 +189,14 @@ const visibilityRouter = require('./routes/visibility');
 const imagesRouter = require('./routes/images');
 
 // ====== Mount routers ======
-console.log(`Mounting routers at base path: ${BASE_PATH}`);
-app.use(`${BASE_PATH}/auth`, authRouter);
-app.use(`${BASE_PATH}/classes`, classesRouter);
-app.use(`${BASE_PATH}/quizzes`, quizzesRouter);
-app.use(`${BASE_PATH}/sessions`, sessionsRouter);
-app.use(`${BASE_PATH}/files`, filesRouter);
-app.use(`${BASE_PATH}/visibility`, visibilityRouter);
-app.use(`${BASE_PATH}/images`, imagesRouter);
+console.log(`Mounting routers at base path: ${MOUNT_PREFIX || '(root)'}`);
+app.use(`${MOUNT_PREFIX}/auth`, authRouter);
+app.use(`${MOUNT_PREFIX}/classes`, classesRouter);
+app.use(`${MOUNT_PREFIX}/quizzes`, quizzesRouter);
+app.use(`${MOUNT_PREFIX}/sessions`, sessionsRouter);
+app.use(`${MOUNT_PREFIX}/files`, filesRouter);
+app.use(`${MOUNT_PREFIX}/visibility`, visibilityRouter);
+app.use(`${MOUNT_PREFIX}/images`, imagesRouter);
 
 // ====== 404 handler ======
 app.use((req, res) => {
@@ -193,14 +205,14 @@ app.use((req, res) => {
     path: req.path,
     method: req.method,
     availablePaths: [
-      `${BASE_PATH}/health`,
-      `${BASE_PATH}/auth/*`,
-      `${BASE_PATH}/classes/*`,
-      `${BASE_PATH}/quizzes/*`,
-      `${BASE_PATH}/sessions/*`,
-      `${BASE_PATH}/files/*`,
-      `${BASE_PATH}/visibility/*`,
-      `${BASE_PATH}/images/*`,
+      `${MOUNT_PREFIX || ''}/health`,
+      `${MOUNT_PREFIX || ''}/auth/*`,
+      `${MOUNT_PREFIX || ''}/classes/*`,
+      `${MOUNT_PREFIX || ''}/quizzes/*`,
+      `${MOUNT_PREFIX || ''}/sessions/*`,
+      `${MOUNT_PREFIX || ''}/files/*`,
+      `${MOUNT_PREFIX || ''}/visibility/*`,
+      `${MOUNT_PREFIX || ''}/images/*`,
     ]
   });
 });
@@ -219,11 +231,11 @@ const port = Number(process.env.PORT || 4000);
 
 let server;
 try {
-  server = app.listen(port, () => {
+server = app.listen(port, () => {
     console.log(`Quiz API running on port ${port}`);
-    console.log(`Base path: ${BASE_PATH}`);
+    console.log(`Base path: ${MOUNT_PREFIX || '(root)'}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Health check: http://localhost:${port}${BASE_PATH}/health`);
+    console.log(`Health check: http://localhost:${port}${MOUNT_PREFIX}/health`);
   });
 } catch (err) {
   console.error('Failed to start server:', err);
