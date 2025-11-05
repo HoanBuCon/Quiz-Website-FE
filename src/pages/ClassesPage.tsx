@@ -2390,7 +2390,7 @@ const ClassesPage: React.FC = () => {
                 Chưa có lớp học nào
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Tạo lớp học đầu tiên để bắt đầu
+                Hãy tạo lớp học mới hoặc nhập ID/Link chia sẻ để bắt đầu
               </p>
               <Link to="/create" className="btn-primary">
                 Tạo lớp học mới

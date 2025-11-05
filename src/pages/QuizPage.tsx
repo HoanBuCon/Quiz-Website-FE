@@ -332,6 +332,7 @@ const QuizPage: React.FC = () => {
               )}
               {currentQuestion.type === 'drag' && (
                 <DragDropQuestion 
+                  key={currentQuestion.id}
                   question={currentQuestion}
                   value={(userAnswers.find(a => a.questionId === currentQuestion.id)?.answers?.[0] as any) || {}}
                   onChange={(mapping) => {
@@ -386,6 +387,7 @@ const QuizPage: React.FC = () => {
                       )}
                       {sub.type === 'drag' && (
                         <DragDropQuestion 
+                          key={sub.id}
                           question={sub}
                           value={(userAnswers.find(a => a.questionId === sub.id)?.answers?.[0] as any) || {}}
                           onChange={(mapping) => {
@@ -489,7 +491,13 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
+  // Sync up to parent whenever local mapping changes
   useEffect(() => { onChange(mapping); }, [mapping]);
+
+  // Reset local mapping when switching to a different question (avoid carrying over state)
+  useEffect(() => {
+    setMapping({ ...(value || {}) });
+  }, [question.id]);
 
   const poolItems = items.filter(it => !mapping[it.id]);
   const itemsByTarget: Record<string, DragItem[]> = {};

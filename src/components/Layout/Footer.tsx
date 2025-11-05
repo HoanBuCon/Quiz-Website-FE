@@ -9,8 +9,13 @@ const Footer: React.FC = () => {
           <div className="text-center md:text-left mb-4 md:mb-0">
             <p className="text-xs sm:text-base text-white dark:text-primary-300 font-medium">
               © {new Date().getFullYear()} 
-              <span className="bg-gradient-to-r from-primary-200 to-primary-400 dark:from-primary-400 dark:to-primary-500 bg-clip-text text-transparent font-bold mx-2">
-                LiemDai
+              <span
+                className="mx-2 font-semibold"
+                style={{
+                  fontFamily: "'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace",
+                }}
+              >
+                liemdai
               </span>
               Bản quyền thuộc về @hoanbucon
             </p>
