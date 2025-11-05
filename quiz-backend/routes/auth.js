@@ -1,3 +1,4 @@
+console.log("Auth router loaded");
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -5,11 +6,11 @@ const nodemailer = require('nodemailer');
 const { authRequired } = require('../middleware/auth');
 const router = express.Router();
 
-// Get current user info
+// Get current user info (consistent response shape)
 router.get('/me', authRequired, async (req, res) => {
   const prisma = req.prisma;
   try {
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: { id: true, email: true, name: true }
     });
@@ -157,7 +158,7 @@ router.post('/reset-with-otp', async (req, res) => {
     orderBy: { createdAt: 'desc' }
   });
   if (!record) return res.status(400).json({ message: 'OTP không hợp lệ hoặc đã hết hạn' });
-const maxAttempts = Number(process.env.OTP_MAX_ATTEMPTS || 5);
+  const maxAttempts = Number(process.env.OTP_MAX_ATTEMPTS || 5);
   if (record.attempts >= maxAttempts) return res.status(429).json({ message: 'Quá số lần nhập OTP. Vui lòng yêu cầu mã mới.' });
 
   const ok = await bcrypt.compare(otp, record.otpHash);
@@ -175,4 +176,3 @@ const maxAttempts = Number(process.env.OTP_MAX_ATTEMPTS || 5);
 });
 
 module.exports = router;
-

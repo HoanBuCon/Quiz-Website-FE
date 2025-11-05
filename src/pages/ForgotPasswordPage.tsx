@@ -21,10 +21,10 @@ const ForgotPasswordPage: React.FC = () => {
     setInfo('');
     try {
       await AuthAPI.forgotOtp(email.trim());
-      setInfo('Đã gửi mã OTP vào Email. Vui lòng kiểm tra hộp thư!');
+      setInfo('Đã gửi mã OTP vào Email, vui lòng kiểm tra hộp thư. Nếu không thấy, hãy kiểm tra trong mục Spam!');
       setOtpStage('verify');
     } catch (e: any) {
-      setError(e?.message || 'Không thể gửi OTP');
+      setError(e?.message || 'Không thể gửi OTP. Vui lòng thử lại sau!');
     } finally {
       setLoading(false);
     }
@@ -33,7 +33,7 @@ const ForgotPasswordPage: React.FC = () => {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== password2) {
-      setError('Mật khẩu xác nhận không khớp');
+      setError('Mật khẩu xác nhận không khớp!');
       return;
     }
     setLoading(true);
@@ -41,13 +41,13 @@ const ForgotPasswordPage: React.FC = () => {
     setInfo('');
     try {
       await AuthAPI.resetWithOtp(email.trim(), otp.trim(), password);
-      setInfo('Đổi mật khẩu thành công. Hãy đăng nhập với mật khẩu mới.');
+      setInfo('Đổi mật khẩu thành công. Hãy đăng nhập với mật khẩu mới!');
       setDone(true);
       setOtp('');
       setPassword('');
       setPassword2('');
     } catch (e: any) {
-      setError(e?.message || 'OTP không hợp lệ hoặc đã hết hạn');
+      setError(e?.message || 'OTP không hợp lệ hoặc đã hết hạn!');
     } finally {
       setLoading(false);
     }
