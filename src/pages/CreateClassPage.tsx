@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UploadedFile } from '../types';
 import { parseFile } from '../utils/docsParser';
 import { checkDuplicateFileName, showDuplicateModal, generateUniqueFileName, formatDate } from '../utils/fileUtils';
+import { getToken } from '../utils/auth';
 
 // Component trang tạo lớp
 const CreateClassPage: React.FC = () => {
@@ -16,6 +17,7 @@ const CreateClassPage: React.FC = () => {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [isCreateNewClass, setIsCreateNewClass] = useState(true);
   const [existingClasses, setExistingClasses] = useState<any[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!getToken());
 
   // Kiểm tra xem form có hợp lệ không
   const isFormValid = () => {
@@ -26,20 +28,29 @@ const CreateClassPage: React.FC = () => {
     }
   };
 
-  // Load danh sách lớp học có sẵn (backend)
+  // Đồng bộ trạng thái đăng nhập và load danh sách lớp học
   useEffect(() => {
-    (async () => {
+    const refreshAuth = async () => {
+      const token = getToken();
+      setIsLoggedIn(!!token);
+      if (!token) return;
       try {
-        const { getToken } = await import('../utils/auth');
-        const token = getToken();
-        if (!token) return;
         const { ClassesAPI } = await import('../utils/api');
         const mine = await ClassesAPI.listMine(token);
         setExistingClasses(mine);
       } catch (e) {
         console.error('Failed to load classes:', e);
       }
-    })();
+    };
+
+    refreshAuth();
+    const handler = () => refreshAuth();
+    window.addEventListener('authChange', handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('authChange', handler);
+      window.removeEventListener('storage', handler);
+    };
   }, []);
 
   // Xử lý khi file được chọn
@@ -486,8 +497,10 @@ const CreateClassPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Class Selection/Creation Section */}
-          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500">
+          {/* Block các thẻ tạo lớp/quiz/upload */}
+          <div className="relative">
+              {/* Class Selection/Creation Section */}
+              <div className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? 'pointer-events-none filter blur-[2px]' : ''}`}>
             <div className="p-6 space-y-6">
               {/* Toggle giữa tạo mới và chọn có sẵn */}
               <div className="flex space-x-4">
@@ -578,7 +591,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Manual Quiz Creation */}
-          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500">
+          <div className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? 'pointer-events-none filter blur-[2px]' : ''}`}>
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
@@ -663,7 +676,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Upload Area */}
-          <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500">
+          <div className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? 'pointer-events-none filter blur-[2px]' : ''}`}>
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
@@ -703,74 +716,80 @@ const CreateClassPage: React.FC = () => {
                 onDragOver={isFormValid() ? handleDrag : undefined}
                 onDrop={isFormValid() ? handleDrop : undefined}
               >
-              <div className="space-y-4">
-                <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                </div>
-                  <div>
-                   <h3 className={`text-lg font-medium mb-2 ${
-                     isFormValid() 
-                       ? 'text-gray-900 dark:text-white' 
-                       : 'text-gray-500 dark:text-gray-400'
-                   }`}>
-                     Kéo thả File vào đây hoặc click để chọn File
-                   </h3>
-                      <p className={`mb-4 ${
-                        isFormValid() 
-                          ? 'text-gray-600 dark:text-gray-400' 
-                          : 'text-gray-500 dark:text-gray-500'
-                      }`}>
-                    Hỗ trợ File .txt, .json, .doc, .docx
-                  </p>
-                  
-                  <label className={`cursor-pointer inline-flex items-center gap-2 ${
-                    isFormValid() 
-                      ? 'btn-primary' 
-                      : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
-                  }`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                <div className="space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-8 h-8 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
                     </svg>
-                    Chọn File
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-medium mb-2 ${
+                      isFormValid() 
+                        ? 'text-gray-900 dark:text-white' 
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      Kéo thả File vào đây hoặc click để chọn File
+                    </h3>
+                    <p className={`mb-4 ${
+                      isFormValid() 
+                        ? 'text-gray-600 dark:text-gray-400' 
+                        : 'text-gray-500 dark:text-gray-500'
+                    }`}>
+                      Hỗ trợ File .txt, .json, .doc, .docx
+                    </p>
+                    <label className={`cursor-pointer inline-flex items-center gap-2 ${
+                      isFormValid() 
+                        ? 'btn-primary' 
+                        : 'px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                    }`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      Chọn File
                       <input
-                       type="file"
-                       multiple
-                       accept=".txt,.json,.doc,.docx"
-                       onChange={handleFileSelect}
-                       className="hidden"
-                       disabled={!isFormValid()}
-                     />
-                  </label>
+                        type="file"
+                        multiple
+                        accept=".txt,.json,.doc,.docx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        disabled={!isFormValid()}
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-            {/* Upload Progress */}
-            {isUploading && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {processingFile ? `Đang xử lý ${processingFile}...` : 'Đang tải lên...'}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">100%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-primary-600 h-2 rounded-full transition-all duration-300"></div>
-                </div>
+          {(!isLoggedIn) && (
+            <div className="pointer-events-none absolute inset-0 z-[100] flex items-center justify-center">
+              <div className="px-6 py-3 rounded-xl bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white text-base sm:text-lg font-bold tracking-wide shadow-2xl ring-1 ring-primary-500/30">
+                Vui lòng đăng nhập để tạo lớp học
               </div>
-            )}
+            </div>
+          )}
+          {isUploading && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {processingFile ? `Đang xử lý ${processingFile}...` : 'Đang tải lên...'}
+                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">100%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div className="bg-primary-600 h-2 rounded-full transition-all duration-300"></div>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Uploaded Files List */}
