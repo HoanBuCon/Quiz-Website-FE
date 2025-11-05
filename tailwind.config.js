@@ -22,7 +22,6 @@ module.exports = {
           800: '#1e40af',
           900: '#1e3a8a',
         },
-        // Thêm màu stone để có tone dịu hơn cho light mode
         stone: {
           50: '#fafaf9',
           100: '#f5f5f4',
@@ -36,7 +35,17 @@ module.exports = {
           900: '#1c1917',
         },
       },
+
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.8s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
-} 
+}

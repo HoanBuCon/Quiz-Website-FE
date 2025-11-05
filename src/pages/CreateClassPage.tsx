@@ -772,8 +772,8 @@ const CreateClassPage: React.FC = () => {
           </div>
           {(!isLoggedIn) && (
             <div className="pointer-events-none absolute inset-0 z-[100] flex items-center justify-center">
-              <div className="px-6 py-3 rounded-xl bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white text-base sm:text-lg font-bold tracking-wide shadow-2xl ring-1 ring-primary-500/30">
-                Vui lòng đăng nhập để tạo lớp học
+              <div className="px-6 py-3 rounded-xl bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white text-base sm:text-lg font-mono font-bold tracking-wide shadow-2xl ring-1 ring-primary-500/30">
+                Vui lòng ĐĂNG NHẬP để tạo lớp học
               </div>
             </div>
           )}

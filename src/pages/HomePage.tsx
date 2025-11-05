@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ClassRoom, Quiz } from '../types';
-import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import { formatDate } from '../utils/fileUtils';
+import React, { useState, useEffect } from "react";
+import { ClassRoom, Quiz } from "../types";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
+import { formatDate } from "../utils/fileUtils";
 
 // Component trang chủ
 const HomePage: React.FC = () => {
@@ -23,7 +23,7 @@ const HomePage: React.FC = () => {
     const centerY = rect.top + rect.height / 2;
     const mouseX = e.clientX - centerX;
     const mouseY = e.clientY - centerY;
-    
+
     setMousePosition({ x: mouseX, y: mouseY });
   };
 
@@ -35,7 +35,7 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const { getToken } = await import('../utils/auth');
+        const { getToken } = await import("../utils/auth");
         const token = getToken();
         setIsLoggedIn(!!token);
         if (!token) {
@@ -45,7 +45,7 @@ const HomePage: React.FC = () => {
           setLoading(false);
           return;
         }
-        const { ClassesAPI, QuizzesAPI } = await import('../utils/api');
+        const { ClassesAPI, QuizzesAPI } = await import("../utils/api");
         const pubs: any[] = await ClassesAPI.listPublic(token);
         // Attach quizzes for each public class
         const classesWithQuizzes: ClassRoom[] = [] as any;
@@ -68,7 +68,7 @@ const HomePage: React.FC = () => {
         setTotalClasses(classesWithQuizzes.length);
         setTotalQuizzes(quizCount);
       } catch (e) {
-        console.error('Failed to load public classes:', e);
+        console.error("Failed to load public classes:", e);
       } finally {
         setLoading(false);
       }
@@ -79,15 +79,15 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('.dropdown-container')) {
+      if (!target.closest(".dropdown-container")) {
         setOpenDropdown(null);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    
+
+    document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -99,25 +99,75 @@ const HomePage: React.FC = () => {
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-          
-          <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
-              <span className="logo-text">liemdai</span>{' '}
-              <span className="text-[50%] align-baseline opacity-80">(Đại Liêm🐧)</span> ưebsite
-            </h1>
-            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
-            </p>
-            
+
+          <div className="relative z-10 lg:flex lg:items-start lg:justify-between">
+            <div className="lg:flex-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
+                <span className="logo-text text-3xl sm:text-4xl lg:text-5xl">
+                  liemdai
+                </span>{" "}
+                <span className="text-[50%] align-baseline opacity-80">
+                  (Đại Liêm🐧)
+                </span>
+              </h1>
+              <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+                Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
+              </p>
+            </div>
+
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 max-w-2xl">
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">{totalClasses}</div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">Lớp học công khai</div>
-              </div>
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">{totalQuizzes}</div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">Bài kiểm tra công khai</div>
+            <div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
+              <div className="flex justify-start lg:justify-end">
+                <div
+                  className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
+                  style={{ gridAutoColumns: "max-content" }}
+                >
+                  {/* Ô 1 */}
+                  <div
+                    className="
+                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                      transition-all duration-500
+                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+                      dark:border-white/10 dark:ring-1 dark:ring-white/10
+                      overflow-hidden group
+                    "
+                  >
+                    {/* Overlay pattern */}
+                    <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+
+                    {/* Hiệu ứng shimmer khi hover */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]" />
+
+                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+                      {totalClasses}
+                    </div>
+                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+                      Lớp học công khai
+                    </div>
+                  </div>
+
+                  {/* Ô 2 */}
+                  <div
+                    className="
+                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                      transition-all duration-500
+                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+                      dark:border-white/10 dark:ring-1 dark:ring-white/10
+                      overflow-hidden group
+                    "
+                  >
+                    <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]" />
+
+                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+                      {totalQuizzes}
+                    </div>
+                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+                      Bài kiểm tra công khai
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -139,7 +189,7 @@ const HomePage: React.FC = () => {
           {loading ? (
             <div className="py-16 flex items-center justify-center">
               {(() => {
-                const Any = require('../components/Spinner').default;
+                const Any = require("../components/Spinner").default;
                 return <Any size={40} />;
               })()}
             </div>
@@ -147,23 +197,37 @@ const HomePage: React.FC = () => {
             // Empty state
             <div className="text-center py-16">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {isLoggedIn ? 'Chưa có lớp học công khai' : 'Vui lòng ĐĂNG NHẬP để tham gia lớp học'}
+                {isLoggedIn
+                  ? "Chưa có lớp học công khai"
+                  : "Vui lòng ĐĂNG NHẬP để tham gia lớp học"}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {isLoggedIn ? 'Hãy quay lại sau để khám phá các lớp học mới' : 'Bạn cần đăng nhập để được cấp quyền truy cập và các tính năng của website'}
+                {isLoggedIn
+                  ? "Hãy quay lại sau để khám phá các lớp học mới"
+                  : "Bạn cần đăng nhập để được cấp quyền truy cập và các tính năng của website"}
               </p>
             </div>
           ) : (
             // Danh sách lớp học
             <div className="space-y-4">
               {publicClasses.map((classRoom) => (
-                <div 
-                  key={classRoom.id} 
+                <div
+                  key={classRoom.id}
                   className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
@@ -181,106 +245,167 @@ const HomePage: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                         <span className="inline-flex items-center gap-1.5">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
                           </svg>
                           {formatDate(classRoom.createdAt)}
                         </span>
-                        <span className="text-gray-300 dark:text-gray-600">•</span>
+                        <span className="text-gray-300 dark:text-gray-600">
+                          •
+                        </span>
                         <span className="inline-flex items-center gap-1.5">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
                           </svg>
                           {classRoom.quizzes?.length || 0} bài kiểm tra
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="relative dropdown-container flex-shrink-0">
-                      <button 
+                      <button
                         className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-shadow"
                         onClick={() => {
-                          if (classRoom.quizzes && classRoom.quizzes.length === 1) {
+                          if (
+                            classRoom.quizzes &&
+                            classRoom.quizzes.length === 1
+                          ) {
                             const firstQuiz = (classRoom.quizzes as Quiz[])[0];
                             navigate(`/quiz/${firstQuiz.id}`);
                           } else {
-                            setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
+                            setOpenDropdown(
+                              openDropdown === classRoom.id
+                                ? null
+                                : classRoom.id
+                            );
                           }
                         }}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
                         </svg>
                         Tham gia
                         {classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                          <svg 
+                          <svg
                             className={`w-4 h-4 transition-transform duration-200 ${
-                              openDropdown === classRoom.id ? 'rotate-180' : ''
-                            }`} 
-                            fill="none" 
-                            stroke="currentColor" 
+                              openDropdown === classRoom.id ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
                           </svg>
                         )}
                       </button>
-                      
+
                       {/* Dropdown Menu */}
-                      {openDropdown === classRoom.id && classRoom.quizzes && classRoom.quizzes.length > 1 && (
-                        <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-10 overflow-hidden">
-                          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
-                            <p className="text-sm font-semibold text-white">
-                              Chọn bài kiểm tra
-                            </p>
-                          </div>
-                          <div className="p-2 max-h-80 overflow-y-auto">
-                            {(classRoom.quizzes as Quiz[]).map((quiz, idx) => (
-                              <button
-                                key={quiz.id}
-                                onClick={() => {
-                                  navigate(`/quiz/${quiz.id}`);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
-                                    {idx + 1}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                                      {quiz.title}
+                      {openDropdown === classRoom.id &&
+                        classRoom.quizzes &&
+                        classRoom.quizzes.length > 1 && (
+                          <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-10 overflow-hidden">
+                            <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                              <p className="text-sm font-semibold text-white">
+                                Chọn bài kiểm tra
+                              </p>
+                            </div>
+                            <div className="p-2 max-h-80 overflow-y-auto">
+                              {(classRoom.quizzes as Quiz[]).map(
+                                (quiz, idx) => (
+                                  <button
+                                    key={quiz.id}
+                                    onClick={() => {
+                                      navigate(`/quiz/${quiz.id}`);
+                                      setOpenDropdown(null);
+                                    }}
+                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                        {idx + 1}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                          {quiz.title}
+                                        </div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          {(quiz as any).questionCount ??
+                                            (quiz as any).questions?.length ??
+                                            0}{" "}
+                                          câu hỏi
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                      {(quiz as any).questionCount ?? ((quiz as any).questions?.length ?? 0)} câu hỏi
-                                    </div>
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
+                                  </button>
+                                )
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </div>
-                  
+
                   {/* Danh sách quiz trong lớp */}
                   {classRoom.quizzes && classRoom.quizzes.length > 0 && (
                     <div className="border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
                       <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        <svg
+                          className="w-5 h-5 text-primary-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
                         </svg>
                         Bài kiểm tra trong lớp
                       </h4>
                       <div className="grid gap-3">
                         {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                          <div 
-                            key={quiz.id} 
+                          <div
+                            key={quiz.id}
                             className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -296,8 +421,18 @@ const HomePage: React.FC = () => {
                                 onClick={() => navigate(`/quiz/${quiz.id}`)}
                                 className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                  />
                                 </svg>
                                 Làm bài
                               </button>
@@ -319,8 +454,18 @@ const HomePage: React.FC = () => {
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">
-                  <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  <svg
+                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -329,18 +474,22 @@ const HomePage: React.FC = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Độ khó: Liemdaidary🔥
                 </p>
-                <a 
-                  href="https://lms.liemsdai.is-best.net/" 
-                  target="_blank" 
+                <a
+                  href="https://lms.liemsdai.is-best.net/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block text-sm font-mono text-primary-600 dark:text-primary-400 hover:underline break-all"
                 >
                   lms.liemsdai.is-best.net
                 </a>
               </div>
-              
+
               <div className="flex items-center justify-center">
-                <div className="perspective-1000 w-full" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                <div
+                  className="perspective-1000 w-full"
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
+                >
                   <a
                     href="https://lms.liemsdai.is-best.net/"
                     target="_blank"
@@ -348,25 +497,43 @@ const HomePage: React.FC = () => {
                     className="relative group block"
                   >
                     <img
-                      src={isDarkMode ? require('../assets/liemdai_dark.png') : require('../assets/liemdai_light.png')}
-                      alt={isDarkMode ? 'liemdai_dark' : 'liemdai_light'}
+                      src={
+                        isDarkMode
+                          ? require("../assets/liemdai_dark.png")
+                          : require("../assets/liemdai_light.png")
+                      }
+                      alt={isDarkMode ? "liemdai_dark" : "liemdai_light"}
                       className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                       style={{
                         maxHeight: 280,
-                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1}deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0 ? '20px' : '0px'})`,
-                        border: '2px solid transparent',
+                        transform: `perspective(1000px) rotateY(${
+                          mousePosition.x * 0.1
+                        }deg) rotateX(${
+                          -mousePosition.y * 0.1
+                        }deg) translateZ(${
+                          Math.abs(mousePosition.x) +
+                            Math.abs(mousePosition.y) >
+                          0
+                            ? "20px"
+                            : "0px"
+                        })`,
+                        border: "2px solid transparent",
                         backgroundImage: isDarkMode
-                          ? 'linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)'
-                          : 'linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)',
-                        backgroundSize: '400% 400%',
-                        animation: 'neonBorder 3s ease-in-out infinite',
-                        backgroundClip: 'border-box',
-                        borderRadius: '12px',
+                          ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
+                          : "linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)",
+                        backgroundSize: "400% 400%",
+                        animation: "neonBorder 3s ease-in-out infinite",
+                        backgroundClip: "border-box",
+                        borderRadius: "12px",
                       }}
                     />
                     {/* Tooltip */}
                     <div
-                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200'}`}
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${
+                        isDarkMode
+                          ? "bg-gray-800 text-white border border-gray-700"
+                          : "bg-white text-gray-900 border border-gray-200"
+                      }`}
                     >
                       Click để chuyển đến trang →
                     </div>
@@ -381,4 +548,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage; 
+export default HomePage;
