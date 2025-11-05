@@ -14,6 +14,7 @@ const HomePage: React.FC = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   // Hàm xử lý di chuyển chuột để tính toán góc xoay
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -36,6 +37,7 @@ const HomePage: React.FC = () => {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
+        setIsLoggedIn(!!token);
         if (!token) {
           setPublicClasses([]);
           setTotalClasses(0);
@@ -100,7 +102,8 @@ const HomePage: React.FC = () => {
           
           <div className="relative z-10">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
-              LiemDai (Đại Liêm) Website 🐧
+              <span className="logo-text">liemdai</span>{' '}
+              <span className="text-[50%] align-baseline opacity-80">(Đại Liêm🐧)</span> ưebsite
             </h1>
             <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
@@ -149,10 +152,10 @@ const HomePage: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Chưa có lớp học công khai
+                {isLoggedIn ? 'Chưa có lớp học công khai' : 'Vui lòng ĐĂNG NHẬP để tham gia lớp học'}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Hãy quay lại sau để khám phá các lớp học mới
+                {isLoggedIn ? 'Hãy quay lại sau để khám phá các lớp học mới' : 'Bạn cần đăng nhập để được cấp quyền truy cập và các tính năng của website'}
               </p>
             </div>
           ) : (
