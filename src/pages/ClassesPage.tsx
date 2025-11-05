@@ -769,39 +769,97 @@ const ClassesPage: React.FC = () => {
 
             {/* Stats Mobile */}
             <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-8">
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
+              {/* Ô 1 */}
+              <div
+                className="
+              relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+              transition-all duration-300
+              dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+              dark:border-white/10 dark:ring-1 dark:ring-white/10
+              dark:hover:brightness-125 dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+              overflow-hidden group
+            "
+              >
+                {/* Overlay pattern */}
+                <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+
+                {/* Shimmer effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer" />
+
+                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
                   {classes.length}
                 </div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
+                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
                   Lớp học
                 </div>
               </div>
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
+
+              {/* Ô 2 */}
+              <div
+                className="
+              relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+              transition-all duration-300
+              dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+              dark:border-white/10 dark:ring-1 dark:ring-white/10
+              dark:hover:brightness-125 dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+              overflow-hidden group
+            "
+              >
+                <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer" />
+
+                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
                   {classes.reduce(
                     (total, cls) => total + getValidQuizzes(cls).length,
                     0
                   )}
                 </div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
+                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
                   Bài kiểm tra
                 </div>
               </div>
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
+
+              {/* Ô 3 */}
+              <div
+                className="
+              relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+              transition-all duration-300
+              dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+              dark:border-white/10 dark:ring-1 dark:ring-white/10
+              dark:hover:brightness-125 dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+              overflow-hidden group
+            "
+              >
+                <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer" />
+
+                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
                   {statsCompleted}
                 </div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
+                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
                   Đã hoàn thành
                 </div>
               </div>
-              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-xl py-2 px-4 border border-gray-200 dark:border-white/20">
-                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-white mb-1">
+
+              {/* Ô 4 */}
+              <div
+                className="
+              relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+              transition-all duration-300
+              dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+              dark:border-white/10 dark:ring-1 dark:ring-white/10
+              dark:hover:brightness-125 dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)]
+              overflow-hidden group
+            "
+              >
+                <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer" />
+
+                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
                   {statsAverage}
                 </div>
-                <div className="text-sm font-mono text-blue-600 dark:text-blue-100">
-                  Điểm TB
+                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+                  Điểm trung bình
                 </div>
               </div>
             </div>
@@ -855,7 +913,10 @@ const ClassesPage: React.FC = () => {
 
           {loading ? (
             <div className="py-8 flex items-center justify-center">
-              {(() => { const Any = require('../components/Spinner').default; return <Any size={36} />; })()}
+              {(() => {
+                const Any = require("../components/Spinner").default;
+                return <Any size={36} />;
+              })()}
             </div>
           ) : classes.length > 0 ? (
             // Danh sách lớp học
@@ -2458,7 +2519,7 @@ const ClassesPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <span className="text-sm text-blue-700 dark:text-blue-400">
-                    Điểm TB
+                    Điểm trung bình
                   </span>
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {statsAverage}
@@ -2508,7 +2569,8 @@ const ClassesPage: React.FC = () => {
                     </svg>
                   </div>
                   <span>
-                    <strong>CHIA SẺ</strong> hoặc <strong>ĐÓNG CHIA SẺ</strong> lớp học và bài tập trắc nghiệm.
+                    <strong>CHIA SẺ</strong> hoặc <strong>ĐÓNG CHIA SẺ</strong>{" "}
+                    lớp học và bài tập trắc nghiệm.
                   </span>
                 </div>
 
