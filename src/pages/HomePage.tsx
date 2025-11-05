@@ -14,6 +14,7 @@ const HomePage: React.FC = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   // Hàm xử lý di chuyển chuột để tính toán góc xoay
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -36,6 +37,7 @@ const HomePage: React.FC = () => {
       try {
         const { getToken } = await import('../utils/auth');
         const token = getToken();
+        setIsLoggedIn(!!token);
         if (!token) {
           setPublicClasses([]);
           setTotalClasses(0);
@@ -149,10 +151,10 @@ const HomePage: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Chưa có lớp học công khai
+                {isLoggedIn ? 'Chưa có lớp học công khai' : 'Vui lòng ĐĂNG NHẬP để tham gia lớp học'}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Hãy quay lại sau để khám phá các lớp học mới
+                {isLoggedIn ? 'Hãy quay lại sau để khám phá các lớp học mới' : 'Bạn cần đăng nhập để được cấp quyền truy cập và các tính năng của website'}
               </p>
             </div>
           ) : (
