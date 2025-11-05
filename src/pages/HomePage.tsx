@@ -102,7 +102,8 @@ const HomePage: React.FC = () => {
           
           <div className="relative z-10">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
-              LiemDai (Đại Liêm) Website 🐧
+              <span className="logo-text">liemdai</span>{' '}
+              <span className="text-[50%] align-baseline opacity-80">(Đại Liêm🐧)</span> ưebsite
             </h1>
             <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
