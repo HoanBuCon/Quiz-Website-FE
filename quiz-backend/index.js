@@ -143,7 +143,7 @@ app.use((req, _res, next) => {
 
 // ====== Static file serving ======
 const uploadPath = isProd
-  ? path.join(__dirname, '../public_html/uploads')
+  ? path.join(__dirname, '../../public_html/uploads')
   : path.join(__dirname, 'public/uploads');
 
 if (!fs.existsSync(uploadPath)) {
