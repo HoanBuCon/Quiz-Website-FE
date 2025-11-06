@@ -285,7 +285,7 @@ const HomePage: React.FC = () => {
               <p className="text-gray-600 dark:text-gray-400">
                 {isLoggedIn
                   ? "Hãy quay lại sau để khám phá các lớp học mới"
-                  : "Bạn cần đăng nhập để được cấp quyền truy cập và các tính năng của website"}
+                  : "Bạn cần đăng nhập để được cấp quyền truy cập vào các tính năng của website"}
               </p>
             </div>
           ) : (
