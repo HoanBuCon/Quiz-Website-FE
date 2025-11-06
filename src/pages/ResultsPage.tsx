@@ -20,6 +20,46 @@ const ResultsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showExplanations, setShowExplanations] = useState(false);
 
+  // Floating scroll buttons (like EditQuizPage)
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
+  const [canScroll, setCanScroll] = useState(true);
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const body = document.documentElement;
+      const viewH = window.innerHeight || 0;
+      const docH = Math.max(body.scrollHeight, body.offsetHeight);
+      const totalScrollable = Math.max(0, docH - viewH);
+      const threshold = 80;
+      const scrollable = totalScrollable > threshold;
+      setCanScroll(scrollable);
+      if (!scrollable) {
+        setAtTop(true);
+        setAtBottom(true);
+        return;
+      }
+      setAtTop(scrollY <= 10);
+      setAtBottom(scrollY >= totalScrollable - 10);
+    };
+    // Defer first measurement until after first paint/content layout
+    const rafId = requestAnimationFrame(onScroll);
+    const tId = setTimeout(onScroll, 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+      clearTimeout(tId);
+    };
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToBottom = () => {
+    const body = document.documentElement;
+    const docH = Math.max(body.scrollHeight, body.offsetHeight);
+    window.scrollTo({ top: docH, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     if (!quizId) {
       navigate('/');
@@ -587,6 +627,26 @@ const ResultsPage: React.FC = () => {
           Hoàn thành lúc: {new Date(result.completedAt).toLocaleString('vi-VN')}
         </p>
       </div>
+      {/* Floating scroll buttons */}
+      {canScroll && (
+        <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+          {(!atTop && !atBottom) && (
+            <button onClick={scrollToTop} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+            </button>
+          )}
+          {atTop && (
+            <button onClick={scrollToBottom} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
+          )}
+          {atBottom && (
+            <button onClick={scrollToTop} className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
