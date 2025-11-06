@@ -291,7 +291,7 @@ const ResultsPage: React.FC = () => {
       <div className="flex flex-wrap gap-4 mb-8">
         <button
           onClick={() => setShowExplanations(!showExplanations)}
-          className="btn-secondary"
+          className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
         >
           {showExplanations ? 'Ẩn giải thích' : 'Hiện giải thích'}
         </button>
@@ -299,8 +299,11 @@ const ResultsPage: React.FC = () => {
           onClick={() => navigate(`/quiz/${quizId}`)}
           className="btn-primary"
         >
-          Làm lại
+          Làm lại Quiz
         </button>
+        <Link to="/classes" className="btn-secondary">
+          Xem lớp học khác
+        </Link>
         <Link to="/" className="btn-secondary">
           Về trang chủ
         </Link>
@@ -319,12 +322,12 @@ const ResultsPage: React.FC = () => {
               <div key={q.id} className="card p-6 border-2 border-primary-200 dark:border-primary-800">
                 {/* Câu hỏi mẹ */}
                 <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                     <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300">
                       Câu {qIndex + 1}: {q.question}
                     </h4>
-                    <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
-                      Câu hỏi mẹ ({q.subQuestions.length} câu con)
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 whitespace-nowrap">
+                      {q.subQuestions.length} câu hỏi
                     </span>
                   </div>
                   {q.questionImage && (
@@ -623,17 +626,20 @@ const ResultsPage: React.FC = () => {
           })}
         </div>
       <div className="mt-8 text-center">
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:justify-center">
+          {/* Làm lại Quiz - hàng đầu, full width ở mobile */}
           <button
             onClick={() => navigate(`/quiz/${quizId}`)}
-            className="btn-primary"
+            className="btn-primary col-span-2 w-full sm:col-span-auto sm:flex-1 inline-flex items-center justify-center"
           >
             Làm lại Quiz
           </button>
-          <Link to="/classes" className="btn-secondary">
+          {/* Xem lớp học khác - hàng hai, trái ở mobile */}
+          <Link to="/classes" className="btn-secondary col-span-1 w-full sm:flex-1 inline-flex items-center justify-center">
             Xem lớp học khác
           </Link>
-          <Link to="/" className="btn-secondary">
+          {/* Về trang chủ - hàng hai, phải ở mobile */}
+          <Link to="/" className="btn-secondary col-span-1 w-full sm:flex-1 inline-flex items-center justify-center">
             Về trang chủ
           </Link>
         </div>

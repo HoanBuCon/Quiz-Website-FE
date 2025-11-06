@@ -17,7 +17,6 @@ import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import ClassViewPage from './pages/ClassViewPage';
 
 // ThemedToaster component để đổi màu theo theme
@@ -170,7 +169,6 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
             {/* Route sử dụng FixedLayout - KHÔNG SCROLL */}
             <Route path="/edit-class/:classId" element={<FixedLayout><EditClassPage /></FixedLayout>} />
           </Routes>

@@ -542,11 +542,39 @@ const QuizPage: React.FC = () => {
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex flex-row items-stretch mt-4 sm:mt-6 gap-3 w-full">
+          <div className="mt-4 sm:mt-6 w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-stretch">
+            {/* Confirm (instant mode) - first row full width on mobile */}
+            {uiMode === 'instant' && (currentQuestion.type === 'multiple' || currentQuestion.type === 'text' || currentQuestion.type === 'drag' || currentQuestion.type === 'composite') && (
+<button
+  onClick={() => markRevealed(currentQuestion.id)}
+  disabled={isRevealed(currentQuestion.id)}
+  className="
+    col-span-2 w-full sm:col-span-auto sm:order-2 sm:flex-1
+    text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]
+    rounded-lg font-medium border-2
+    border-blue-500 dark:border-blue-400
+    bg-gray-50 dark:bg-blue-900/40
+    text-blue-600 dark:text-blue-300
+    hover:bg-blue-50 dark:hover:bg-blue-800/60
+    hover:text-blue-700 dark:hover:text-blue-200
+    hover:shadow-md hover:shadow-blue-400/25 dark:hover:shadow-blue-900/40
+    transition-all duration-200
+    disabled:opacity-60 disabled:cursor-not-allowed
+  "
+>
+  Xác nhận
+</button>
+
+
+
+
+            )}
+
+            {/* Prev - second row, left on mobile; first on desktop */}
             <button
               onClick={handlePrevQuestion}
               disabled={currentQuestionIndex === 0}
-              className="btn-secondary flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
+              className="btn-secondary col-span-1 sm:col-span-auto sm:order-1 sm:flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -554,21 +582,11 @@ const QuizPage: React.FC = () => {
               Câu trước
             </button>
 
-            {/* Nút Xác nhận cho multiple/text/drag/composite ở chế độ instant */}
-            {uiMode === 'instant' && (currentQuestion.type === 'multiple' || currentQuestion.type === 'text' || currentQuestion.type === 'drag' || currentQuestion.type === 'composite') && (
-              <button
-                onClick={() => markRevealed(currentQuestion.id)}
-                disabled={isRevealed(currentQuestion.id)}
-                className="flex-1 btn-primary text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px] disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Xác nhận
-              </button>
-            )}
-
+            {/* Next - second row, right on mobile; last on desktop */}
             <button
               onClick={handleNextQuestion}
               disabled={currentQuestionIndex === questions.length - 1}
-              className="btn-secondary flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
+              className="btn-secondary col-span-1 sm:col-span-auto sm:order-3 sm:flex-1 flex items-center justify-center gap-2 text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]"
             >
               Câu sau
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -737,10 +755,10 @@ const TextRevealPanel: React.FC<{ question: Question; userValue: string }> = ({ 
     <div className={`mt-2 rounded-lg border p-3 text-sm transition-colors ${isOk ? 'border-green-500 bg-green-50/60 text-green-800 dark:border-green-400 dark:bg-green-900/20 dark:text-green-200' : 'border-rose-500 bg-rose-50/60 text-rose-800 dark:border-rose-400 dark:bg-rose-900/20 dark:text-rose-200'}`}>
       {isOk ? 'Chính xác!' : 'Chưa chính xác.'}
       <div className="mt-1">
-        <span className="opacity-80">Đáp án của bạn:</span> <span className="font-medium">{userValue || '(trống)'}</span>
+        <span className="opacity-80">Đáp án của bạn:</span> <span className="font-medium">{userValue || '(Trống)'}</span>
       </div>
       <div className="mt-1">
-        <span className="opacity-80">Đáp án đúng:</span> <span className="font-medium">{ca.join(' | ') || '(chưa cấu hình)'}</span>
+        <span className="opacity-80">Đáp án đúng:</span> <span className="font-medium">{ca.join(' | ') || '(Không thuộc nhóm nào)'}</span>
       </div>
     </div>
   );
@@ -947,7 +965,7 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
             <ul className="list-disc list-inside space-y-0.5">
               {items.map(it => (
                 <li key={it.id}>
-                  <span className="opacity-80">{it.label}</span> → <span className="font-medium">{targets.find(t => t.id === (correctMapping as any)[it.id])?.label || '(chưa cấu hình)'}</span>
+                  <span className="opacity-80">{it.label}</span> → <span className="font-medium">{targets.find(t => t.id === (correctMapping as any)[it.id])?.label || '(Không thuộc nhóm nào)'}</span>
                 </li>
               ))}
             </ul>
