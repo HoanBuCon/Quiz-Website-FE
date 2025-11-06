@@ -1,5 +1,5 @@
 import { FaRegDotCircle, FaRegEdit, FaRegHandPointer, FaSitemap } from "react-icons/fa";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Question, UserAnswer, DragTarget, DragItem } from '../types';
 import { buildShortId } from '../utils/share';
@@ -16,6 +16,14 @@ const QuizPage: React.FC = () => {
   const [quizTitle, setQuizTitle] = useState('');
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
   const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
+
+  // UI mode: 'default' (nộp bài mới xem kết quả) | 'instant' (xem kết quả ngay)
+  const [uiMode, setUiMode] = useState<'default' | 'instant'>('default');
+  const [showModeChooser, setShowModeChooser] = useState<boolean>(false);
+  // Lưu trạng thái đã xác nhận (reveal) cho các câu hỏi cần nút Xác nhận (text/drag)
+  const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  // Theo dõi viewport để render floating nút chuyển đổi chỉ khi >= 1024px (lg)
+  const [isLarge, setIsLarge] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth >= 1024 : false));
 
   // Load quiz data from backend
   useEffect(() => {
@@ -64,12 +72,35 @@ const QuizPage: React.FC = () => {
     loadQuiz();
   }, [quizId, navigate]);
 
+  // Hỏi người dùng chọn định dạng khi vào trang
+  useEffect(() => {
+    // Chỉ hiển thị sau khi loading xong và có câu hỏi hợp lệ
+    if (!loading && questions.length > 0) {
+      setShowModeChooser(true);
+    }
+  }, [loading, questions.length]);
+
+  // Lắng nghe thay đổi kích thước màn hình để quyết định có render floating toggle hay không
+  useEffect(() => {
+    const onResize = () => setIsLarge(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // Xử lý khi người dùng chọn đáp án (cho single/multiple/text)
   const handleAnswerSelect = (questionId: string, answer: string, questionType?: 'single' | 'multiple' | 'text') => {
     const currentQuestion = questions[currentQuestionIndex];
     
     // Xác định type: ưu tiên questionType được truyền vào (cho sub-question), fallback về currentQuestion.type
     const typeToCheck = questionType || currentQuestion.type;
+
+    // Nếu đang ở chế độ instant và câu hỏi đã reveal (khoá), không cho chọn lại
+    if (uiMode === 'instant') {
+      // Khoá top-level khi đã reveal
+      if (revealed.has(questionId)) return;
+      // Trong composite: nếu đang chọn câu con và parent đã reveal thì không cho chọn
+      if (currentQuestion.type === 'composite' && questionId !== currentQuestion.id && revealed.has(currentQuestion.id)) return;
+    }
     
     setUserAnswers(prev => {
       const existingAnswer = prev.find(a => a.questionId === questionId);
@@ -98,6 +129,14 @@ const QuizPage: React.FC = () => {
         );
       }
     });
+
+    // Ở chế độ instant: Single (top-level) sẽ reveal và khoá ngay sau khi chọn lần đầu
+    if (uiMode === 'instant') {
+      const isTopLevel = questionId === currentQuestion.id;
+      if (isTopLevel && (typeToCheck === 'single') && currentQuestion.type === 'single') {
+        markRevealed(questionId);
+      }
+    }
   };
 
   const getCurrentAnswer = (questionId: string) => {
@@ -129,6 +168,25 @@ const QuizPage: React.FC = () => {
       // Single/Multiple/Text: kiểm tra length
       return getCurrentAnswer(question.id).length > 0;
     }
+  };
+
+  // Helpers
+  const getCorrectAnswers = (q: Question): string[] => {
+    if (q.type === 'drag' || q.type === 'composite') return [] as string[];
+    const ca = Array.isArray(q.correctAnswers) ? q.correctAnswers as string[] : [];
+    return ca;
+  };
+
+  const isRevealed = (qid: string) => uiMode === 'instant' && revealed.has(qid);
+  const isChoiceReveal = (q: Question, _selected: string[], forceReveal: boolean = false) => uiMode === 'instant' && (forceReveal || revealed.has(q.id));
+
+  const markRevealed = (qid: string) => setRevealed(prev => new Set(prev).add(qid));
+  const unmarkRevealed = (qid: string) => setRevealed(prev => { const n = new Set(prev); n.delete(qid); return n; });
+
+  const isTextAnswerCorrect = (q: Question, value: string) => {
+    const ca = Array.isArray(q.correctAnswers) ? q.correctAnswers as string[] : [];
+    const norm = (s: string) => (s || '').trim().toLowerCase();
+    return ca.some(ans => norm(ans) === norm(value));
   };
 
   // Navigate to next/previous question
@@ -243,7 +301,7 @@ const QuizPage: React.FC = () => {
                       : [...prev, currentQuestion.id]
                   );
                 }}
-className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${
+                  className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${
                   markedQuestions.includes(currentQuestion.id)
                     ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                     : 'bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -292,30 +350,66 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
             {/* Answer options */}
             <div className="space-y-2 sm:space-y-3">
               {currentQuestion.type === 'text' && (
-                <input
-                  type="text"
-                  className="w-full p-3 border border-gray-400 rounded-lg text-sm sm:text-base dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
-                  placeholder="Nhập câu trả lời của bạn"
-                  value={(getCurrentAnswer(currentQuestion.id)[0] || '') as string}
-                  onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
-                />
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    disabled={isRevealed(currentQuestion.id)}
+                    className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${
+                      isRevealed(currentQuestion.id)
+                        ? (isTextAnswerCorrect(currentQuestion, (getCurrentAnswer(currentQuestion.id)[0] as string) || '')
+                            ? 'border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500'
+                            : 'border-rose-600 bg-rose-500 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500')
+                        : 'border-gray-400 dark:border-gray-600'
+                    }`}
+                    placeholder="Nhập câu trả lời của bạn"
+                    value={(getCurrentAnswer(currentQuestion.id)[0] || '') as string}
+                    onChange={(e) => handleAnswerSelect(currentQuestion.id, e.target.value)}
+                  />
+                  {uiMode === 'instant' && isRevealed(currentQuestion.id) && (
+                    <TextRevealPanel question={currentQuestion} userValue={(getCurrentAnswer(currentQuestion.id)[0] as string) || ''} />
+                  )}
+                </div>
               )}
               {currentQuestion.type !== 'text' && currentQuestion.type !== 'drag' && currentQuestion.type !== 'composite' && Array.isArray(currentQuestion.options) && (
                 <>
                   {currentQuestion.options.map((option, index) => {
                     const optionImage = currentQuestion.optionImages && currentQuestion.optionImages[option];
+                    const selected = getCurrentAnswer(currentQuestion.id);
+                    const shouldReveal = isChoiceReveal(currentQuestion, selected);
+                    const isCorrect = getCorrectAnswers(currentQuestion).includes(option);
+                    const isChosen = selected.includes(option);
+                    const locked = uiMode === 'instant' && revealed.has(currentQuestion.id);
+                    const base = 'w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base disabled:cursor-not-allowed';
+                    const chosenStyle = 'bg-primary-100 text-primary-900 border-primary-600 shadow-md shadow-primary-500/20 dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25';
+                    const normalStyle = 'bg-white text-gray-800 border-gray-400 hover:border-gray-500 hover:bg-stone-100 hover:shadow-md hover:shadow-gray-400/15 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-700/50 dark:hover:shadow-md dark:hover:shadow-gray-400/20';
+                    const correctStyle = 'bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500';
+                    const wrongChosenStyle = 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500';
+
+                    const cls = shouldReveal
+                      ? (isCorrect ? correctStyle : (isChosen ? wrongChosenStyle : normalStyle))
+                      : (isChosen ? chosenStyle : normalStyle);
+
                     return (
                       <button
                         key={index}
+                        disabled={locked}
                         onClick={() => handleAnswerSelect(currentQuestion.id, option)}
-                        className={`w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base ${
-                          getCurrentAnswer(currentQuestion.id).includes(option)
-                            ? 'bg-primary-100 text-primary-900 border-primary-600 shadow-md shadow-primary-500/20 dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25'
-                            : 'bg-white text-gray-800 border-gray-400 hover:border-gray-500 hover:bg-stone-100 hover:shadow-md hover:shadow-gray-400/15 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-700/50 dark:hover:shadow-md dark:hover:shadow-gray-400/20'
-                        }`}
+                        className={`${base} ${cls}`}
                       >
                         <div className="flex flex-col items-start gap-2 w-full">
-                          <span>{String.fromCharCode(65 + index)}. {option}</span>
+                          <span className="flex items-center gap-2">
+                            {shouldReveal && isCorrect && (
+                              <svg className="w-4 h-4 text-current dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            {shouldReveal && isChosen && !isCorrect && (
+                              <svg className="w-4 h-4 text-current dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            )}
+                            <span>{String.fromCharCode(65 + index)}. {option}</span>
+                          </span>
                           {optionImage && (
                             <img
                               src={optionImage}
@@ -342,12 +436,16 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
                       return prev.map(a => a.questionId === currentQuestion.id ? { ...a, answers: [mapping as any] } : a);
                     });
                   }}
+                  reveal={isRevealed(currentQuestion.id)}
+                  correctMapping={(currentQuestion.correctAnswers as any) || {}}
                 />
               )}
               {currentQuestion.type === 'composite' && Array.isArray((currentQuestion as any).subQuestions) && (
                 <div className="space-y-4">
-                  {(currentQuestion as any).subQuestions.map((sub: Question, idx: number) => (
-                    <div key={sub.id} className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30">
+                  {(currentQuestion as any).subQuestions.map((sub: Question, idx: number) => {
+                    const parentRevealed = isRevealed(currentQuestion.id);
+                    return (
+                    <div key={sub.id} className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-colors duration-200">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                           Câu hỏi con {idx + 1}
@@ -358,31 +456,62 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
                       </div>
                       <div className="font-medium mb-3 text-gray-900 dark:text-gray-100">{sub.question}</div>
                       {sub.type === 'text' && (
-                        <input
-                          type="text"
-                          className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                          placeholder="Nhập câu trả lời của bạn"
-                          value={(getCurrentAnswer(sub.id)[0] || '') as string}
-                          onChange={(e) => handleAnswerSelect(sub.id, e.target.value, 'text')}
-                        />
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            disabled={parentRevealed}
+                            className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${
+                              parentRevealed
+                                ? (isTextAnswerCorrect(sub, (getCurrentAnswer(sub.id)[0] as string) || '')
+                                    ? 'border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500'
+                                    : 'border-rose-600 bg-rose-500 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500')
+                                : 'border-gray-400'
+                            }`}
+                            placeholder="Nhập câu trả lời của bạn"
+                            value={(getCurrentAnswer(sub.id)[0] || '') as string}
+                            onChange={(e) => handleAnswerSelect(sub.id, e.target.value, 'text')}
+                          />
+                          {uiMode === 'instant' && parentRevealed && (
+                            <TextRevealPanel question={sub} userValue={(getCurrentAnswer(sub.id)[0] as string) || ''} />
+                          )}
+                        </div>
                       )}
                       {sub.type !== 'text' && sub.type !== 'drag' && Array.isArray(sub.options) && (
                         <div className="space-y-2">
-                          {sub.options.map((opt, oidx) => (
-                            <button
-                              key={oidx}
-                              onClick={() => handleAnswerSelect(sub.id, opt, sub.type as 'single' | 'multiple')}
-                              className={`w-full p-3 text-left rounded-lg border transition-all duration-200 ${
-                                getCurrentAnswer(sub.id).includes(opt) 
-                                  ? 'bg-primary-100 border-primary-600 text-primary-900 shadow-sm dark:bg-primary-900/50 dark:border-primary-400 dark:text-primary-100' 
-                                  : 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700'
-                              }`}
-                            >
-                              <div className="text-left w-full">
-                                <span className="font-medium">{String.fromCharCode(65 + oidx)}.</span> {opt}
-                              </div>
-                            </button>
-                          ))}
+                          {sub.options.map((opt, oidx) => {
+                            const selected = getCurrentAnswer(sub.id);
+                            const shouldReveal = isChoiceReveal(sub, selected, parentRevealed);
+                            const isCorrect = (Array.isArray(sub.correctAnswers) ? sub.correctAnswers as string[] : []).includes(opt);
+                            const isChosen = selected.includes(opt);
+                            const base = 'w-full p-3 text-left rounded-lg border transition-all duration-200 disabled:cursor-not-allowed';
+                            const chosenStyle = 'bg-primary-100 border-primary-600 text-primary-900 shadow-sm dark:bg-primary-900/50 dark:border-primary-400 dark:text-primary-100';
+                            const normalStyle = 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700';
+                            const correctStyle = 'bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500';
+                            const wrongChosenStyle = 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500';
+                            const cls = shouldReveal ? (isCorrect ? correctStyle : (isChosen ? wrongChosenStyle : normalStyle)) : (isChosen ? chosenStyle : normalStyle);
+                            return (
+                              <button
+                                key={oidx}
+                                disabled={parentRevealed}
+                                onClick={() => handleAnswerSelect(sub.id, opt, sub.type as 'single' | 'multiple')}
+                                className={`${base} ${cls}`}
+                              >
+                                <div className="text-left w-full flex items-center gap-2">
+                                  {shouldReveal && isCorrect && (
+                                    <svg className="w-4 h-4 text-current dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                  {shouldReveal && isChosen && !isCorrect && (
+                                    <svg className="w-4 h-4 text-current dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  )}
+                                  <span className="font-medium">{String.fromCharCode(65 + oidx)}.</span> {opt}
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                       {sub.type === 'drag' && (
@@ -397,17 +526,32 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
                               return prev.map(a => a.questionId === sub.id ? { ...a, answers: [mapping as any] } : a);
                             });
                           }}
+                          reveal={parentRevealed}
+                          correctMapping={(sub.correctAnswers as any) || {}}
                         />
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
+                  {/* Nút Xác nhận cho Composite trong chế độ xem ngay */}
+                  {uiMode === 'instant' && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => markRevealed(currentQuestion.id)}
+                        disabled={isRevealed(currentQuestion.id)}
+                        className="btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Xác nhận
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex flex-row justify-between mt-4 sm:mt-6 gap-3 w-full">
+          <div className="flex flex-row items-stretch mt-4 sm:mt-6 gap-3 w-full">
             <button
               onClick={handlePrevQuestion}
               disabled={currentQuestionIndex === 0}
@@ -418,6 +562,17 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
               </svg>
               Câu trước
             </button>
+
+            {/* Nút Xác nhận cho multiple/text/drag/composite ở chế độ instant */}
+            {uiMode === 'instant' && (currentQuestion.type === 'multiple' || currentQuestion.type === 'text' || currentQuestion.type === 'drag' || currentQuestion.type === 'composite') && (
+              <button
+                onClick={() => markRevealed(currentQuestion.id)}
+                disabled={isRevealed(currentQuestion.id)}
+                className="flex-1 btn-primary text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Xác nhận
+              </button>
+            )}
 
             <button
               onClick={handleNextQuestion}
@@ -435,9 +590,21 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
         {/* Right Section - Sidebar */}
         <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
           <div className="card p-4 sm:p-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
-              Danh sách câu hỏi
-            </h3>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Danh sách câu hỏi
+              </h3>
+              {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
+              <button
+                onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
+                className="block lg:hidden ml-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-colors duration-200 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="Chuyển đổi định dạng"
+              >
+                <span className="hidden sm:inline">Chuyển đổi</span>
+                <span className="sm:hidden">Đổi</span>
+                <span className={`ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${uiMode === 'instant' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>{uiMode === 'instant' ? 'Xem ngay' : 'Mặc định'}</span>
+              </button>
+            </div>
             <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
               {questions.map((question, index) => (
                 <button
@@ -478,12 +645,73 @@ className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight 
           ></div>
         </div>
       </div>
+      {/* Floating switch mode button for >=1024px - chỉ render khi viewport >= 1024px */}
+      {isLarge && (
+        <button
+          onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
+          className="hidden lg:flex fixed bottom-6 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+          title="Chuyển đổi định dạng"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7 7 0 0014 0M19 15a7 7 0 00-14 0" />
+          </svg>
+          <span className="font-medium text-sm">{uiMode === 'instant' ? 'Định dạng: Xem ngay' : 'Định dạng: Mặc định'}</span>
+        </button>
+      )}
+
+      {/* Mode chooser dialog */}
+      {showModeChooser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+            <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chọn định dạng làm bài</h4>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Bạn có thể thay đổi lại bất cứ lúc nào.</p>
+            </div>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => { setUiMode('default'); setShowModeChooser(false); }}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 p-4 text-left hover:border-blue-500 hover:shadow-sm transition-colors duration-200 bg-white dark:bg-gray-800"
+              >
+                <div className="font-semibold text-gray-900 dark:text-gray-100">Định dạng mặc định</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Làm bài bình thường và xem kết quả sau khi nộp.</div>
+              </button>
+              <button
+                onClick={() => { setUiMode('instant'); setShowModeChooser(false); }}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 p-4 text-left hover:border-emerald-500 hover:shadow-sm transition-colors duration-200 bg-white dark:bg-gray-800"
+              >
+                <div className="font-semibold text-gray-900 dark:text-gray-100">Xem đáp án ngay</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận.</div>
+              </button>
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-right">
+              <button onClick={() => setShowModeChooser(false)} className="btn-secondary px-4 py-2 text-sm">Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TextRevealPanel: React.FC<{ question: Question; userValue: string }> = ({ question, userValue }) => {
+  const ca = Array.isArray(question.correctAnswers) ? (question.correctAnswers as string[]) : [];
+  const norm = (s: string) => (s || '').trim();
+  const isOk = ca.some(ans => norm(ans).toLowerCase() === norm(userValue).toLowerCase());
+  return (
+    <div className={`mt-2 rounded-lg border p-3 text-sm transition-colors ${isOk ? 'border-green-500 bg-green-50/60 text-green-800 dark:border-green-400 dark:bg-green-900/20 dark:text-green-200' : 'border-rose-500 bg-rose-50/60 text-rose-800 dark:border-rose-400 dark:bg-rose-900/20 dark:text-rose-200'}`}>
+      {isOk ? 'Chính xác!' : 'Chưa chính xác.'}
+      <div className="mt-1">
+        <span className="opacity-80">Đáp án của bạn:</span> <span className="font-medium">{userValue || '(trống)'}</span>
+      </div>
+      <div className="mt-1">
+        <span className="opacity-80">Đáp án đúng:</span> <span className="font-medium">{ca.join(' | ') || '(chưa cấu hình)'}</span>
+      </div>
     </div>
   );
 };
 
 // Drag & Drop component for 'drag' question type
-const DragDropQuestion: React.FC<{ question: Question; value: Record<string, string>; onChange: (mapping: Record<string, string>) => void }> = ({ question, value, onChange }) => {
+const DragDropQuestion: React.FC<{ question: Question; value: Record<string, string>; onChange: (mapping: Record<string, string>) => void; reveal?: boolean; correctMapping?: Record<string, string> }> = ({ question, value, onChange, reveal = false, correctMapping = {} }) => {
   const targets = (question.options && (question.options as any).targets) as DragTarget[] || [];
   const items = (question.options && (question.options as any).items) as DragItem[] || [];
 
@@ -508,6 +736,7 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
   }
 
   const assign = (itemId: string, targetId?: string) => {
+    if (reveal) return; // khoá sau khi reveal
     setMapping(prev => {
       const next = { ...prev } as any;
       if (!targetId) delete next[itemId]; else next[itemId] = targetId;
@@ -515,8 +744,16 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
     });
   };
 
+  const isItemCorrect = (it: DragItem) => {
+    if (!reveal) return undefined;
+    const cur = mapping[it.id];
+    const ok = correctMapping && correctMapping[it.id] && cur === correctMapping[it.id];
+    return ok ? true : (cur ? false : undefined);
+  };
+
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    if (reveal) { e.preventDefault(); return; }
     setDraggedItem(itemId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', itemId);
@@ -529,6 +766,7 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
 
   const handleDragOver = (e: React.DragEvent, targetId?: string) => {
     e.preventDefault();
+    if (reveal) return;
     e.dataTransfer.dropEffect = 'move';
     setDragOverTarget(targetId || 'pool');
   };
@@ -539,6 +777,7 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
 
   const handleDrop = (e: React.DragEvent, targetId?: string) => {
     e.preventDefault();
+    if (reveal) return;
     if (draggedItem) {
       assign(draggedItem, targetId);
     }
@@ -562,13 +801,14 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
           {poolItems.map(it => (
             <button 
               key={it.id}
-              draggable
+              draggable={!reveal}
               onDragStart={(e) => handleDragStart(e, it.id)}
               onDragEnd={handleDragEnd}
-              className={`p-3 rounded-lg bg-yellow-500 text-white font-medium border-2 border-yellow-500 shadow-md shadow-yellow-500/20 text-left hover:bg-yellow-600 transition-all duration-200 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30 cursor-move ${
+              className={`p-3 rounded-lg font-medium border-2 text-left transition-all duration-200 ${reveal ? 'cursor-default' : 'cursor-move'} ${
                 draggedItem === it.id ? 'opacity-50 scale-95' : ''
-              }`}
+              } ${reveal && correctMapping[it.id] ? 'bg-rose-500 border-rose-600 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500' : 'bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/20 hover:bg-yellow-600 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30'}`}
               onClick={() => assign(it.id, undefined)}
+              disabled={reveal}
             >
               <span className="flex items-center gap-2">
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -609,7 +849,8 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
             {poolItems.length > 0 && (
               <div className="mb-3">
                 <select
-                  className="w-full p-2.5 border border-gray-400 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  disabled={reveal}
+                  className="w-full p-2.5 border border-gray-400 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 disabled:opacity-60 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   value=""
                   onChange={(e) => {
                     const itemId = e.target.value;
@@ -626,25 +867,31 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
 
             {/* Đáp án đã chọn */}
             <div className="space-y-2 min-h-[60px]">
-              {(itemsByTarget[t.id] || []).map(it => (
-                <button 
-                  key={it.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, it.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`w-full p-3 rounded-lg bg-primary-500 text-white font-medium border-2 border-primary-500 shadow-md shadow-primary-500/20 text-left hover:bg-primary-600 transition-all duration-200 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60 cursor-move ${
-                    draggedItem === it.id ? 'opacity-50 scale-95' : ''
-                  }`}
-                  onClick={() => assign(it.id, undefined)}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                    </svg>
-                    {it.label}
-                  </span>
-                </button>
-              ))}
+              {(itemsByTarget[t.id] || []).map(it => {
+                const state = isItemCorrect(it);
+                const base = 'w-full p-3 rounded-lg font-medium border-2 text-left transition-all duration-200';
+                const normal = 'bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 hover:bg-primary-600 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60';
+                const ok = 'bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500';
+                const bad = 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500';
+                return (
+                  <button 
+                    key={it.id}
+                    draggable={!reveal}
+                    onDragStart={(e) => handleDragStart(e, it.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`${base} ${reveal ? 'cursor-default' : 'cursor-move'} ${draggedItem === it.id ? 'opacity-50 scale-95' : ''} ${state === undefined ? normal : state ? ok : bad}`}
+                    onClick={() => assign(it.id, undefined)}
+                    disabled={reveal}
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+                      {it.label}
+                    </span>
+                  </button>
+                );
+              })}
               {(itemsByTarget[t.id] || []).length === 0 && (
                 <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
                   Chưa có đáp án
@@ -658,6 +905,18 @@ const DragDropQuestion: React.FC<{ question: Question; value: Record<string, str
       {/* Hướng dẫn */}
       <div className="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-3">
         <p><strong>Hướng dẫn:</strong> Kéo thả đáp án từ kho vào nhóm tương ứng, hoặc chọn từ dropdown. Nhấn vào đáp án đã chọn để đưa về kho.</p>
+        {reveal && (
+          <div className="mt-2 rounded-lg border p-3 transition-colors text-sm text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600">
+            <div className="font-medium mb-1">Đáp án đúng:</div>
+            <ul className="list-disc list-inside space-y-0.5">
+              {items.map(it => (
+                <li key={it.id}>
+                  <span className="opacity-80">{it.label}</span> → <span className="font-medium">{targets.find(t => t.id === (correctMapping as any)[it.id])?.label || '(chưa cấu hình)'}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
