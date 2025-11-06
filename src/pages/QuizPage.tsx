@@ -269,9 +269,12 @@ const QuizPage: React.FC = () => {
         </h1>
         <button
           onClick={handleSubmit}
-          className="btn-primary w-full sm:w-auto text-sm sm:text-base"
+          className="btn-primary w-full sm:w-auto text-sm sm:text-base inline-flex items-center justify-center gap-2"
         >
-          Nộp bài
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Nộp bài</span>
         </button>
       </div>
 
@@ -533,18 +536,6 @@ const QuizPage: React.FC = () => {
                     </div>
                     );
                   })}
-                  {/* Nút Xác nhận cho Composite trong chế độ xem ngay */}
-                  {uiMode === 'instant' && (
-                    <div className="pt-2">
-                      <button
-                        onClick={() => markRevealed(currentQuestion.id)}
-                        disabled={isRevealed(currentQuestion.id)}
-                        className="btn-primary w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        Xác nhận
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -598,7 +589,7 @@ const QuizPage: React.FC = () => {
               <div className="minimap-toggle-wrap block lg:hidden ml-2 self-stretch h-auto md:h-auto">
                 <button
                   onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
-className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                  className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
                   title="Chuyển đổi định dạng"
                 >
                 <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -670,31 +661,67 @@ className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 
 
       {/* Mode chooser dialog */}
       {showModeChooser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+        <div className="fixed inset-0 z-50 p-4 flex items-center justify-center bg-black/40">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl">
+            {/* Close */}
+            <button
+              onClick={() => setShowModeChooser(false)}
+              className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition"
+              aria-label="Đóng"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
             <div className="p-5 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chọn định dạng làm bài</h4>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Bạn có thể thay đổi lại bất cứ lúc nào.</p>
             </div>
+
+            {/* Options */}
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => { setUiMode('default'); setShowModeChooser(false); }}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 p-4 text-left hover:border-blue-500 hover:shadow-sm transition-colors duration-200 bg-white dark:bg-gray-800"
+                className="group h-32 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 text-left hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition"
               >
-                <div className="font-semibold text-gray-900 dark:text-gray-100">Định dạng mặc định</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Làm bài bình thường và xem kết quả sau khi nộp.</div>
+                <div className="flex h-full flex-col">
+                  <div className="flex flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Định dạng mặc định</div>
+                  </div>
+                  <div className="flex flex-1 items-start">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Làm bài bình thường và xem kết quả sau khi nộp.</p>
+                  </div>
+                </div>
               </button>
+
               <button
                 onClick={() => { setUiMode('instant'); setShowModeChooser(false); }}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 p-4 text-left hover:border-emerald-500 hover:shadow-sm transition-colors duration-200 bg-white dark:bg-gray-800"
+                className="group h-32 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 text-left hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition"
               >
-                <div className="font-semibold text-gray-900 dark:text-gray-100">Xem đáp án ngay</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận.</div>
+                <div className="flex h-full flex-col">
+                  <div className="flex flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                      </svg>
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Xem đáp án ngay</div>
+                  </div>
+                  <div className="flex flex-1 items-start">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận.</p>
+                  </div>
+                </div>
               </button>
             </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-right">
-              <button onClick={() => setShowModeChooser(false)} className="btn-secondary px-4 py-2 text-sm">Đóng</button>
-            </div>
+
           </div>
         </div>
       )}
