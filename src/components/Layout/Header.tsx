@@ -17,6 +17,23 @@ const Header: React.FC = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const shimmer = e.currentTarget.querySelector('.nav-shimmer') as HTMLElement | null;
+    if (!shimmer) return;
+    shimmer.classList.remove('backward');
+    void shimmer.offsetWidth;
+    shimmer.classList.add('forward');
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const shimmer = e.currentTarget.querySelector('.nav-shimmer') as HTMLElement | null;
+    if (!shimmer) return;
+    shimmer.classList.remove('forward');
+    void shimmer.offsetWidth;
+    shimmer.classList.add('backward');
+  };
+
+
   // Load user info when logged in
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -169,6 +186,8 @@ const Header: React.FC = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                     className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
                       border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
                       transition-colors transition-shadow duration-300 ease-out overflow-hidden
@@ -185,10 +204,17 @@ const Header: React.FC = () => {
                     <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
                     <span className="transition-colors duration-300 ease-out">{item.label}</span>
 
-                    {/* shimmer: inner animate div + z trên (đảm bảo hiển thị) */}
-                    <div className="nav-shimmer absolute left-0 right-0 bottom-0 w-full h-0.5 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-400/80 to-transparent animate-shimmer" />
-                    </div>
+                    {/* shimmer: inner sweep with transform so it reverses on hover-out */}
+<div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
+  <span
+    className="
+      nav-shimmer
+      block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
+      opacity-0 group-hover:opacity-100
+      transition-opacity duration-200 ease-in-out
+    "
+  />
+</div>
                   </Link>
                 );
               })}

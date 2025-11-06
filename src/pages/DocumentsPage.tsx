@@ -490,11 +490,25 @@ const DocumentsPage: React.FC = () => {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section Mobile */}
       <div className="mb-8 lg:hidden">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-          
+          {/* Overlay pattern */}
+          <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
+          {/* Shimmer effect */}
+          <div
+            className="
+              absolute inset-0
+              opacity-30
+              bg-gradient-to-r from-transparent via-white/65 to-transparent
+              blur-[3px]
+              animate-[shimmer_3s_ease-in-out_infinite]
+              [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+              mix-blend-overlay
+              rounded-2xl pointer-events-none
+            "
+          ></div>
           <div className="relative z-10">
             <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
               Tài liệu của tôi
@@ -574,11 +588,25 @@ const DocumentsPage: React.FC = () => {
         <div className="lg:w-[70%] min-w-0 order-1">
           {/* Desktop Banner - Only visible on lg and above */}
           <div className="hidden lg:block mb-8">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
+            <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-              
+              {/* Overlay pattern */}
+              <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
+              {/* Shimmer effect */}
+              <div
+                className="
+                  absolute inset-0
+                  opacity-30
+                  bg-gradient-to-r from-transparent via-white/65 to-transparent
+                  blur-[3px]
+                  animate-[shimmer_3s_ease-in-out_infinite]
+                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+                  mix-blend-overlay
+                  rounded-2xl pointer-events-none
+                "
+              ></div>            
               <div className="relative z-10">
                 <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Tài liệu của tôi

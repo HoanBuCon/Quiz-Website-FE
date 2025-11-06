@@ -243,10 +243,10 @@ const QuizPage: React.FC = () => {
                       : [...prev, currentQuestion.id]
                   );
                 }}
-                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors w-fit min-h-[1.75rem] max-h-[1.75rem] sm:min-h-[2rem] sm:max-h-[2rem] flex items-center shrink-0 ${
+className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${
                   markedQuestions.includes(currentQuestion.id)
                     ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {markedQuestions.includes(currentQuestion.id) ? 'Đã đánh dấu' : 'Xem lại câu này'}
