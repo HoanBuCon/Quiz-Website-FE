@@ -761,8 +761,18 @@ const ClassesPage: React.FC = () => {
           {/* Overlay pattern */}
           <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
           {/* Shimmer effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer rounded-2xl pointer-events-none"></div>
-
+          <div
+            className="
+              absolute inset-0
+              opacity-30
+              bg-gradient-to-r from-transparent via-white/65 to-transparent
+              blur-[3px]
+              animate-[shimmer_3s_ease-in-out_infinite]
+              [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+              mix-blend-overlay
+              rounded-2xl pointer-events-none
+            "
+          ></div>
           <div className="relative z-10">
             <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-2 tracking-tight">
               Lớp học của tôi
@@ -787,19 +797,30 @@ const ClassesPage: React.FC = () => {
                 <div
                   className="
                     absolute inset-0 opacity-10
-                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
                 />
 
-                {/* Hiệu ứng shimmer khi hover */}
+                {/* Hiệu ứng shimmer ánh bạc */}
                 <div
                   className="
-                    absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-                    bg-gradient-to-r from-transparent via-white to-transparent
+                    absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                    bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
-                    blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+                    blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                    rounded-xl mix-blend-overlay pointer-events-none
+                  "
+                />
+
+                {/* Bóng sáng trung tâm */}
+                <div
+                  className="
+                    absolute inset-0 pointer-events-none
+                    bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                    dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                    rounded-xl
                   "
                 />
 
@@ -824,25 +845,31 @@ const ClassesPage: React.FC = () => {
                 <div
                   className="
                     absolute inset-0 opacity-10
-                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
                 />
                 <div
                   className="
-                    absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-                    bg-gradient-to-r from-transparent via-white to-transparent
+                    absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                    bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
-                    blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+                    blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                    rounded-xl mix-blend-overlay pointer-events-none
+                  "
+                />
+                <div
+                  className="
+                    absolute inset-0 pointer-events-none
+                    bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                    dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                    rounded-xl
                   "
                 />
 
                 <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {classes.reduce(
-                    (total, cls) => total + getValidQuizzes(cls).length,
-                    0
-                  )}
+                  {classes.reduce((total, cls) => total + getValidQuizzes(cls).length, 0)}
                 </div>
                 <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
                   Bài kiểm tra
@@ -862,17 +889,26 @@ const ClassesPage: React.FC = () => {
                 <div
                   className="
                     absolute inset-0 opacity-10
-                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
                 />
                 <div
                   className="
-                    absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-                    bg-gradient-to-r from-transparent via-white to-transparent
+                    absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                    bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
-                    blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+                    blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                    rounded-xl mix-blend-overlay pointer-events-none
+                  "
+                />
+                <div
+                  className="
+                    absolute inset-0 pointer-events-none
+                    bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                    dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                    rounded-xl
                   "
                 />
 
@@ -897,17 +933,26 @@ const ClassesPage: React.FC = () => {
                 <div
                   className="
                     absolute inset-0 opacity-10
-                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+                    bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                    dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
                 />
                 <div
                   className="
-                    absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-                    bg-gradient-to-r from-transparent via-white to-transparent
+                    absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                    bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
-                    blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+                    blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                    rounded-xl mix-blend-overlay pointer-events-none
+                  "
+                />
+                <div
+                  className="
+                    absolute inset-0 pointer-events-none
+                    bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                    dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                    rounded-xl
                   "
                 />
 
@@ -935,8 +980,18 @@ const ClassesPage: React.FC = () => {
               {/* Overlay pattern */}
               <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
               {/* Shimmer effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer rounded-2xl pointer-events-none"></div>
-
+              <div
+                className="
+                  absolute inset-0
+                  opacity-30
+                  bg-gradient-to-r from-transparent via-white/65 to-transparent
+                  blur-[3px]
+                  animate-[shimmer_3s_ease-in-out_infinite]
+                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+                  mix-blend-overlay
+                  rounded-2xl pointer-events-none
+                "
+              ></div>
               <div className="relative z-10">
                 <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Lớp học của tôi

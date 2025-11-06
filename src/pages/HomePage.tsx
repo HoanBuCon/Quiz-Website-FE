@@ -102,8 +102,18 @@ const HomePage: React.FC = () => {
           {/* Overlay pattern */}
           <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
           {/* Shimmer effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer rounded-2xl pointer-events-none"></div>
-          
+          <div
+            className="
+              absolute inset-0
+              opacity-30
+              bg-gradient-to-r from-transparent via-white/65 to-transparent
+              blur-[3px]
+              animate-[shimmer_3s_ease-in-out_infinite]
+              [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+              mix-blend-overlay
+              rounded-2xl pointer-events-none
+            "
+          ></div>
           <div className="relative z-10 lg:flex lg:items-start lg:justify-between">
             <div className="lg:flex-1">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
@@ -120,91 +130,112 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Stats */}
-<div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
-  <div className="flex justify-start lg:justify-end">
-    <div
-      className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
-      style={{ gridAutoColumns: "max-content" }}
-    >
-      {/* Ô 1: Tổng lớp học */}
-      <div
-        className="
-          relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-          transition-all duration-500
-          dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-          dark:border-white/10 dark:ring-1 dark:ring-white/10
-          overflow-hidden group
-        "
-      >
-        {/* Overlay pattern: vân chéo rõ nét */}
-        <div
-          className="
-            absolute inset-0 opacity-10
-            bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-            dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
-            rounded-xl pointer-events-none
-          "
-        />
+            <div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
+              <div className="flex justify-start lg:justify-end">
+                <div
+                  className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
+                  style={{ gridAutoColumns: "max-content" }}
+                >
+                  {/* Ô 1: Tổng lớp học */}
+                  <div
+                    className="
+                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                      transition-all duration-500
+                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+                      dark:border-white/10 dark:ring-1 dark:ring-white/10
+                      overflow-hidden group
+                    "
+                  >
+                    {/* Overlay pattern: vân chéo rõ nét */}
+                    <div
+                      className="
+                        absolute inset-0 opacity-10
+                        bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                        dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
+                        rounded-xl pointer-events-none
+                      "
+                    />
 
-        {/* Hiệu ứng shimmer khi hover */}
-        <div
-          className="
-            absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-            bg-gradient-to-r from-transparent via-white to-transparent
-            translate-x-[-100%] group-hover:translate-x-[100%]
-            blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
-          "
-        />
+                    {/* Hiệu ứng shimmer ánh bạc */}
+                    <div
+                      className="
+                        absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                        bg-gradient-to-r from-transparent via-white/80 to-transparent
+                        translate-x-[-100%] group-hover:translate-x-[100%]
+                        blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                        rounded-xl mix-blend-overlay pointer-events-none
+                      "
+                    />
 
-        <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-          {totalClasses}
-        </div>
-        <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-          Lớp học công khai
-        </div>
-      </div>
+                    {/* Hiệu ứng bóng sáng mờ giữa */}
+                    <div
+                      className="
+                        absolute inset-0 pointer-events-none
+                        bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                        dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                        rounded-xl
+                      "
+                    />
 
-      {/* Ô 2: Tổng bài kiểm tra */}
-      <div
-        className="
-          relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-          transition-all duration-500
-          dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-          dark:border-white/10 dark:ring-1 dark:ring-white/10
-          overflow-hidden group
-        "
-      >
-        {/* Overlay pattern: vân chéo rõ nét */}
-        <div
-          className="
-            absolute inset-0 opacity-10
-            bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
-            dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
-            rounded-xl pointer-events-none
-          "
-        />
+                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+                      {totalClasses}
+                    </div>
+                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+                      Lớp học công khai
+                    </div>
+                  </div>
 
-        {/* Hiệu ứng shimmer khi hover */}
-        <div
-          className="
-            absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
-            bg-gradient-to-r from-transparent via-white to-transparent
-            translate-x-[-100%] group-hover:translate-x-[100%]
-            blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
-          "
-        />
+                  {/* Ô 2: Tổng bài kiểm tra */}
+                  <div
+                    className="
+                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                      transition-all duration-500
+                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+                      dark:border-white/10 dark:ring-1 dark:ring-white/10
+                      overflow-hidden group
+                    "
+                  >
+                    {/* Overlay pattern: vân chéo rõ nét */}
+                    <div
+                      className="
+                        absolute inset-0 opacity-10
+                        bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
+                        dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
+                        rounded-xl pointer-events-none
+                      "
+                    />
 
-        <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-          {totalQuizzes}
-        </div>
-        <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-          Bài kiểm tra công khai
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                    {/* Hiệu ứng shimmer ánh bạc */}
+                    <div
+                      className="
+                        absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
+                        bg-gradient-to-r from-transparent via-white/80 to-transparent
+                        translate-x-[-100%] group-hover:translate-x-[100%]
+                        blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
+                        rounded-xl mix-blend-overlay pointer-events-none
+                      "
+                    />
 
+                    {/* Hiệu ứng bóng sáng mờ giữa */}
+                    <div
+                      className="
+                        absolute inset-0 pointer-events-none
+                        bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
+                        dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
+                        rounded-xl
+                      "
+                    />
+
+                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+                      {totalQuizzes}
+                    </div>
+                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+                      Bài kiểm tra công khai
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
