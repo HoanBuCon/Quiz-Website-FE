@@ -595,15 +595,22 @@ const QuizPage: React.FC = () => {
                 Danh sách câu hỏi
               </h3>
               {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
-              <button
-                onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
-                className="block lg:hidden ml-2 inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-colors duration-200 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                title="Chuyển đổi định dạng"
-              >
-                <span className="hidden sm:inline">Chuyển đổi</span>
-                <span className="sm:hidden">Đổi</span>
-                <span className={`ml-1 inline-block px-1.5 py-0.5 rounded text-[10px] sm:text-xs ${uiMode === 'instant' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>{uiMode === 'instant' ? 'Xem ngay' : 'Mặc định'}</span>
-              </button>
+              <div className="minimap-toggle-wrap block lg:hidden ml-2 self-stretch h-auto md:h-auto">
+                <button
+                  onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
+className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                  title="Chuyển đổi định dạng"
+                >
+                <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                  <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
+                    {uiMode === 'instant' ? 'Định dạng: Xem ngay' : 'Định dạng: Mặc định'}
+                  </span>
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
               {questions.map((question, index) => (
@@ -649,12 +656,14 @@ const QuizPage: React.FC = () => {
       {isLarge && (
         <button
           onClick={() => setUiMode(prev => prev === 'default' ? 'instant' : 'default')}
-          className="hidden lg:flex fixed bottom-6 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+          className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
           title="Chuyển đổi định dạng"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 9a7 7 0 0014 0M19 15a7 7 0 00-14 0" />
-          </svg>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
           <span className="font-medium text-sm">{uiMode === 'instant' ? 'Định dạng: Xem ngay' : 'Định dạng: Mặc định'}</span>
         </button>
       )}
