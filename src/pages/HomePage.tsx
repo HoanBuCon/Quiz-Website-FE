@@ -120,60 +120,91 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Stats */}
-            <div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
-              <div className="flex justify-start lg:justify-end">
-                <div
-                  className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
-                  style={{ gridAutoColumns: "max-content" }}
-                >
-                  {/* Ô 1 */}
-                  <div
-                    className="
-                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-                      transition-all duration-500
-                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-                      dark:border-white/10 dark:ring-1 dark:ring-white/10
-                      overflow-hidden group
-                    "
-                  >
-                    {/* Overlay pattern */}
-                    <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+<div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
+  <div className="flex justify-start lg:justify-end">
+    <div
+      className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
+      style={{ gridAutoColumns: "max-content" }}
+    >
+      {/* Ô 1: Tổng lớp học */}
+      <div
+        className="
+          relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+          transition-all duration-500
+          dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+          dark:border-white/10 dark:ring-1 dark:ring-white/10
+          overflow-hidden group
+        "
+      >
+        {/* Overlay pattern: vân chéo rõ nét */}
+        <div
+          className="
+            absolute inset-0 opacity-10
+            bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
+            dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+            rounded-xl pointer-events-none
+          "
+        />
 
-                    {/* Hiệu ứng shimmer khi hover */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]" />
+        {/* Hiệu ứng shimmer khi hover */}
+        <div
+          className="
+            absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
+            bg-gradient-to-r from-transparent via-white to-transparent
+            translate-x-[-100%] group-hover:translate-x-[100%]
+            blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+          "
+        />
 
-                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                      {totalClasses}
-                    </div>
-                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                      Lớp học công khai
-                    </div>
-                  </div>
+        <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+          {totalClasses}
+        </div>
+        <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+          Lớp học công khai
+        </div>
+      </div>
 
-                  {/* Ô 2 */}
-                  <div
-                    className="
-                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-                      transition-all duration-500
-                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-                      dark:border-white/10 dark:ring-1 dark:ring-white/10
-                      overflow-hidden group
-                    "
-                  >
-                    <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-xl pointer-events-none" />
+      {/* Ô 2: Tổng bài kiểm tra */}
+      <div
+        className="
+          relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+          transition-all duration-500
+          dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+          dark:border-white/10 dark:ring-1 dark:ring-white/10
+          overflow-hidden group
+        "
+      >
+        {/* Overlay pattern: vân chéo rõ nét */}
+        <div
+          className="
+            absolute inset-0 opacity-10
+            bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.10)_0px,_rgba(0,0,0,0.10)_1px,_transparent_1px,_transparent_8px)]
+            dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.20)_0px,_rgba(255,255,255,0.20)_1px,_transparent_1px,_transparent_8px)]
+            rounded-xl pointer-events-none
+          "
+        />
 
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-r from-transparent via-white to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]" />
+        {/* Hiệu ứng shimmer khi hover */}
+        <div
+          className="
+            absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700
+            bg-gradient-to-r from-transparent via-white to-transparent
+            translate-x-[-100%] group-hover:translate-x-[100%]
+            blur-sm animate-[shimmer_1.5s_ease-in-out_infinite]
+          "
+        />
 
-                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                      {totalQuizzes}
-                    </div>
-                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                      Bài kiểm tra công khai
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+          {totalQuizzes}
+        </div>
+        <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+          Bài kiểm tra công khai
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
           </div>
         </div>
       </div>
