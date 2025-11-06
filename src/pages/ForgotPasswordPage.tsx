@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AuthAPI } from '../utils/api';
 
 const ForgotPasswordPage: React.FC = () => {
@@ -81,6 +81,14 @@ const ForgotPasswordPage: React.FC = () => {
             <button type="submit" disabled={loading} className="w-full btn-primary disabled:opacity-50">
               {loading ? 'Đang gửi...' : 'Gửi mã OTP'}
             </button>
+            <div className="text-center">
+              <Link
+                to="/login"
+                className="text-sm text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+              >
+                ← Quay lại đăng nhập
+              </Link>
+            </div>
           </form>
         )}
 
@@ -129,6 +137,14 @@ const ForgotPasswordPage: React.FC = () => {
                 <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
                   {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
                 </button>
+              </div>
+              <div className="text-center mt-2">
+                <Link
+                  to="/login"
+                  className="text-sm text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  ← Quay lại đăng nhập
+                </Link>
               </div>
             </form>
           ) : (
