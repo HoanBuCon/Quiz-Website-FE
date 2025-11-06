@@ -424,8 +424,18 @@ const CreateClassPage: React.FC = () => {
           {/* Overlay pattern */}
           <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
           {/* Shimmer effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer rounded-2xl pointer-events-none"></div>
-          
+          <div
+            className="
+              absolute inset-0
+              opacity-30
+              bg-gradient-to-r from-transparent via-white/65 to-transparent
+              blur-[3px]
+              animate-[shimmer_3s_ease-in-out_infinite]
+              [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+              mix-blend-overlay
+              rounded-2xl pointer-events-none
+            "
+          ></div>  
           <div className="relative z-10">
             <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
               Tạo lớp học mới
@@ -484,8 +494,18 @@ const CreateClassPage: React.FC = () => {
               {/* Overlay pattern */}
               <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
               {/* Shimmer effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-25 transition-opacity duration-700 bg-gradient-to-r from-transparent via-yellow-200/60 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-sm animate-shimmer rounded-2xl pointer-events-none"></div>
-              
+              <div
+                className="
+                  absolute inset-0
+                  opacity-30
+                  bg-gradient-to-r from-transparent via-white/65 to-transparent
+                  blur-[3px]
+                  animate-[shimmer_3s_ease-in-out_infinite]
+                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
+                  mix-blend-overlay
+                  rounded-2xl pointer-events-none
+                "
+              ></div>        
               <div className="relative z-10">
                 <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
                   Tạo lớp học mới
