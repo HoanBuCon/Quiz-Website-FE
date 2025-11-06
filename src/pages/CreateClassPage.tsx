@@ -695,7 +695,7 @@ const CreateClassPage: React.FC = () => {
           </div>
 
           {/* Divider */}
-          <div className="flex items-center my-8">
+          <div className={`flex items-center my-8 ${!isLoggedIn ? 'pointer-events-none filter blur-[2px]' : ''}`}>
             <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
             <span className="px-6 text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full py-1">
               hoặc
