@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Quiz, Question } from '../types';
 
@@ -20,38 +20,53 @@ const ResultsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showExplanations, setShowExplanations] = useState(false);
 
-  // Floating scroll buttons (like EditQuizPage)
+  // Floating scroll buttons
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
   const [canScroll, setCanScroll] = useState(true);
+
+  // Shared measurement function to avoid duplication
+  const computeScrollState = useCallback(() => {
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const body = document.documentElement;
+    const viewH = window.innerHeight || 0;
+    const docH = Math.max(body.scrollHeight, body.offsetHeight);
+    const totalScrollable = Math.max(0, docH - viewH);
+    const threshold = 80;
+    const scrollable = totalScrollable > threshold;
+    setCanScroll(scrollable);
+    if (!scrollable) {
+      setAtTop(true);
+      setAtBottom(true);
+      return;
+    }
+    setAtTop(scrollY <= 10);
+    setAtBottom(scrollY >= totalScrollable - 10);
+  }, []);
+
+  // Attach scroll listener once, and do an initial measurement
   useEffect(() => {
-    const onScroll = () => {
-      const scrollY = window.scrollY || window.pageYOffset || 0;
-      const body = document.documentElement;
-      const viewH = window.innerHeight || 0;
-      const docH = Math.max(body.scrollHeight, body.offsetHeight);
-      const totalScrollable = Math.max(0, docH - viewH);
-      const threshold = 80;
-      const scrollable = totalScrollable > threshold;
-      setCanScroll(scrollable);
-      if (!scrollable) {
-        setAtTop(true);
-        setAtBottom(true);
-        return;
-      }
-      setAtTop(scrollY <= 10);
-      setAtBottom(scrollY >= totalScrollable - 10);
-    };
     // Defer first measurement until after first paint/content layout
-    const rafId = requestAnimationFrame(onScroll);
-    const tId = setTimeout(onScroll, 300);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    const rafId = requestAnimationFrame(computeScrollState);
+    const tId = setTimeout(computeScrollState, 300);
+    window.addEventListener('scroll', computeScrollState, { passive: true });
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', computeScrollState);
       cancelAnimationFrame(rafId);
       clearTimeout(tId);
     };
-  }, []);
+  }, [computeScrollState]);
+
+  // Recompute after content loads so the bottom button appears immediately
+  useEffect(() => {
+    if (loading) return;
+    const rafId = requestAnimationFrame(computeScrollState);
+    const tId = setTimeout(computeScrollState, 0);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(tId);
+    };
+  }, [loading, quiz, result, computeScrollState]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
   const scrollToBottom = () => {
