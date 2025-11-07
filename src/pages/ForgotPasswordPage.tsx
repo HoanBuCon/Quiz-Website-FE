@@ -1,30 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { AuthAPI } from '../utils/api';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { AuthAPI } from "../utils/api";
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
-  const [password2, setPassword2] = useState('');
-  const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [otpStage, setOtpStage] = useState<"request" | "verify">("request");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [done, setDone] = useState(false);
 
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setInfo('');
+    setError("");
+    setInfo("");
     setLoading(true);
     try {
       await AuthAPI.forgotOtp(email.trim());
-      setInfo('Đã gửi mã OTP vào email của bạn. Vui lòng kiểm tra hộp thư (kể cả mục Spam).');
-      setOtpStage('verify');
+      setInfo(
+        "Đã gửi mã OTP vào email của bạn. Vui lòng kiểm tra hộp thư (kể cả mục Spam)."
+      );
+      setOtpStage("verify");
     } catch (e: any) {
-      setError(e?.message || 'Không thể gửi OTP. Vui lòng thử lại.');
+      setError(e?.message || "Không thể gửi OTP. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -32,19 +34,21 @@ const ForgotPasswordPage: React.FC = () => {
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setInfo('');
+    setError("");
+    setInfo("");
     if (password !== password2) {
-      setError('Mật khẩu xác nhận không khớp!');
+      setError("Mật khẩu xác nhận không khớp!");
       return;
     }
     setLoading(true);
     try {
       await AuthAPI.resetWithOtp(email.trim(), otp.trim(), password);
       setDone(true);
-      setInfo('Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới!');
+      setInfo(
+        "Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới!"
+      );
     } catch (e: any) {
-      setError(e?.message || 'OTP không hợp lệ hoặc đã hết hạn!');
+      setError(e?.message || "OTP không hợp lệ hoặc đã hết hạn!");
     } finally {
       setLoading(false);
     }
@@ -55,7 +59,9 @@ const ForgotPasswordPage: React.FC = () => {
       <div className="w-full max-w-md bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-lg p-8">
         <div className="flex flex-col items-center mb-8">
           <img src="/Trollface.png" alt="Logo" className="h-12 w-12 mb-3" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quên mật khẩu</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Quên mật khẩu
+          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 text-center">
             Hãy nhập email để nhận mã xác thực (OTP)
           </p>
@@ -65,8 +71,8 @@ const ForgotPasswordPage: React.FC = () => {
           <div
             className={`p-3 rounded-xl text-sm mb-4 ${
               error
-                ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                ? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                : "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
             }`}
           >
             {error || info}
@@ -74,10 +80,13 @@ const ForgotPasswordPage: React.FC = () => {
         )}
 
         {/* Giai đoạn 1: Nhập email */}
-        {otpStage === 'request' && (
+        {otpStage === "request" && (
           <form onSubmit={handleRequest} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Email
               </label>
               <input
@@ -100,7 +109,7 @@ const ForgotPasswordPage: React.FC = () => {
                          focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 transition-all duration-200 
                          disabled:opacity-50"
             >
-              {loading ? 'Đang gửi...' : 'Gửi mã OTP'}
+              {loading ? "Đang gửi..." : "Gửi mã OTP"}
             </button>
 
             <div className="text-center mt-4">
@@ -115,12 +124,15 @@ const ForgotPasswordPage: React.FC = () => {
         )}
 
         {/* Giai đoạn 2: Nhập OTP & mật khẩu mới */}
-        {otpStage === 'verify' && (
+        {otpStage === "verify" && (
           <form onSubmit={handleReset} className="space-y-6">
             {!done ? (
               <>
                 <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    htmlFor="otp"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     Mã OTP
                   </label>
                   <input
@@ -138,7 +150,10 @@ const ForgotPasswordPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     Mật khẩu mới
                   </label>
                   <input
@@ -155,7 +170,10 @@ const ForgotPasswordPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="password2" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label
+                    htmlFor="password2"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
                     Xác nhận mật khẩu
                   </label>
                   <input
@@ -174,7 +192,7 @@ const ForgotPasswordPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => setOtpStage('request')}
+                    onClick={() => setOtpStage("request")}
                     className="text-sm text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 underline"
                   >
                     Nhập email khác
@@ -187,7 +205,7 @@ const ForgotPasswordPage: React.FC = () => {
                                focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 transition-all duration-200 
                                disabled:opacity-50"
                   >
-                    {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                    {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
                   </button>
                 </div>
 
@@ -202,10 +220,12 @@ const ForgotPasswordPage: React.FC = () => {
               </>
             ) : (
               <div className="space-y-6 text-center">
-                <p className="text-green-600 dark:text-green-400 font-medium">{info}</p>
+                <p className="text-green-600 dark:text-green-400 font-medium">
+                  {info}
+                </p>
                 <button
                   type="button"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate("/login")}
                   className="w-full py-2.5 rounded-xl text-white font-medium bg-primary-600 hover:bg-primary-700 
                              focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 transition-all duration-200"
                 >

@@ -414,7 +414,8 @@ const ClassesPage: React.FC = () => {
             totalDone += sessions.length || 0;
             for (const s of sessions) {
               // Calculate percentage: (score / totalQuestions) * 100
-              const questionCount = (q as any).questionCount ?? (q as any).questions?.length ?? 0;
+              const questionCount =
+                (q as any).questionCount ?? (q as any).questions?.length ?? 0;
               if (typeof s.score === "number" && questionCount > 0) {
                 totalPercentage += (s.score / questionCount) * 100;
               }
@@ -423,7 +424,9 @@ const ClassesPage: React.FC = () => {
         }
         setStatsCompleted(totalDone);
         setStatsAverage(
-          totalDone > 0 ? Math.round((totalPercentage / totalDone / 10) * 10) / 10 : 0
+          totalDone > 0
+            ? Math.round((totalPercentage / totalDone / 10) * 10) / 10
+            : 0
         );
       } catch (e) {
         // ignore stats errors
@@ -873,7 +876,10 @@ const ClassesPage: React.FC = () => {
                 />
 
                 <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {classes.reduce((total, cls) => total + getValidQuizzes(cls).length, 0)}
+                  {classes.reduce(
+                    (total, cls) => total + getValidQuizzes(cls).length,
+                    0
+                  )}
                 </div>
                 <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
                   Bài kiểm tra

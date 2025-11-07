@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
-import Header from './Header';
-import Footer from './Footer';
-import BackgroundMusic from '../BackgroundMusic';
+import React, { ReactNode } from "react";
+import Header from "./Header";
+import Footer from "./Footer";
+import BackgroundMusic from "../BackgroundMusic";
 
 // Interface cho Layout component
 interface LayoutProps {
@@ -14,16 +14,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <Header />
-      
+
       {/* Main Content */}
-      <main className="flex-1 pt-16">
-        {children}
-      </main>
-      
+      <main className="flex-1 pt-16">{children}</main>
+
       {/* Footer */}
       <Footer />
     </div>
   );
 };
 
-export default Layout; 
+export default Layout;

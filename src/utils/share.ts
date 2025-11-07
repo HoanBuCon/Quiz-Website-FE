@@ -4,7 +4,7 @@
 function djb2(str: string): number {
   let hash = 5381 >>> 0;
   for (let i = 0; i < str.length; i++) {
-    hash = (((hash << 5) + hash) + str.charCodeAt(i)) >>> 0; // hash * 33 + c
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0; // hash * 33 + c
   }
   return hash >>> 0;
 }
@@ -22,8 +22,10 @@ export function buildShortId(id: string): string {
   const h = djb2(id);
   const letters = lettersFromHash(h);
   // derive 9 digits from hash and embedded numeric from id if available
-  const digitsInId = (id.match(/\d+/g) || []).join('');
-  let numeric = (Math.abs(h).toString() + digitsInId).padEnd(9, '0').slice(0, 9);
+  const digitsInId = (id.match(/\d+/g) || []).join("");
+  let numeric = (Math.abs(h).toString() + digitsInId)
+    .padEnd(9, "0")
+    .slice(0, 9);
   return `${letters}${numeric}`;
 }
 

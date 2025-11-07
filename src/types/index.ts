@@ -1,14 +1,22 @@
 // Định nghĩa các types cho dự án Quiz Website
 
-export interface DragTarget { id: string; label: string }
-export interface DragItem { id: string; label: string }
+export interface DragTarget {
+  id: string;
+  label: string;
+}
+export interface DragItem {
+  id: string;
+  label: string;
+}
 
 export interface Question {
   id: string;
   question: string;
-  type: 'single' | 'multiple' | 'text' | 'drag' | 'composite'; // + kéo thả, câu hỏi mẹ
+  type: "single" | "multiple" | "text" | "drag" | "composite"; // + kéo thả, câu hỏi mẹ
   // Với trắc nghiệm: mảng string; với kéo thả: { targets, items }
-  options?: string[] | { targets: DragTarget[]; items: DragItem[]; [k: string]: any };
+  options?:
+    | string[]
+    | { targets: DragTarget[]; items: DragItem[]; [k: string]: any };
   // Với trắc nghiệm/text: string[]; với kéo thả: map itemId -> targetId
   correctAnswers: string[] | Record<string, string>;
   explanation?: string; // Giải thích đáp án
@@ -26,7 +34,7 @@ export interface Quiz {
   questionCount?: number; // Dùng cho listing để tránh tải câu hỏi
   createdAt: Date;
   updatedAt: Date;
-  accessType?: 'owner' | 'shared' | 'public'; // runtime-only: FE permissions
+  accessType?: "owner" | "shared" | "public"; // runtime-only: FE permissions
 }
 
 export interface ClassRoom {
@@ -40,7 +48,7 @@ export interface ClassRoom {
   isActive?: boolean;
   createdAt: Date;
   updatedAt?: Date;
-  accessType?: 'owner' | 'shared' | 'public'; // runtime-only: FE permissions
+  accessType?: "owner" | "shared" | "public"; // runtime-only: FE permissions
 }
 
 export interface UserAnswer {
@@ -61,9 +69,9 @@ export interface QuizSession {
 export interface UploadedFile {
   id: string;
   name: string;
-  type: 'docs' | 'json' | 'txt';
+  type: "docs" | "json" | "txt";
   size: number;
   uploadedAt: Date;
   content?: string;
   quizzes?: Quiz[];
-} 
+}

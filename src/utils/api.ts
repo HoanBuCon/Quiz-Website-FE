@@ -1,6 +1,7 @@
 // Simple API client using fetch with JWT support
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api";
 
 export function getApiBaseUrl(): string {
   return API_BASE_URL;
@@ -14,13 +15,13 @@ export async function apiRequest<T>(
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(text || `Request failed: ${res.status}`);
   }
   // No content
@@ -30,23 +31,57 @@ export async function apiRequest<T>(
 
 // High-level API helpers
 export const ClassesAPI = {
-  listMine: (token: string) => apiRequest<any[]>(`/classes?mine=true`, { token }),
+  listMine: (token: string) =>
+    apiRequest<any[]>(`/classes?mine=true`, { token }),
   listPublic: (token: string) => apiRequest<any[]>(`/classes`, { token }),
-  create: (data: { name: string; description?: string; isPublic?: boolean }, token: string) =>
-    apiRequest<any>(`/classes`, { method: 'POST', token, body: JSON.stringify({ isPublic: false, ...data }) }),
-  update: (id: string, data: { name?: string; description?: string; isPublic?: boolean }, token: string) =>
-    apiRequest<any>(`/classes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
-  remove: (id: string, token: string) => apiRequest<void>(`/classes/${id}`, { method: 'DELETE', token }),
+  create: (
+    data: { name: string; description?: string; isPublic?: boolean },
+    token: string
+  ) =>
+    apiRequest<any>(`/classes`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ isPublic: false, ...data }),
+    }),
+  update: (
+    id: string,
+    data: { name?: string; description?: string; isPublic?: boolean },
+    token: string
+  ) =>
+    apiRequest<any>(`/classes/${id}`, {
+      method: "PUT",
+      token,
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string, token: string) =>
+    apiRequest<void>(`/classes/${id}`, { method: "DELETE", token }),
   import: (payload: { classId?: string; quizId?: string }, token: string) =>
-    apiRequest<any>(`/classes/import`, { method: 'POST', token, body: JSON.stringify(payload) }),
+    apiRequest<any>(`/classes/import`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const QuizzesAPI = {
-  getById: (quizId: string, token: string) => apiRequest<any>(`/quizzes/${quizId}`, { token }),
-  byClass: (classId: string, token: string) => apiRequest<any[]>(`/quizzes/by-class/${classId}`, { token }),
-  create: (data: any, token: string) => apiRequest<any>(`/quizzes`, { method: 'POST', token, body: JSON.stringify({ published: false, ...data }) }),
-  update: (id: string, data: any, token: string) => apiRequest<any>(`/quizzes/${id}`, { method: 'PUT', token, body: JSON.stringify(data) }),
-  remove: (id: string, token: string) => apiRequest<void>(`/quizzes/${id}`, { method: 'DELETE', token }),
+  getById: (quizId: string, token: string) =>
+    apiRequest<any>(`/quizzes/${quizId}`, { token }),
+  byClass: (classId: string, token: string) =>
+    apiRequest<any[]>(`/quizzes/by-class/${classId}`, { token }),
+  create: (data: any, token: string) =>
+    apiRequest<any>(`/quizzes`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ published: false, ...data }),
+    }),
+  update: (id: string, data: any, token: string) =>
+    apiRequest<any>(`/quizzes/${id}`, {
+      method: "PUT",
+      token,
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string, token: string) =>
+    apiRequest<void>(`/quizzes/${id}`, { method: "DELETE", token }),
 };
 
 // Images API
@@ -59,17 +94,19 @@ export const ImagesAPI = {
    */
   upload: async (file: File, token: string): Promise<string> => {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append("image", file);
 
     const res = await fetch(`${API_BASE_URL}/images/upload`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } as any : undefined,
+      method: "POST",
+      headers: token
+        ? ({ Authorization: `Bearer ${token}` } as any)
+        : undefined,
       body: formData,
       // Không set Content-Type header - để browser tự set với boundary
     });
 
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = await res.text().catch(() => "");
       throw new Error(text || `Upload failed: ${res.status}`);
     }
 
@@ -84,66 +121,160 @@ export const ImagesAPI = {
    */
   delete: async (filename: string, token: string): Promise<void> => {
     await fetch(`${API_BASE_URL}/images/${filename}`, {
-      method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } as any : undefined,
+      method: "DELETE",
+      headers: token
+        ? ({ Authorization: `Bearer ${token}` } as any)
+        : undefined,
     });
   },
 };
 
 export const VisibilityAPI = {
   publicToggle: async (
-    payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean },
+    payload: {
+      targetType: "class" | "quiz";
+      targetId: string;
+      enabled: boolean;
+    },
     token: string
   ) => {
     // Always use consolidated endpoint to enforce cascading rules (Class ⇄ Quizzes)
-    return await apiRequest<any>(`/visibility/public`, { method: 'POST', token, body: JSON.stringify(payload) });
+    return await apiRequest<any>(`/visibility/public`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    });
   },
-  shareToggle: async (payload: { targetType: 'class'|'quiz'; targetId: string; enabled: boolean }, token: string) => {
+  shareToggle: async (
+    payload: {
+      targetType: "class" | "quiz";
+      targetId: string;
+      enabled: boolean;
+    },
+    token: string
+  ) => {
     try {
-      return await apiRequest<any>(`/visibility/share`, { method: 'POST', token, body: JSON.stringify(payload) });
+      return await apiRequest<any>(`/visibility/share`, {
+        method: "POST",
+        token,
+        body: JSON.stringify(payload),
+      });
     } catch (_e: any) {
       // Older backend without share endpoints: best-effort no-op so UI can still open Share modal
       return { ok: true, fallback: true } as any;
     }
   },
-  getShareStatus: async (targetType: 'class'|'quiz', targetId: string, token: string) => {
+  getShareStatus: async (
+    targetType: "class" | "quiz",
+    targetId: string,
+    token: string
+  ) => {
     try {
-      return await apiRequest<{ isShareable: boolean }>(`/visibility/share/status?targetType=${targetType}&targetId=${targetId}`, { token });
+      return await apiRequest<{ isShareable: boolean }>(
+        `/visibility/share/status?targetType=${targetType}&targetId=${targetId}`,
+        { token }
+      );
     } catch {
       return { isShareable: false };
     }
   },
-  claim: (payload: { classId?: string; quizId?: string; code?: string }, token: string) =>
-    apiRequest<any>(`/visibility/claim`, { method: 'POST', token, body: JSON.stringify(payload) }),
-  removeAccess: (payload: { classId?: string; quizId?: string }, token: string) =>
-    apiRequest<void>(`/visibility/access`, { method: 'DELETE', token, body: JSON.stringify(payload) }),
-  listSharedClasses: (token: string) => apiRequest<any[]>(`/visibility/shared/classes`, { token }),
-  listSharedQuizzes: (token: string) => apiRequest<any[]>(`/visibility/shared/quizzes`, { token }),
+  claim: (
+    payload: { classId?: string; quizId?: string; code?: string },
+    token: string
+  ) =>
+    apiRequest<any>(`/visibility/claim`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    }),
+  removeAccess: (
+    payload: { classId?: string; quizId?: string },
+    token: string
+  ) =>
+    apiRequest<void>(`/visibility/access`, {
+      method: "DELETE",
+      token,
+      body: JSON.stringify(payload),
+    }),
+  listSharedClasses: (token: string) =>
+    apiRequest<any[]>(`/visibility/shared/classes`, { token }),
+  listSharedQuizzes: (token: string) =>
+    apiRequest<any[]>(`/visibility/shared/quizzes`, { token }),
 };
 export const SessionsAPI = {
-  start: (quizId: string, token: string) => apiRequest<any>(`/sessions/start`, { method: 'POST', token, body: JSON.stringify({ quizId }) }),
-  submit: (payload: { quizId: string; answers: Record<string, any>; timeSpent: number }, token: string) =>
-    apiRequest<any>(`/sessions/submit`, { method: 'POST', token, body: JSON.stringify(payload) }),
-  byQuiz: (quizId: string, token: string) => apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
-  getOne: (id: string, token: string) => apiRequest<any>(`/sessions/${id}`, { token }),
+  start: (quizId: string, token: string) =>
+    apiRequest<any>(`/sessions/start`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ quizId }),
+    }),
+  submit: (
+    payload: {
+      quizId: string;
+      answers: Record<string, any>;
+      timeSpent: number;
+    },
+    token: string
+  ) =>
+    apiRequest<any>(`/sessions/submit`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    }),
+  byQuiz: (quizId: string, token: string) =>
+    apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
+  getOne: (id: string, token: string) =>
+    apiRequest<any>(`/sessions/${id}`, { token }),
 };
 
 export const FilesAPI = {
   listMine: (token: string) => apiRequest<any[]>(`/files`, { token }),
-  upload: (data: { name: string; type: 'docs'|'json'|'txt'; size: number; content?: string }, token: string) =>
-    apiRequest<any>(`/files`, { method: 'POST', token, body: JSON.stringify(data) }),
-  remove: (id: string, token: string) => apiRequest<void>(`/files/${id}`, { method: 'DELETE', token }),
+  upload: (
+    data: {
+      name: string;
+      type: "docs" | "json" | "txt";
+      size: number;
+      content?: string;
+    },
+    token: string
+  ) =>
+    apiRequest<any>(`/files`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string, token: string) =>
+    apiRequest<void>(`/files/${id}`, { method: "DELETE", token }),
 };
 
 export const AuthAPI = {
-  me: (token: string) => apiRequest<{ user: { id: string; email: string; name: string } }>(`/auth/me`, { token }),
+  me: (token: string) =>
+    apiRequest<{ user: { id: string; email: string; name: string } }>(
+      `/auth/me`,
+      { token }
+    ),
   // New OTP-based endpoints
-  forgotOtp: (email: string) => apiRequest<void>(`/auth/forgot-otp`, { method: 'POST', body: JSON.stringify({ email }) }),
+  forgotOtp: (email: string) =>
+    apiRequest<void>(`/auth/forgot-otp`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
   resetWithOtp: (email: string, otp: string, newPassword: string) =>
-    apiRequest<void>(`/auth/reset-with-otp`, { method: 'POST', body: JSON.stringify({ email, otp, newPassword }) }),
+    apiRequest<void>(`/auth/reset-with-otp`, {
+      method: "POST",
+      body: JSON.stringify({ email, otp, newPassword }),
+    }),
   // Legacy (dev-only) endpoints
-  forgot: (email: string) => apiRequest<{ resetToken: string; resetLink: string }>(`/auth/forgot`, { method: 'POST', body: JSON.stringify({ email }) }),
-  reset: (token: string, newPassword: string) => apiRequest<void>(`/auth/reset`, { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+  forgot: (email: string) =>
+    apiRequest<{ resetToken: string; resetLink: string }>(`/auth/forgot`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  reset: (token: string, newPassword: string) =>
+    apiRequest<void>(`/auth/reset`, {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
 };
 
-export type { };
+export type {};

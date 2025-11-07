@@ -32,7 +32,7 @@
   backdrop-filter: blur(10px);
   padding: 24px 16px 16px 16px;
   z-index: 1001;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: "Segoe UI", sans-serif;
   transition: all 0.3s ease;
   /* FIX: Đảm bảo toàn bộ media player có thể nhận events */
   pointer-events: auto;
@@ -105,8 +105,9 @@ body.dark-mode .media-player-box {
   margin-bottom: 6px;
 }
 
-.current-time, .total-time {
-  font-family: 'Segoe UI', monospace;
+.current-time,
+.total-time {
+  font-family: "Segoe UI", monospace;
   font-weight: 500;
 }
 
@@ -125,7 +126,8 @@ body.dark-mode .timeline-container .timeline-slider {
   accent-color: #1abc9c;
 }
 
-.controls, .options {
+.controls,
+.options {
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -159,7 +161,7 @@ body.dark-mode .timeline-container .timeline-slider {
 /* FIX: Tăng hit area cho buttons */
 .controls button::before,
 .options button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -4px;
   left: -4px;
@@ -201,7 +203,7 @@ body.dark-mode .options button:hover:not(:disabled) {
 }
 
 .options .active {
-  color: #3498db;;
+  color: #3498db;
 }
 
 body.dark-mode .options .active {
@@ -274,14 +276,14 @@ body.dark-mode .loop-options button {
     padding: 16px 12px 12px 12px;
     font-size: 14px;
   }
-  
+
   .track-name {
     font-size: 0.8rem;
     margin-bottom: 12px;
     line-height: 1.3;
     max-height: 3.9em; /* 3 lines × 1.3 line-height */
   }
-  
+
   .controls button,
   .options button {
     min-width: 28px;
@@ -289,24 +291,24 @@ body.dark-mode .loop-options button {
     font-size: 0.9rem;
     padding: 6px;
   }
-  
+
   .controls {
     gap: 8px;
   }
-  
+
   .options {
     gap: 8px;
   }
-  
+
   .loop-options {
     right: -50%;
     width: 200px;
   }
-  
+
   .timeline-slider {
     height: 3px;
   }
-  
+
   .time-display {
     font-size: 0.7rem;
     margin-bottom: 4px;
@@ -322,12 +324,12 @@ body.dark-mode .loop-options button {
     bottom: 70px;
     padding: 12px 8px 8px 8px;
   }
-  
+
   .track-name {
     font-size: 0.75rem;
     margin-bottom: 10px;
   }
-  
+
   .controls button,
   .options button {
     min-width: 24px;
@@ -335,11 +337,11 @@ body.dark-mode .loop-options button {
     font-size: 0.8rem;
     padding: 4px;
   }
-  
+
   .controls {
     gap: 6px;
   }
-  
+
   .options {
     gap: 6px;
   }

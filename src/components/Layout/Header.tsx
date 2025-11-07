@@ -1,10 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
-import { useMusic } from '../../context/MusicContext';
-import { FaMusic, FaBars, FaTimes, FaSignOutAlt, FaUser, FaHome, FaBook, FaPlus, FaGraduationCap } from 'react-icons/fa';
-import { getToken, clearToken } from '../../utils/auth';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
+import { useMusic } from "../../context/MusicContext";
+import {
+  FaMusic,
+  FaBars,
+  FaTimes,
+  FaSignOutAlt,
+  FaUser,
+  FaHome,
+  FaBook,
+  FaPlus,
+  FaGraduationCap,
+} from "react-icons/fa";
+import { getToken, clearToken } from "../../utils/auth";
+import { toast } from "react-hot-toast";
 
 // Component Header chính của website
 const Header: React.FC = () => {
@@ -18,21 +28,24 @@ const Header: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const shimmer = e.currentTarget.querySelector('.nav-shimmer') as HTMLElement | null;
+    const shimmer = e.currentTarget.querySelector(
+      ".nav-shimmer"
+    ) as HTMLElement | null;
     if (!shimmer) return;
-    shimmer.classList.remove('backward');
+    shimmer.classList.remove("backward");
     void shimmer.offsetWidth;
-    shimmer.classList.add('forward');
+    shimmer.classList.add("forward");
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const shimmer = e.currentTarget.querySelector('.nav-shimmer') as HTMLElement | null;
+    const shimmer = e.currentTarget.querySelector(
+      ".nav-shimmer"
+    ) as HTMLElement | null;
     if (!shimmer) return;
-    shimmer.classList.remove('forward');
+    shimmer.classList.remove("forward");
     void shimmer.offsetWidth;
-    shimmer.classList.add('backward');
+    shimmer.classList.add("backward");
   };
-
 
   // Load user info when logged in
   useEffect(() => {
@@ -40,11 +53,11 @@ const Header: React.FC = () => {
       const token = getToken();
       if (token) {
         try {
-          const { AuthAPI } = await import('../../utils/api');
+          const { AuthAPI } = await import("../../utils/api");
           const response = await AuthAPI.me(token);
-          setUserName(response.user.name || response.user.email.split('@')[0]);
+          setUserName(response.user.name || response.user.email.split("@")[0]);
         } catch (error) {
-          console.error('Failed to load user info:', error);
+          console.error("Failed to load user info:", error);
           // Fallback to email prefix if name not available
           setUserName(null);
         }
@@ -52,7 +65,7 @@ const Header: React.FC = () => {
         setUserName(null);
       }
     };
-    
+
     if (isLoggedIn) {
       loadUserInfo();
     }
@@ -61,16 +74,16 @@ const Header: React.FC = () => {
   // Update auth state when token changes
   useEffect(() => {
     const checkAuth = () => setIsLoggedIn(!!getToken());
-    
+
     const handleAuthChange = () => checkAuth();
-    
+
     // Listen to custom auth change events and storage changes
-    window.addEventListener('authChange', handleAuthChange);
-    window.addEventListener('storage', handleAuthChange);
-    
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
     return () => {
-      window.removeEventListener('authChange', handleAuthChange);
-      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
     };
   }, []);
 
@@ -79,24 +92,24 @@ const Header: React.FC = () => {
     clearToken();
     setIsLoggedIn(false);
     setUserName(null);
-    toast.success('Đã đăng xuất thành công!');
+    toast.success("Đã đăng xuất thành công!");
     // Trigger Header update
-    window.dispatchEvent(new Event('authChange'));
-    navigate('/');
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/");
   };
 
   // Danh sách các trang navigation
   const navItems = [
-    { path: '/', label: 'Trang chủ', icon: FaHome },
-    { path: '/classes', label: 'Lớp học', icon: FaGraduationCap },
-    { path: '/create', label: 'Tạo lớp', icon: FaPlus },
-    { path: '/documents', label: 'Tài liệu', icon: FaBook },
+    { path: "/", label: "Trang chủ", icon: FaHome },
+    { path: "/classes", label: "Lớp học", icon: FaGraduationCap },
+    { path: "/create", label: "Tạo lớp", icon: FaPlus },
+    { path: "/documents", label: "Tài liệu", icon: FaBook },
   ];
 
   // Kiểm tra xem link có active không
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
+    if (path === "/") {
+      return location.pathname === "/";
     }
     return location.pathname.startsWith(path);
   };
@@ -113,14 +126,14 @@ const Header: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (isUserMenuOpen && !target.closest('.user-menu-container')) {
+      if (isUserMenuOpen && !target.closest(".user-menu-container")) {
         setIsUserMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserMenuOpen]);
 
@@ -146,17 +159,20 @@ const Header: React.FC = () => {
 
   return (
     <>
-  <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
         <div className="max-w-screen-2xl mx-auto relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <div className="flex items-center min-w-0">
-              <Link to="/" className="flex items-center space-x-2 group hover:scale-105 transition-transform duration-200 ease-out">
+              <Link
+                to="/"
+                className="flex items-center space-x-2 group hover:scale-105 transition-transform duration-200 ease-out"
+              >
                 {/* Logo với Trollface không có nền */}
                 <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
-                  <img 
-                    src="/Trollface.png" 
-                    alt="Trollface Logo" 
+                  <img
+                    src="/Trollface.png"
+                    alt="Trollface Logo"
                     className="w-8 h-8 sm:w-10 sm:h-10 object-contain group-hover:scale-110 transition-transform duration-200 ease-out"
                   />
                 </div>
@@ -171,9 +187,11 @@ const Header: React.FC = () => {
               {/* Highlight nền trượt (luôn nằm dưới các nút) */}
               <div
                 className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
-                  ${isDarkMode
-                    ? 'bg-gradient-to-r from-primary-900/40 to-primary-700/40'
-                    : 'bg-transparent' /* để light mode giữ màu nền nút cũ (tránh đè màu) */}
+                  ${
+                    isDarkMode
+                      ? "bg-gradient-to-r from-primary-900/40 to-primary-700/40"
+                      : "bg-transparent" /* để light mode giữ màu nền nút cũ (tránh đè màu) */
+                  }
                 `}
                 style={highlightStyle}
               ></div>
@@ -195,26 +213,28 @@ const Header: React.FC = () => {
                         active
                           ? `${
                               isDarkMode
-                                ? 'bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20'
-                                : 'header-nav-active border-0 shadow-md' /* KHÔI PHỤC màu lightmode cũ */
+                                ? "bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20"
+                                : "header-nav-active border-0 shadow-md" /* KHÔI PHỤC màu lightmode cũ */
                             }`
-                          : 'text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0'
+                          : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
                       }`}
                   >
                     <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
-                    <span className="transition-colors duration-300 ease-out">{item.label}</span>
+                    <span className="transition-colors duration-300 ease-out">
+                      {item.label}
+                    </span>
 
                     {/* shimmer: inner sweep with transform so it reverses on hover-out */}
-<div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
-  <span
-    className="
+                    <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
+                      <span
+                        className="
       nav-shimmer
       block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
       opacity-0 group-hover:opacity-100
       transition-opacity duration-200 ease-in-out
     "
-  />
-</div>
+                      />
+                    </div>
                   </Link>
                 );
               })}
@@ -227,16 +247,21 @@ const Header: React.FC = () => {
                 onClick={toggleMusicPlayer}
                 className={`p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center ${
                   showMusicPlayer
-                    ? 'bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300'
-                    : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600'
+                    ? "bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600"
                 }`}
                 aria-label="Toggle Music Player"
-                title={showMusicPlayer ? 'Ẩn Music Player' : 'Hiện Music Player'}
+                title={
+                  showMusicPlayer ? "Ẩn Music Player" : "Hiện Music Player"
+                }
               >
-                {React.createElement(FaMusic as React.ComponentType<any>, { 
-                  className: `w-5 h-5 ${
-                    isPlaying ? 'animate-spin' : ''
-                  } ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}`, style: isPlaying ? { animationDuration: '2s' } : undefined
+                {React.createElement(FaMusic as React.ComponentType<any>, {
+                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${
+                    showMusicPlayer
+                      ? "text-primary-600 dark:text-primary-400"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`,
+                  style: isPlaying ? { animationDuration: "2s" } : undefined,
                 })}
               </button>
 
@@ -279,14 +304,21 @@ const Header: React.FC = () => {
                     className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
                   >
                     <FaUser className="w-4 h-4" />
-                    <span>{userName || 'Tài khoản'}</span>
-                    <svg 
-                      className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                    <span>{userName || "Tài khoản"}</span>
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isUserMenuOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
 
@@ -302,9 +334,9 @@ const Header: React.FC = () => {
                           <FaGraduationCap className="w-4 h-4 mr-3" />
                           <span>Lớp học của tôi</span>
                         </Link>
-                        
+
                         <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                        
+
                         <button
                           onClick={() => {
                             handleLogout();
@@ -344,15 +376,21 @@ const Header: React.FC = () => {
                 onClick={toggleMusicPlayer}
                 className={`p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center ${
                   showMusicPlayer
-                    ? 'bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300'
-                    : 'bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600'
+                    ? "bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-800 dark:to-primary-700 text-primary-700 dark:text-primary-300"
+                    : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600"
                 }`}
                 aria-label="Toggle Music Player"
-                title={showMusicPlayer ? 'Ẩn Music Player' : 'Hiện Music Player'}
+                title={
+                  showMusicPlayer ? "Ẩn Music Player" : "Hiện Music Player"
+                }
               >
                 {React.createElement(FaMusic as React.ComponentType<any>, {
-                  className: `w-5 h-5 ${isPlaying ? 'animate-spin' : ''} ${showMusicPlayer ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400'}`,
-                  style: isPlaying ? { animationDuration: '2s' } : undefined
+                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${
+                    showMusicPlayer
+                      ? "text-primary-600 dark:text-primary-400"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`,
+                  style: isPlaying ? { animationDuration: "2s" } : undefined,
                 })}
               </button>
 
@@ -363,11 +401,23 @@ const Header: React.FC = () => {
                 aria-label="Toggle theme"
               >
                 {isDarkMode ? (
-                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-yellow-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-5 h-5 text-gray-700"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                   </svg>
                 )}
@@ -379,10 +429,13 @@ const Header: React.FC = () => {
                 className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-600 dark:text-slate-400 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center aspect-square w-10 h-10"
                 aria-label="Toggle mobile menu"
               >
-                {isMobileMenuOpen ? 
-                  React.createElement(FaTimes as React.ComponentType<any>, { className: "w-5 h-5" }) : 
-                  React.createElement(FaBars as React.ComponentType<any>, { className: "w-5 h-5" })
-                }
+                {isMobileMenuOpen
+                  ? React.createElement(FaTimes as React.ComponentType<any>, {
+                      className: "w-5 h-5",
+                    })
+                  : React.createElement(FaBars as React.ComponentType<any>, {
+                      className: "w-5 h-5",
+                    })}
               </button>
             </div>
           </div>
@@ -390,9 +443,11 @@ const Header: React.FC = () => {
       </header>
 
       {/* Mobile Navigation Menu */}
-      <div className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
-        isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
-      }`}>
+      <div
+        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         <div className="max-w-screen-2xl mx-auto">
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
             {navItems.map((item) => {
@@ -404,8 +459,8 @@ const Header: React.FC = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
                     isActive(item.path)
-                      ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                      ? "bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                   }`}
                 >
                   <IconComponent className="w-4 h-4" />
@@ -413,7 +468,7 @@ const Header: React.FC = () => {
                 </Link>
               );
             })}
-            
+
             {/* Mobile Auth Links */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4">
               {isLoggedIn ? (
@@ -424,7 +479,7 @@ const Header: React.FC = () => {
                     className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                   >
                     <FaUser className="w-4 h-4 mr-2" />
-                    <span>{userName || 'Tài khoản'}</span>
+                    <span>{userName || "Tài khoản"}</span>
                   </Link>
                   <button
                     onClick={() => {
@@ -462,7 +517,7 @@ const Header: React.FC = () => {
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="nav:hidden fixed inset-0 z-30 bg-black/20 dark:bg-black/40"
           onClick={() => setIsMobileMenuOpen(false)}
         />

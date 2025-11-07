@@ -1,37 +1,40 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { apiRequest } from '../utils/api';
-import { setToken } from '../utils/auth';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { apiRequest } from "../utils/api";
+import { setToken } from "../utils/auth";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: '' }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email) return setErrors({ email: 'Vui lòng nhập email' });
-    if (!formData.password) return setErrors({ password: 'Vui lòng nhập mật khẩu' });
+    if (!formData.email) return setErrors({ email: "Vui lòng nhập email" });
+    if (!formData.password)
+      return setErrors({ password: "Vui lòng nhập mật khẩu" });
 
     setLoading(true);
     try {
-      const response = await apiRequest<{ token: string }>('/auth/login', {
-        method: 'POST',
+      const response = await apiRequest<{ token: string }>("/auth/login", {
+        method: "POST",
         body: JSON.stringify(formData),
       });
       setToken(response.token);
-      toast.success('Đăng nhập thành công!');
-      navigate('/classes');
+      toast.success("Đăng nhập thành công!");
+      navigate("/classes");
     } catch (err: any) {
-      toast.error(err.message || 'Sai thông tin đăng nhập.');
+      toast.error(err.message || "Sai thông tin đăng nhập.");
     } finally {
       setLoading(false);
     }
@@ -42,9 +45,11 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md bg-white/90 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-lg p-8">
         <div className="flex flex-col items-center mb-8">
           <img src="/Trollface.png" alt="Logo" className="h-12 w-12 mb-3" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Đăng nhập</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Đăng nhập
+          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            hoặc{' '}
+            hoặc{" "}
             <Link
               to="/register"
               className="text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
@@ -56,7 +61,10 @@ const LoginPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Email
             </label>
             <input
@@ -66,15 +74,20 @@ const LoginPage: React.FC = () => {
               value={formData.email}
               onChange={handleInputChange}
               className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+                errors.email ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="your_email@email.com"
             />
-            {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Mật khẩu
             </label>
             <input
@@ -84,11 +97,13 @@ const LoginPage: React.FC = () => {
               value={formData.password}
               onChange={handleInputChange}
               className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
+                errors.password ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="your_password"
             />
-            {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between text-sm">
@@ -105,7 +120,7 @@ const LoginPage: React.FC = () => {
             disabled={loading}
             className="w-full py-2.5 mt-4 rounded-xl text-white font-medium bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800 transition-all duration-200 disabled:opacity-50"
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
 
           <div className="text-center mt-4">
