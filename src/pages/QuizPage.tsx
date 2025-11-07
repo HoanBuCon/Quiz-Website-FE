@@ -1253,7 +1253,7 @@ const DragDropQuestion: React.FC<{
   };
 
   return (
-    <div className="space-y-4">
+    <div className="drag-question space-y-4">
       {/* Kho đáp án */}
       <div
         className={`border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-all duration-200 ${

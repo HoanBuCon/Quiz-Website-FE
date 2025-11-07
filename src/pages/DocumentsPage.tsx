@@ -953,9 +953,19 @@ const DocumentsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Tài liệu mới nhất
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {documents.length > 0
+                      ? formatDate(documents[0].uploadedAt)
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     Tổng dung lượng
                   </span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {formatFileSize(
                       documents.reduce((total, doc) => total + doc.size, 0)
                     )}
@@ -975,16 +985,6 @@ const DocumentsPage: React.FC = () => {
                   </span>
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {totalQuizzes}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tài liệu mới nhất
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {documents.length > 0
-                      ? formatDate(documents[0].uploadedAt)
-                      : "N/A"}
                   </span>
                 </div>
               </div>
@@ -1032,9 +1032,19 @@ const DocumentsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Tài liệu mới nhất
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {documents.length > 0
+                      ? formatDate(documents[0].uploadedAt)
+                      : "N/A"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     Tổng dung lượng
                   </span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
                     {formatFileSize(
                       documents.reduce((total, doc) => total + doc.size, 0)
                     )}
@@ -1054,16 +1064,6 @@ const DocumentsPage: React.FC = () => {
                   </span>
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {totalQuizzes}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tài liệu mới nhất
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {documents.length > 0
-                      ? formatDate(documents[0].uploadedAt)
-                      : "N/A"}
                   </span>
                 </div>
               </div>

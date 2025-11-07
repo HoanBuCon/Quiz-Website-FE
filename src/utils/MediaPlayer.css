@@ -94,7 +94,7 @@ body.dark-mode .media-player-box {
   border-radius: 4px;
   background: #ddd;
   pointer-events: auto;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 .time-display {

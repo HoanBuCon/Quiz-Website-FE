@@ -172,9 +172,13 @@
 /* Import code fonts for logo */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700;900&display=swap');
 
-/* Prevent text cursor on non-text elements */
+/* Baseline cursor and selection behavior */
+body {
+  cursor: default; /* default arrow for most elements */
+}
+
+/* Do not allow text selection by default */
 * {
-  cursor: default;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -182,7 +186,14 @@
 }
 
 /* Allow text cursor and selection only for text input elements */
-input,
+/* Text-like inputs show text cursor */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
 textarea,
 [contenteditable="true"],
 .text-selectable {
@@ -192,6 +203,16 @@ textarea,
   -ms-user-select: text !important;
   user-select: text !important;
 }
+
+/* Range sliders should use pointer cursor */
+input[type="range"],
+.timeline-slider {
+  cursor: pointer !important;
+}
+/* Slider thumbs cursors */
+input[type="range"]::-webkit-slider-thumb { cursor: pointer; }
+input[type="range"]::-moz-range-thumb { cursor: pointer; }
+input[type="range"]::-ms-thumb { cursor: pointer; }
 
 /* Allow pointer cursor for interactive elements */
 button,
@@ -204,6 +225,49 @@ a,
   -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important;
+}
+/* Ensure pointer applies to children inside clickable elements */
+button *,
+a *,
+[role="button"] *,
+[onclick] *,
+.cursor-pointer * {
+  cursor: pointer !important;
+}
+
+/* Draggable elements show grab/grabbing cursor */
+[draggable="true"],
+.draggable {
+  cursor: grab !important;
+}
+[draggable="true"]:active,
+.draggable:active {
+  cursor: grabbing !important;
+}
+
+/* Ensure custom button utility classes also force pointer (and children) */
+.btn-primary,
+.btn-secondary,
+.effect-btn,
+.btn-primary *,
+.btn-secondary *,
+.effect-btn * {
+  cursor: pointer !important;
+}
+
+/* Drag question specific: force grab cursors within draggable answers, overriding generic pointer rules */
+.drag-question [draggable="true"],
+.drag-question .draggable {
+  cursor: grab !important;
+}
+.drag-question [draggable="true"]:active,
+.drag-question .draggable:active {
+  cursor: grabbing !important;
+}
+/* Ensure children inside draggable answers inherit the grab/grabbing cursor (not pointer) */
+.drag-question [draggable="true"] *,
+.drag-question .draggable * {
+  cursor: inherit !important;
 }
 
 /* Allow text selection for readable content when needed */
