@@ -94,6 +94,23 @@ const BackgroundMusic = () => {
   const { showMusicPlayer, setShowMusicPlayer, setIsPlaying: setCtxIsPlaying } = useMusic();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+  // Helper: lấy volume đã lưu (0-100), mặc định 50
+  const getSavedVolumePercent = () => {
+    try {
+      const saved = localStorage.getItem('mediaPlayerVolume');
+      const n = saved != null ? parseInt(saved) : NaN;
+      if (Number.isFinite(n) && n >= 0 && n <= 100) return n;
+    } catch {}
+    return 50;
+  };
+
+  // Áp dụng volume ngay khi mount (trước cả khi mở MediaPlayer)
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = getSavedVolumePercent() / 100;
+    }
+  }, []);
+
   const tracks = playlists[selectedPlaylistIndex]?.tracks || [];
   const currentTrack = tracks[currentTrackIndex] || (playlists[0]?.tracks?.[0]);
   // Danh sách hiển thị cho dropdown track: theo queue nếu random, ngược lại theo playlist gốc
@@ -271,7 +288,8 @@ useEffect(() => {
       const audioEl = audioRef.current;
       if (!audioEl) return;
       try {
-        audioEl.volume = 0.5;
+        // Áp dụng volume đã lưu (nếu có)
+        audioEl.volume = getSavedVolumePercent() / 100;
         // Random playlist trước, rồi random track trong playlist đó
         const randomPlaylistIndex = Math.floor(Math.random() * playlists.length);
         setSelectedPlaylistIndex(randomPlaylistIndex);
@@ -351,7 +369,8 @@ useEffect(() => {
         try {
           const audioEl = audioRef.current;
           if (!audioEl) return;
-          audioEl.volume = 0.5;
+          // Áp dụng volume đã lưu (nếu có)
+          audioEl.volume = getSavedVolumePercent() / 100;
           const randomPlaylistIndex = Math.floor(Math.random() * playlists.length);
           setSelectedPlaylistIndex(randomPlaylistIndex);
           const selectedTracks = playlists[randomPlaylistIndex].tracks;
