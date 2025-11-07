@@ -402,7 +402,7 @@ const ClassesPage: React.FC = () => {
       try {
         const { SessionsAPI } = await import("../utils/api");
         let totalDone = 0;
-        let totalScore = 0;
+        let totalPercentage = 0;
         for (const cls of withQuizzes) {
           const quizzes = (cls.quizzes as Quiz[]) || [];
           for (const q of quizzes) {
@@ -413,13 +413,17 @@ const ClassesPage: React.FC = () => {
             // Assume backend returns only current user's sessions
             totalDone += sessions.length || 0;
             for (const s of sessions) {
-              if (typeof s.score === "number") totalScore += s.score;
+              // Calculate percentage: (score / totalQuestions) * 100
+              const questionCount = (q as any).questionCount ?? (q as any).questions?.length ?? 0;
+              if (typeof s.score === "number" && questionCount > 0) {
+                totalPercentage += (s.score / questionCount) * 100;
+              }
             }
           }
         }
         setStatsCompleted(totalDone);
         setStatsAverage(
-          totalDone > 0 ? Math.round((totalScore / totalDone) * 10) / 10 : 0
+          totalDone > 0 ? Math.round((totalPercentage / totalDone / 10) * 10) / 10 : 0
         );
       } catch (e) {
         // ignore stats errors

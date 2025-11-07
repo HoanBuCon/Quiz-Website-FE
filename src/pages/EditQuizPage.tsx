@@ -620,31 +620,30 @@ const EditQuizPage: React.FC = () => {
   const restoreScrollY = useRef<number>(0);
 
   const handleQuestionEdit = (questionId: string) => {
+    // Lưu vị trí scroll trước mở editor
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    restoreScrollY.current = scrollY;
     restoreTargetId.current = questionId;
-    restoreScrollY.current = window.scrollY || window.pageYOffset || 0;
+    
+    // Mở editor
     setIsEditing(questionId);
-    // Ensure the editor opens with the question anchored in view (prevent jump)
+    
+    // Ngăn chặn browser scroll tự động bằng cách ngay lập tức restore vị trí
     requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-qid="${questionId}"]`) as HTMLElement | null;
-      if (el) {
-        el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
-      }
+      window.scrollTo(0, scrollY);
     });
   };
 
-  // When closing editor, restore back to the question element (robust to DOM reflow)
+  // Khi editor đóng, khôi phục vị trí scroll
   useEffect(() => {
-    if (isEditing === null && restoreTargetId.current) {
-      const id = restoreTargetId.current;
-      // wait for DOM updates
-      requestAnimationFrame(() => {
-        const el = document.querySelector(`[data-qid="${id}"]`) as HTMLElement | null;
-        if (el) {
-          el.scrollIntoView({ block: 'start', behavior: 'instant' as any });
-        } else {
-          window.scrollTo({ top: restoreScrollY.current, behavior: 'instant' as any });
-        }
-      });
+    if (isEditing === null && restoreScrollY.current > 0) {
+      // Sở dụng setTimeout để đợi cho React render xong trước khi restore
+      const timer = setTimeout(() => {
+        window.scrollTo(0, restoreScrollY.current);
+        restoreTargetId.current = null;
+        restoreScrollY.current = 0;
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isEditing]);
 
@@ -850,7 +849,7 @@ const EditQuizPage: React.FC = () => {
           </svg>
         </div>
         
-        {/* Question content giữ nguyên kích thước */}
+        {/* Question content */}
         <div className="hover:shadow-md transition-shadow duration-200">
           {isEditing === question.id ? (
             <QuestionEditor question={question} index={index} />
@@ -867,7 +866,8 @@ const EditQuizPage: React.FC = () => {
     const savedOptionsRef = useRef<string[]>(Array.isArray(question.options) ? question.options as string[] : ["", ""]);
 
     useEffect(() => {
-      // Đảm bảo câu hỏi text luôn có ít nhất 1 đáp án trống
+      // Chỉ initialize state khi component lần đầu mở (dựa vào question.id)
+      // Điều này tránh reset state khi parent re-render
       if (question.type === 'text' && (!question.correctAnswers || question.correctAnswers.length === 0)) {
         setEditedQuestion({
           ...question,
