@@ -2678,7 +2678,7 @@ const ClassesPage: React.FC = () => {
 
               <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 shrink-0 self-center">
                     <svg
                       className="w-5 h-5 text-indigo-700 dark:text-indigo-300"
                       fill="none"
@@ -2700,7 +2700,7 @@ const ClassesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-lg">
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 shrink-0 self-center">
                     <svg
                       className="w-5 h-5 text-purple-700 dark:text-purple-300"
                       fill="none"
@@ -2728,7 +2728,7 @@ const ClassesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 shrink-0 self-center">
                     <svg
                       className="w-5 h-5 text-green-700 dark:text-green-300"
                       fill="none"
@@ -2757,7 +2757,7 @@ const ClassesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-yellow-900/10 rounded-lg">
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 shrink-0 self-center">
                     <svg
                       className="w-5 h-5 text-blue-700 dark:text-yellow-400"
                       fill="none"
@@ -2779,7 +2779,7 @@ const ClassesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg">
-                  <div className="flex items-center justify-center w-6 h-6 shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 shrink-0 self-center">
                     <svg
                       className="w-5 h-5 text-red-700 dark:text-red-400"
                       fill="none"
