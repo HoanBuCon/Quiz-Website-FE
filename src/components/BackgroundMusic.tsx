@@ -209,7 +209,7 @@ const BackgroundMusic = () => {
     // Lắng nghe tất cả các loại tương tác
     const interactionEvents = [
       'click', 'mousedown', 'pointerdown',
-      'touchend', 'keydown', 'wheel', 'mousemove'
+      'touchend', 'keydown'
     ];
 
     interactionEvents.forEach(event => {
