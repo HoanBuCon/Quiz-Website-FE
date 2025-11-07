@@ -245,11 +245,10 @@ const Header: React.FC = () => {
               {/* Music Player Toggle Button */}
               <button
                 onClick={toggleMusicPlayer}
-                className={`group relative p-2 rounded-lg outline-none focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center active:scale-[0.98] ${
-                  showMusicPlayer
-                    ? "bg-white/70 dark:bg-white/5 backdrop-blur-md border border-sky-300/60 dark:border-sky-400/30 ring-2 ring-sky-400/30 ring-offset-2 ring-offset-slate-100 dark:ring-offset-[#1a1e3a] shadow-[0_8px_24px_rgba(56,189,248,0.25)] text-sky-700 dark:text-sky-300"
-                    : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600"
-                }`}
+                className={`group relative p-2 rounded-lg outline-none focus:outline-none transition-colors duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center active:scale-[0.98]
+                  bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600
+                  ${showMusicPlayer ? "border border-sky-300/60 dark:border-sky-400/30" : "border-0"}
+                `}
                 aria-label="Toggle Music Player"
                 aria-pressed={showMusicPlayer}
                 title={
@@ -376,11 +375,10 @@ const Header: React.FC = () => {
               {/* Mobile Music Player Button */}
               <button
                 onClick={toggleMusicPlayer}
-                className={`group relative p-2 rounded-lg outline-none focus:outline-none transition-all duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center active:scale-[0.98] ${
-                  showMusicPlayer
-                    ? "bg-white/70 dark:bg-white/5 backdrop-blur-md border border-sky-300/60 dark:border-sky-400/30 ring-2 ring-sky-400/30 ring-offset-2 ring-offset-slate-100 dark:ring-offset-[#1a1e3a] shadow-[0_8px_24px_rgba(56,189,248,0.25)] text-sky-700 dark:text-sky-300"
-                    : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600"
-                }`}
+                className={`group relative p-2 rounded-lg outline-none focus:outline-none transition-colors duration-300 shadow-sm hover:shadow-md aspect-square w-10 h-10 flex items-center justify-center active:scale-[0.98]
+                  bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600
+                  ${showMusicPlayer ? "border border-sky-300/60 dark:border-sky-400/30" : "border-0"}
+                `}
                 aria-label="Toggle Music Player"
                 aria-pressed={showMusicPlayer}
                 title={
