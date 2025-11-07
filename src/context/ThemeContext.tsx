@@ -30,8 +30,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark-mode');
     }
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
