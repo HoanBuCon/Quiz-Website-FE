@@ -553,7 +553,7 @@ const QuizPage: React.FC = () => {
                             )[0] as string) || ""
                           )
                           ? "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500"
-                          : "border-rose-600 bg-rose-500 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
+                          : "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
                         : "border-gray-400 dark:border-gray-600"
                     }`}
                     placeholder="Nhập câu trả lời của bạn"
@@ -604,7 +604,7 @@ const QuizPage: React.FC = () => {
                       const correctStyle =
                         "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
                       const wrongChosenStyle =
-                        "bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500";
+                        "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
 
                       const cls = shouldReveal
                         ? isCorrect
@@ -644,7 +644,7 @@ const QuizPage: React.FC = () => {
                               )}
                               {shouldReveal && isChosen && !isCorrect && (
                                 <svg
-                                  className="w-4 h-4 text-current dark:text-rose-400"
+                                  className="w-4 h-4 text-current dark:text-red-400"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -755,7 +755,7 @@ const QuizPage: React.FC = () => {
                                           )[0] as string) || ""
                                         )
                                         ? "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500"
-                                        : "border-rose-600 bg-rose-500 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
+                                        : "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
                                       : "border-gray-400"
                                   }`}
                                   placeholder="Nhập câu trả lời của bạn"
@@ -808,7 +808,7 @@ const QuizPage: React.FC = () => {
                                     const correctStyle =
                                       "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
                                     const wrongChosenStyle =
-                                      "bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500";
+                                      "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
                                     const cls = shouldReveal
                                       ? isCorrect
                                         ? correctStyle
@@ -851,7 +851,7 @@ const QuizPage: React.FC = () => {
                                             isChosen &&
                                             !isCorrect && (
                                               <svg
-                                                className="w-4 h-4 text-current dark:text-rose-400"
+                                                className="w-4 h-4 text-current dark:text-red-400"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
@@ -1052,7 +1052,7 @@ const QuizPage: React.FC = () => {
                       index === currentQuestionIndex
                         ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                         : uiMode === "instant" && isQuestionWrong(question)
-                        ? "bg-rose-500 text-white font-medium border border-transparent shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-500 dark:border-rose-500"
+                        ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
                         : markedQuestions.includes(question.id)
                         ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
                         : isQuestionAnswered(question)
@@ -1470,7 +1470,7 @@ const TextRevealPanel: React.FC<{ question: Question; userValue: string }> = ({
       className={`mt-2 rounded-lg border p-3 text-sm transition-colors ${
         isOk
           ? "border-green-500 bg-green-50/60 text-green-800 dark:border-green-400 dark:bg-green-900/20 dark:text-green-200"
-          : "border-rose-500 bg-rose-50/60 text-rose-800 dark:border-rose-400 dark:bg-rose-900/20 dark:text-rose-200"
+          : "border-red-500 bg-red-50/60 text-red-800 dark:border-red-400 dark:bg-red-900/20 dark:text-red-200"
       }`}
     >
       {isOk ? "Chính xác!" : "Chưa chính xác."}
@@ -1608,7 +1608,7 @@ const DragDropQuestion: React.FC<{
                 reveal ? "cursor-default" : "cursor-move"
               } ${draggedItem === it.id ? "opacity-50 scale-95" : ""} ${
                 reveal && correctMapping[it.id]
-                  ? "bg-rose-500 border-transparent text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
+                  ? "bg-red-600 border-transparent text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
                   : "bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/20 hover:bg-yellow-600 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30"
               }`}
               onClick={() => assign(it.id, undefined)}
@@ -1705,7 +1705,7 @@ const DragDropQuestion: React.FC<{
                 const ok =
                   "bg-green-500 text-white border-transparent shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
                 const bad =
-                  "bg-rose-500 text-white border-transparent shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500";
+                  "bg-red-600 text-white border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
                 return (
                   <button
                     key={it.id}
