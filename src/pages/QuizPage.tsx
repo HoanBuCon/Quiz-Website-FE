@@ -384,11 +384,16 @@ const QuizPage: React.FC = () => {
         }, {} as Record<string, any>);
         const { SessionsAPI } = await import("../utils/api");
         const qid = effectiveQuizId || quizId!;
-        await SessionsAPI.submit(
+        const created = await SessionsAPI.submit(
           { quizId: qid, answers: answersMap, timeSpent },
           token
         );
-        navigate(`/results/${qid}`);
+        try {
+          const order = questions.map((q) => q.id);
+          const key = `quizOrder:${qid}`;
+          sessionStorage.setItem(key, JSON.stringify({ order, ts: Date.now() }));
+        } catch {}
+        navigate(`/results/${qid}`, { state: { questionOrder: questions.map((q) => q.id) } });
       } catch (e) {
         console.error("Submit failed:", e);
         alert("Có lỗi xảy ra khi nộp bài.");

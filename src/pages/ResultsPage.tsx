@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Quiz, Question } from "../types";
 
 interface QuizResult {
@@ -15,10 +15,12 @@ interface QuizResult {
 const ResultsPage: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
+  const location = useLocation() as any;
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExplanations, setShowExplanations] = useState(false);
+  const passedOrder: string[] | undefined = location?.state?.questionOrder;
 
   // Floating scroll buttons
   const [atTop, setAtTop] = useState(true);
@@ -204,6 +206,41 @@ const ResultsPage: React.FC = () => {
     return "text-red-600";
   };
 
+  // xác định thứ tự câu hỏi giống trang làm bài
+  const displayQuestions: Question[] = useMemo(() => {
+    if (!quiz) return [] as any;
+    const fromState = Array.isArray(passedOrder) ? passedOrder : undefined;
+    let fromStorage: string[] | undefined;
+    try {
+      const raw = sessionStorage.getItem(`quizOrder:${quizId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.order)) fromStorage = parsed.order;
+      }
+    } catch {}
+    const order = fromState || fromStorage;
+    if (!order || order.length === 0) return quiz.questions as any;
+    const map = new Map((quiz.questions as any).map((q: Question) => [q.id, q]));
+    const arr = order.map((id) => map.get(id)).filter(Boolean) as Question[];
+    // phòng trường hợp có câu mới không trong order
+    const extras = (quiz.questions as any).filter(
+      (q: Question) => !order.includes(q.id)
+    );
+    return [...arr, ...extras];
+  }, [quiz, passedOrder, quizId]);
+
+  const isQuestionWrongForResult = (q: any): boolean => {
+    if (!result) return false;
+    if (q.type === "composite" && Array.isArray(q.subQuestions)) {
+      return q.subQuestions.some((sub: any) => {
+        const ua = result.userAnswers[sub.id];
+        return !getAnswerStatus(sub, ua).isCorrect;
+      });
+    }
+    const ua = result.userAnswers[q.id];
+    return !getAnswerStatus(q, ua).isCorrect;
+  };
+
   if (loading) {
     const Spinner = require("../components/Spinner").default;
     return (
@@ -231,10 +268,11 @@ const ResultsPage: React.FC = () => {
     );
   }
 
+
   const percentage = Math.round((result.score / result.totalQuestions) * 100);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header với kết quả tổng quan */}
       <div className="card p-8 mb-8">
         <div className="text-center mb-6">
@@ -350,18 +388,23 @@ const ResultsPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Chi tiết từng câu hỏi */}
-      <div className="space-y-6">
-        <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Chi tiết câu trả lời
-        </h3>
+      {/* Layout 2 cột: Trái = kết quả, Phải = minimap */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {/* Trái: kết quả chi tiết */}
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
+          {/* Chi tiết từng câu hỏi */}
+          <div className="space-y-6">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Chi tiết câu trả lời
+          </h3>
 
-        {quiz.questions.map((q: any, qIndex: number) => {
+          {displayQuestions.map((q: any, qIndex: number) => {
           // Xử lý câu hỏi composite - hiển thị câu hỏi mẹ và các câu con
           if (q.type === "composite" && Array.isArray(q.subQuestions)) {
             return (
               <div
                 key={q.id}
+                id={`q-${q.id}`}
                 className="card p-6 border-2 border-primary-200 dark:border-primary-800"
               >
                 {/* Câu hỏi mẹ */}
@@ -538,7 +581,7 @@ const ResultsPage: React.FC = () => {
           const userAnswer = result.userAnswers[q.id] || [];
           const { isCorrect, correctAnswers } = getAnswerStatus(q, userAnswer);
           return (
-            <div key={q.id} className="card p-6">
+            <div key={q.id} id={`q-${q.id}`} className="card p-6">
               <div className="flex items-start justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <span className="mr-3">Câu {qIndex + 1}:</span>
@@ -805,8 +848,10 @@ const ResultsPage: React.FC = () => {
             </div>
           );
         })}
-      </div>
-      <div className="mt-8 text-center">
+          </div>
+
+          {/* Nút dưới cùng (làm lại, xem lớp, về trang chủ) */}
+          <div className="mt-8 text-center">
         <div className="w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:justify-center">
           {/* Làm lại Quiz - hàng đầu, full width ở mobile */}
           <button
@@ -834,7 +879,42 @@ const ResultsPage: React.FC = () => {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
           Hoàn thành lúc: {new Date(result.completedAt).toLocaleString("vi-VN")}
         </p>
+          </div>
+        </div>
+
+        {/* Phải: minimap */}
+        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 lg:self-start lg:sticky lg:top-24">
+          <div className="card p-4 sm:p-6 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Danh sách câu hỏi
+              </h3>
+            </div>
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
+              {displayQuestions.map((q: any, index: number) => {
+                const wrong = isQuestionWrongForResult(q);
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => {
+                      const el = document.getElementById(`q-${q.id}`);
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm ${
+                      wrong
+                        ? "bg-red-600 text-white font-medium border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
+                        : "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
+
       {/* Floating scroll buttons */}
       {canScroll && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
