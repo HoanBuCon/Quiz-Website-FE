@@ -1071,7 +1071,7 @@ const QuizPage: React.FC = () => {
       {/* Mode chooser dialog */}
       {showModeChooser && (
         <div className="fixed inset-0 z-50 p-4 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp">
+          <div className="relative w-full max-w-lg sm:max-w-lg md:max-w-2xl overflow-hidden overflow-y-auto sm:overflow-y-auto md:overflow-y-visible max-h-[90vh] sm:max-h-[90vh] md:max-h-none rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -1079,27 +1079,27 @@ const QuizPage: React.FC = () => {
             <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
             
             {/* Header - Chọn định dạng */}
-            <div className="relative px-6 pt-6 pb-4">
+            <div className="relative px-4 pt-4 pb-3 sm:px-4 sm:pt-4 sm:pb-3 md:px-6 md:pt-6 md:pb-4">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
+                <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
                   <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
-                <h4 className="text-2xl font-bold text-white mb-2">
+                <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
                   Chọn định dạng làm bài
                 </h4>
-                <p className="text-sm text-blue-100 dark:text-blue-200">
+                <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
                   Bạn có thể thay đổi lại bất cứ lúc nào trong quá trình làm bài
                 </p>
               </div>
             </div>
 
             {/* Options - Định dạng */}
-            <div className="relative px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <button
                 onClick={() => setSelectedUiMode("default")}
-                className={`group relative overflow-hidden h-36 w-full rounded-xl p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   selectedUiMode === "default"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1123,7 +1123,7 @@ const QuizPage: React.FC = () => {
                 )}
                 <div className="relative flex h-full flex-col justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
+                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
                       <svg
                         className="w-6 h-6 text-blue-600 dark:text-blue-400"
                         viewBox="0 0 24 24"
@@ -1136,12 +1136,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
                         Định dạng mặc định
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Làm bài bình thường và xem kết quả sau khi nộp
                   </p>
                 </div>
@@ -1149,7 +1149,7 @@ const QuizPage: React.FC = () => {
 
               <button
                 onClick={() => setSelectedUiMode("instant")}
-                className={`group relative overflow-hidden h-36 w-full rounded-xl p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   selectedUiMode === "instant"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1173,7 +1173,7 @@ const QuizPage: React.FC = () => {
                 )}
                 <div className="relative flex h-full flex-col justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
+                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
                       <svg
                         className="w-6 h-6 text-purple-600 dark:text-purple-400"
                         viewBox="0 0 24 24"
@@ -1189,12 +1189,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
                         Xem đáp án ngay
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận
                   </p>
                 </div>
@@ -1202,32 +1202,32 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Separator */}
-            <div className="relative py-6 px-6">
+            <div className="relative py-4 px-4 md:py-6 md:px-6">
               <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
             </div>
 
             {/* Header - Trộn câu hỏi */}
-            <div className="relative px-6 pb-4">
+            <div className="relative px-4 pb-3 md:px-6 md:pb-4">
               <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
+                <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
                   <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
                 </div>
-                <h4 className="text-2xl font-bold text-white mb-2">
+                <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
                   Trộn câu hỏi
                 </h4>
-                <p className="text-sm text-blue-100 dark:text-blue-200">
+                <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
                   Chọn cách hiển thị câu hỏi và đáp án trong bài thi
                 </p>
               </div>
             </div>
 
             {/* Options - Trộn */}
-            <div className="relative px-6 pb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <button
                 onClick={() => setShuffleMode("none")}
-                className={`group relative overflow-hidden h-36 w-full rounded-xl p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   shuffleMode === "none"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1251,7 +1251,7 @@ const QuizPage: React.FC = () => {
                 )}
                 <div className="relative flex h-full flex-col justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
+                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
                       <svg
                         className="w-6 h-6 text-green-600 dark:text-green-400"
                         viewBox="0 0 24 24"
@@ -1267,12 +1267,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
                         Không trộn
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Giữ nguyên thứ tự câu hỏi hiển thị trên web
                   </p>
                 </div>
@@ -1280,7 +1280,7 @@ const QuizPage: React.FC = () => {
 
               <button
                 onClick={() => setShuffleMode("random")}
-                className={`group relative overflow-hidden h-36 w-full rounded-xl p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   shuffleMode === "random"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1304,7 +1304,7 @@ const QuizPage: React.FC = () => {
                 )}
                 <div className="relative flex h-full flex-col justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
+                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
                       <svg
                         className="w-6 h-6 text-orange-600 dark:text-orange-400"
                         viewBox="0 0 24 24"
@@ -1320,12 +1320,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
                         Trộn ngẫu nhiên
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Trộn thứ tự câu hỏi và đáp án trong từng câu
                   </p>
                 </div>
@@ -1333,12 +1333,12 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Separator */}
-            <div className="relative py-6 px-6">
+            <div className="relative py-4 px-4 md:py-6 md:px-6">
               <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
             </div>
 
             {/* Button bắt đầu */}
-            <div className="relative px-6 pb-6">
+            <div className="relative px-4 pb-4 md:px-6 md:pb-6">
               <button
                 onClick={() => {
                   if (selectedUiMode !== null && shuffleMode !== null) {
@@ -1354,7 +1354,7 @@ const QuizPage: React.FC = () => {
                   }
                 }}
                 disabled={selectedUiMode === null || shuffleMode === null}
-                className={`w-full py-4 px-6 rounded-xl font-semibold text-base transition-all duration-300 ${
+                className={`w-full py-3 px-4 md:py-4 md:px-6 rounded-xl font-semibold text-base transition-all duration-300 ${
                   selectedUiMode !== null && shuffleMode !== null
                     ? "bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl dark:bg-gradient-to-r dark:from-blue-600 dark:to-blue-700 dark:text-white dark:hover:from-blue-700 dark:hover:to-blue-800"
                     : "bg-white/20 text-white/40 cursor-not-allowed dark:bg-white/10"
