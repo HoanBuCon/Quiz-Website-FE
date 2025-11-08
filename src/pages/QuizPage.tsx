@@ -251,6 +251,74 @@ const QuizPage: React.FC = () => {
     }
   };
 
+  // Trong chế độ "Xem đáp án ngay": xác định câu hỏi đã reveal chưa
+  const isQuestionRevealed = (question: Question): boolean => {
+    if (uiMode !== "instant") return false;
+    if (question.type === "composite") return revealed.has(question.id);
+    return revealed.has(question.id);
+  };
+
+  // So sánh tập hợp (dùng cho multiple)
+  const setsEqual = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const sa = new Set(a);
+    for (const x of b) if (!sa.has(x)) return false;
+    return true;
+  };
+
+  // Kiểm tra đúng/sai cho câu hỏi (chỉ dùng khi đã reveal trong chế độ instant)
+  const isQuestionWrong = (question: Question): boolean => {
+    if (uiMode !== "instant") return false;
+    if (!isQuestionRevealed(question)) return false;
+
+    if (question.type === "single" || question.type === "multiple") {
+      const selected = getCurrentAnswer(question.id) as string[];
+      const correct = getCorrectAnswers(question) as string[];
+      if (question.type === "single") {
+        if (selected.length !== 1) return true; // đã reveal mà chưa chọn đủ
+        return !correct.includes(selected[0]);
+      } else {
+        return !setsEqual(selected, correct);
+      }
+    }
+
+    if (question.type === "text") {
+      const val = (getCurrentAnswer(question.id)[0] as string) || "";
+      return !isTextAnswerCorrect(question, val);
+    }
+
+    if (question.type === "drag") {
+      const mapping =
+        (userAnswers.find((a) => a.questionId === question.id)?.answers?.[0] as
+          any) || {};
+      const correctMapping = (question.correctAnswers || {}) as Record<
+        string,
+        string
+      >;
+      const items =
+        ((question.options && (question.options as any).items) as DragItem[]) ||
+        [];
+      for (const it of items) {
+        const u = mapping[it.id];
+        const c = correctMapping[it.id];
+        if ((u || "") !== (c || "")) return true;
+      }
+      return false;
+    }
+
+    if (question.type === "composite") {
+      const subs = (question as any).subQuestions || [];
+      if (!Array.isArray(subs) || subs.length === 0) return false;
+      // Đúng khi tất cả câu con đúng; sai nếu có ít nhất 1 câu con sai
+      for (const sub of subs as Question[]) {
+        if (isQuestionWrong(sub)) return true;
+      }
+      return false;
+    }
+
+    return false;
+  };
+
   // Helpers
   const getCorrectAnswers = (q: Question): string[] => {
     if (q.type === "drag" || q.type === "composite") return [] as string[];
@@ -983,6 +1051,8 @@ const QuizPage: React.FC = () => {
                     ${
                       index === currentQuestionIndex
                         ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
+                        : uiMode === "instant" && isQuestionWrong(question)
+                        ? "bg-rose-500 text-white font-medium border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
                         : markedQuestions.includes(question.id)
                         ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
                         : isQuestionAnswered(question)
