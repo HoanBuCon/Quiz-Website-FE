@@ -284,7 +284,7 @@ const ResultsPage: React.FC = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
           <div className="text-center">
             <div
               className={`text-4xl font-bold ${getScoreColor(
@@ -367,23 +367,23 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Nút điều khiển */}
-      <div className="flex flex-wrap gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <button
           onClick={() => setShowExplanations(!showExplanations)}
-          className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
+          className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
         >
           {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
         </button>
         <button
           onClick={() => navigate(`/quiz/${quizId}`)}
-          className="btn-primary"
+          className="btn-primary w-full inline-flex items-center justify-center"
         >
           Làm lại Quiz
         </button>
-        <Link to="/classes" className="btn-secondary">
+        <Link to="/classes" className="btn-secondary w-full inline-flex items-center justify-center">
           Xem lớp học khác
         </Link>
-        <Link to="/" className="btn-secondary">
+        <Link to="/" className="btn-secondary w-full inline-flex items-center justify-center">
           Về trang chủ
         </Link>
       </div>
@@ -847,35 +847,38 @@ const ResultsPage: React.FC = () => {
           </div>
 
           {/* Nút dưới cùng (làm lại, xem lớp, về trang chủ) */}
-          <div className="mt-8 text-center">
-        <div className="w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:justify-center">
-          {/* Làm lại Quiz - hàng đầu, full width ở mobile */}
+      <div className="mt-8 text-center">
+        <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
             onClick={() => navigate(`/quiz/${quizId}`)}
-            className="btn-primary col-span-2 w-full sm:col-span-auto sm:flex-1 inline-flex items-center justify-center"
+            className="btn-primary w-full inline-flex items-center justify-center"
           >
             Làm lại Quiz
           </button>
-          {/* Xem lớp học khác - hàng hai, trái ở mobile */}
           <Link
             to="/classes"
-            className="btn-secondary col-span-1 w-full sm:flex-1 inline-flex items-center justify-center"
+            className="btn-secondary w-full inline-flex items-center justify-center"
           >
             Xem lớp học khác
           </Link>
-          {/* Về trang chủ - hàng hai, phải ở mobile */}
           <Link
             to="/"
-            className="btn-secondary col-span-1 w-full sm:flex-1 inline-flex items-center justify-center"
+            className="btn-secondary w-full inline-flex items-center justify-center"
           >
             Về trang chủ
           </Link>
+          <button
+            onClick={() => setShowExplanations(!showExplanations)}
+            className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
+          >
+            {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
+          </button>
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
           Hoàn thành lúc: {new Date(result.completedAt).toLocaleString("vi-VN")}
         </p>
-          </div>
+      </div>
         </div>
 
         {/* Phải: minimap */}
