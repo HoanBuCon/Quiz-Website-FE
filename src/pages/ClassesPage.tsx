@@ -2723,7 +2723,7 @@ const ClassesPage: React.FC = () => {
                   </div>
                   <span>
                     Tạo <strong>ID</strong> và <strong>LINK</strong> truy cập
-                    lớp học và bài tập trắc nghiệm người khác tham gia.
+                    lớp học và bài tập trắc nghiệm cho người khác tham gia.
                   </span>
                 </div>
 
