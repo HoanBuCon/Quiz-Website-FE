@@ -488,7 +488,7 @@ const EditQuizPage: React.FC = () => {
           // Cho phép 1 nhóm trở lên
           if (targets.length < 1)
             invalidQuestions.push(
-              `Câu ${i + 1}: Kéo thả cần ít nhất 1 nhóm/ô đích`
+              `Câu ${i + 1}: Kéo thả cần ít nhất 1 nhóm đích`
             );
           if (items.length < 1)
             invalidQuestions.push(`Câu ${i + 1}: Kéo thả cần ít nhất 1 đáp án`);
@@ -1098,7 +1098,7 @@ const EditQuizPage: React.FC = () => {
 
         // Cho phép 1 nhóm trở lên (không bắt buộc 2 nhóm)
         if (targets.length < 1) {
-          alert("Cần ít nhất 1 nhóm/ô đích");
+          alert("Cần ít nhất 1 nhóm đích");
           return;
         }
         if (items.length < 1) {
@@ -1713,7 +1713,7 @@ const EditQuizPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nhóm/Ô đích
+                  Nhóm đích
                 </label>
                 {(() => {
                   const dragOpt = (editedQuestion.options as any) || {
