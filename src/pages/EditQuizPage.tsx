@@ -483,7 +483,16 @@ const EditQuizPage: React.FC = () => {
           const items: any[] = Array.isArray(opt.items)
             ? opt.items.filter((t: any) => (t.label || "").trim())
             : [];
-          const mapping = (q.correctAnswers as Record<string, string>) || {};
+          const rawMap = (q.correctAnswers as Record<string, string>) || {};
+          // Làm sạch mapping: chỉ giữ mapping tới target tồn tại và item tồn tại
+          const targetSet = new Set(targets.map((t) => t.id));
+          const itemSet = new Set(items.map((it) => it.id));
+          const cleanedMap: Record<string, string> = {};
+          Object.entries(rawMap).forEach(([itemId, targetId]) => {
+            if (itemSet.has(itemId) && targetSet.has(targetId)) {
+              cleanedMap[itemId] = targetId;
+            }
+          });
 
           // Cho phép 1 nhóm trở lên
           if (targets.length < 1)
@@ -498,7 +507,7 @@ const EditQuizPage: React.FC = () => {
           return {
             ...q,
             options: { targets, items },
-            correctAnswers: mapping,
+            correctAnswers: cleanedMap,
           };
         } else if (q.type === "composite") {
           // Validate composite question
@@ -1106,13 +1115,21 @@ const EditQuizPage: React.FC = () => {
           return;
         }
 
-        // Mapping cho phép undefined (đáp án không thuộc nhóm nào = đúng)
-        const mapping = (editedQuestion.correctAnswers as any) || {};
+        // Làm sạch mapping: chỉ giữ các itemId tồn tại và targetId thuộc danh sách targets
+        const rawMap = ((editedQuestion.correctAnswers as any) || {}) as Record<string, string>;
+        const targetSet = new Set(targets.map((t: any) => t.id));
+        const itemSet = new Set(items.map((i: any) => i.id));
+        const cleanedMap: Record<string, string> = {};
+        Object.entries(rawMap).forEach(([itemId, targetId]) => {
+          if (itemSet.has(itemId) && targetSet.has(targetId)) {
+            cleanedMap[itemId] = targetId;
+          }
+        });
 
         const updatedData = {
           ...editedQuestion,
           options: { targets, items },
-          correctAnswers: mapping, // Không bắt buộc phải map hết
+          correctAnswers: cleanedMap, // Không bắt buộc phải map hết
         };
         handleQuestionSave(question.id, updatedData);
       } else if (editedQuestion.type === "composite") {
@@ -1260,7 +1277,8 @@ const EditQuizPage: React.FC = () => {
                 { id: "i2", label: "Đáp án 2" },
               ],
             },
-            correctAnswers: { i1: "t1", i2: "t2" } as any,
+            // Không gán sẵn nhóm cho bất kỳ đáp án nào; để trống mapping
+            correctAnswers: {} as any,
           };
         } else if (newType === "composite") {
           return {
@@ -1753,12 +1771,23 @@ const EditQuizPage: React.FC = () => {
                               const next = {
                                 ...(editedQuestion.options as any),
                               };
+                              const removedTarget = (next.targets || [])[i]?.id;
                               next.targets = (next.targets || []).filter(
                                 (_: any, idx: number) => idx !== i
                               );
+                              // Làm sạch mapping: xóa các đáp án đang gán vào target vừa xóa
+                              const nextMap = {
+                                ...(editedQuestion.correctAnswers as any),
+                              } as Record<string, string>;
+                              if (removedTarget) {
+                                Object.keys(nextMap).forEach((key) => {
+                                  if (nextMap[key] === removedTarget) delete nextMap[key];
+                                });
+                              }
                               setEditedQuestion((prev) => ({
                                 ...prev,
                                 options: next,
+                                correctAnswers: nextMap as any,
                               }));
                             }}
                           >
