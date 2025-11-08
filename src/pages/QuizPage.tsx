@@ -1071,7 +1071,7 @@ const QuizPage: React.FC = () => {
       {/* Mode chooser dialog */}
       {showModeChooser && (
         <div className="fixed inset-0 z-50 p-4 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg sm:max-w-lg md:max-w-2xl overflow-hidden overflow-y-auto sm:overflow-y-auto md:overflow-y-visible max-h-[90vh] sm:max-h-[90vh] md:max-h-none rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp">
+          <div className="relative w-full max-w-lg sm:max-w-lg md:max-w-2xl overflow-hidden overflow-y-auto max-h-[90vh] rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp overscroll-contain">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -1096,10 +1096,10 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Options - Định dạng */}
-            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
               <button
                 onClick={() => setSelectedUiMode("default")}
-                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   selectedUiMode === "default"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1121,11 +1121,11 @@ const QuizPage: React.FC = () => {
                     </svg>
                   </div>
                 )}
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
+                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
                       <svg
-                        className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                        className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1136,12 +1136,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
                         Định dạng mặc định
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Làm bài bình thường và xem kết quả sau khi nộp
                   </p>
                 </div>
@@ -1149,7 +1149,7 @@ const QuizPage: React.FC = () => {
 
               <button
                 onClick={() => setSelectedUiMode("instant")}
-                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   selectedUiMode === "instant"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1171,11 +1171,11 @@ const QuizPage: React.FC = () => {
                     </svg>
                   </div>
                 )}
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
+                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
                       <svg
-                        className="w-6 h-6 text-purple-600 dark:text-purple-400"
+                        className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1189,12 +1189,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
                         Xem đáp án ngay
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận
                   </p>
                 </div>
@@ -1224,10 +1224,10 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Options - Trộn */}
-            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
               <button
                 onClick={() => setShuffleMode("none")}
-                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   shuffleMode === "none"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1249,11 +1249,11 @@ const QuizPage: React.FC = () => {
                     </svg>
                   </div>
                 )}
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
+                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
                       <svg
-                        className="w-6 h-6 text-green-600 dark:text-green-400"
+                        className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1267,12 +1267,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
                         Không trộn
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Giữ nguyên thứ tự câu hỏi hiển thị trên web
                   </p>
                 </div>
@@ -1280,7 +1280,7 @@ const QuizPage: React.FC = () => {
 
               <button
                 onClick={() => setShuffleMode("random")}
-                className={`group relative overflow-hidden h-28 md:h-36 w-full rounded-xl p-4 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
+                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${
                   shuffleMode === "random"
                     ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
                     : "hover:border-white/30 dark:hover:border-white/30"
@@ -1302,11 +1302,11 @@ const QuizPage: React.FC = () => {
                     </svg>
                   </div>
                 )}
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
+                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
                       <svg
-                        className="w-6 h-6 text-orange-600 dark:text-orange-400"
+                        className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1320,12 +1320,12 @@ const QuizPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-1 text-gray-900 dark:text-gray-50">
+                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
                         Trộn ngẫu nhiên
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
                     Trộn thứ tự câu hỏi và đáp án trong từng câu
                   </p>
                 </div>
