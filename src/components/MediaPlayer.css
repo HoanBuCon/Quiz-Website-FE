@@ -32,6 +32,8 @@
   --mp-accent: #3498db;           /* blue accent */
   --mp-accent-weak: rgba(52, 152, 219, 0.12);  /* more visible hover */
   --mp-accent-soft: rgba(52, 152, 219, 0.20);  /* more visible active */
+  --mp-accent-strong: #2d8fd6;    /* slightly brighter for text highlight */
+  --mp-accent-glow: rgba(52, 152, 219, 0.35); /* subtle glow */
   --mp-slider-bg: #dbe2f0;        /* lighter track */
 }
 
@@ -45,6 +47,8 @@ html.dark, body.dark-mode {
   --mp-accent: #3498db;           /* dark accent aligned to banner (blue) */
   --mp-accent-weak: rgba(52, 152, 219, 0.12);
   --mp-accent-soft: rgba(52, 152, 219, 0.2);
+  --mp-accent-strong: #5fb8ff;    /* brighter for active text in dark */
+  --mp-accent-glow: rgba(52, 152, 219, 0.5); /* stronger glow in dark */
   --mp-slider-bg: #3a3f5a;
 }
 
@@ -487,8 +491,8 @@ body.dark-mode .volume-value {
 
 .track-panel-item.active {
   background: var(--mp-accent-soft);
-  color: var(--mp-accent);
-  font-weight: 600;
+  color: var(--mp-accent-strong);
+  font-weight: 700;
 }
 
 .dark .track-button,
@@ -531,13 +535,14 @@ body.dark-mode .track-panel-item {
 
 .dark .track-panel-item:hover,
 body.dark-mode .track-panel-item:hover {
-  background: rgba(10, 241, 107, 0.08);
+  background: var(--mp-accent-weak);
 }
 
 .dark .track-panel-item.active,
 body.dark-mode .track-panel-item.active {
-  background: rgba(10, 241, 107, 0.12);
-  color: #0af16b;
+  background: var(--mp-accent-soft);
+  color: var(--mp-accent-strong);
+  text-shadow: 0 0 6px var(--mp-accent-glow);
 }
 
 /* Playlist selector nằm dưới cụm nút, cùng chiều rộng */
@@ -761,7 +766,7 @@ body.dark-mode .playlist-dropdown-item.active {
 
 .track-dropdown-item.active {
   background: var(--mp-accent-soft);
-  color: var(--mp-accent);
+  color: var(--mp-accent-strong);
   font-weight: 700;
 }
 
@@ -773,13 +778,13 @@ body.dark-mode .track-dropdown-button {
 }
 
 body.dark-mode .track-dropdown-button:hover {
-  border-color: rgba(10, 241, 107, 0.35);
-  box-shadow: 0 8px 18px rgba(10, 241, 107, 0.12);
+  border-color: var(--mp-accent);
+  box-shadow: 0 8px 18px rgba(52, 152, 219, 0.12);
 }
 
 body.dark-mode .track-dropdown-button:focus {
-  border-color: #0af16b;
-  box-shadow: 0 0 0 3px rgba(10, 241, 107, 0.25);
+  border-color: var(--mp-accent);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
 }
 
 body.dark-mode .track-dropdown-arrow {
@@ -797,12 +802,14 @@ body.dark-mode .track-dropdown-item {
 }
 
 body.dark-mode .track-dropdown-item:hover {
-  background: rgba(10, 241, 107, 0.08);
+  background: var(--mp-accent-weak);
 }
 
+.dark .track-dropdown-item.active,
 body.dark-mode .track-dropdown-item.active {
-  background: rgba(10, 241, 107, 0.12);
-  color: #0af16b;
+  background: var(--mp-accent-soft);
+  color: var(--mp-accent-strong);
+  text-shadow: 0 0 6px var(--mp-accent-glow);
 }
 
 @media (max-width: 768px) {
