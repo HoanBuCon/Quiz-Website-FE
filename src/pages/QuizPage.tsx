@@ -3,6 +3,7 @@ import {
   FaRegEdit,
   FaRegHandPointer,
   FaSitemap,
+  FaRegClock,
 } from "react-icons/fa";
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ const QuizPage: React.FC = () => {
   const [quizTitle, setQuizTitle] = useState("");
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
   const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState<number>(0);
 
   // UI mode: 'default' (nộp bài mới xem kết quả) | 'instant' (xem kết quả ngay)
   const [uiMode, setUiMode] = useState<"default" | "instant">("default");
@@ -153,6 +155,16 @@ const QuizPage: React.FC = () => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Đồng hồ thời gian làm bài
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+    // cập nhật ngay lần đầu
+    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    return () => clearInterval(id);
+  }, [startTime]);
 
   // Xử lý khi người dùng chọn đáp án (cho single/multiple/text)
   const handleAnswerSelect = (
@@ -344,6 +356,14 @@ const QuizPage: React.FC = () => {
       return n;
     });
 
+  const formatElapsed = (sec: number) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  };
+
   const isTextAnswerCorrect = (q: Question, value: string) => {
     const ca = Array.isArray(q.correctAnswers)
       ? (q.correctAnswers as string[])
@@ -431,32 +451,31 @@ const QuizPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Header with title and submit button */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4 sm:gap-0">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {quizTitle}
-        </h1>
-        <button
-          onClick={handleSubmit}
-          className="btn-primary w-full sm:w-auto text-sm sm:text-base inline-flex items-center justify-center gap-2"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      {/* Top headers row: left = title+timer, right = submit button */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,20rem] gap-4 lg:gap-8 mb-4 sm:mb-6 items-stretch">
+        {/* Left header: Title + Timer */}
+        <div className="flex h-full flex-row items-center justify-between gap-2 min-w-0">
+          <h1 className="flex-1 min-w-0 truncate text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {quizTitle}
+          </h1>
+          <div className="flex items-center gap-2 px-3 rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 w-fit h-full self-stretch shrink-0 whitespace-nowrap">
+            <FaRegClock className="w-4 h-4 shrink-0" />
+            <span className="text-sm font-mono font-bold">{formatElapsed(elapsed)}</span>
+          </div>
+        </div>
+        {/* Right header: Submit button (no wrapper div) */}
+        <div className="flex w-full">
+          <button
+            onClick={handleSubmit}
+            className="btn-primary h-full w-full text-sm sm:text-base inline-flex items-center justify-center gap-2"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          <span>Nộp bài</span>
-        </button>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Nộp bài</span>
+          </button>
+        </div>
       </div>
-
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
         <div className="flex-1 min-w-0 order-2 lg:order-1">
