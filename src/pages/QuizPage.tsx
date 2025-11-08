@@ -1052,7 +1052,7 @@ const QuizPage: React.FC = () => {
                       index === currentQuestionIndex
                         ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                         : uiMode === "instant" && isQuestionWrong(question)
-                        ? "bg-rose-500 text-white font-medium border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
+                        ? "bg-rose-500 text-white font-medium border border-transparent shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-500 dark:border-rose-500"
                         : markedQuestions.includes(question.id)
                         ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
                         : isQuestionAnswered(question)
@@ -1608,7 +1608,7 @@ const DragDropQuestion: React.FC<{
                 reveal ? "cursor-default" : "cursor-move"
               } ${draggedItem === it.id ? "opacity-50 scale-95" : ""} ${
                 reveal && correctMapping[it.id]
-                  ? "bg-rose-500 border-rose-600 text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
+                  ? "bg-rose-500 border-transparent text-white dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500"
                   : "bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/20 hover:bg-yellow-600 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30"
               }`}
               onClick={() => assign(it.id, undefined)}
@@ -1703,9 +1703,9 @@ const DragDropQuestion: React.FC<{
                 const normal =
                   "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 hover:bg-primary-600 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60";
                 const ok =
-                  "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                  "bg-green-500 text-white border-transparent shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
                 const bad =
-                  "bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500";
+                  "bg-rose-500 text-white border-transparent shadow-md shadow-rose-500/20 dark:bg-rose-900/40 dark:text-rose-100 dark:border-rose-500";
                 return (
                   <button
                     key={it.id}
