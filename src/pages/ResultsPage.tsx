@@ -850,6 +850,12 @@ const ResultsPage: React.FC = () => {
       <div className="mt-8 text-center">
         <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
+            onClick={() => setShowExplanations(!showExplanations)}
+            className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
+          >
+            {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
+          </button>
+          <button
             onClick={() => navigate(`/quiz/${quizId}`)}
             className="btn-primary w-full inline-flex items-center justify-center"
           >
@@ -867,12 +873,6 @@ const ResultsPage: React.FC = () => {
           >
             Về trang chủ
           </Link>
-          <button
-            onClick={() => setShowExplanations(!showExplanations)}
-            className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
-          >
-            {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
-          </button>
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
