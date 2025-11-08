@@ -394,10 +394,6 @@ const ResultsPage: React.FC = () => {
         <div className="flex-1 min-w-0 order-2 lg:order-1">
           {/* Chi tiết từng câu hỏi */}
           <div className="space-y-6">
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            Chi tiết câu trả lời
-          </h3>
-
           {displayQuestions.map((q: any, qIndex: number) => {
           // Xử lý câu hỏi composite - hiển thị câu hỏi mẹ và các câu con
           if (q.type === "composite" && Array.isArray(q.subQuestions)) {
