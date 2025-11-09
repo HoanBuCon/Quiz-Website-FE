@@ -241,16 +241,22 @@ async function printFullUserInfo(user) {
             const totalTime = sessions.reduce((sum, s) => sum + s.timeSpent, 0);
             const times = sessions
                 .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
-                .map((s) => `→ ${s.completedAt?.toLocaleString() || "?"} (${s.timeSpent}s)`)
+                .map(
+                    (s, i) =>
+                        `#${i + 1} ${s.completedAt?.toLocaleString() || "?"} (${s.timeSpent}s) → ${((
+                            (s.score / s.totalQuestions) *
+                            100
+                        ).toFixed(2))}%`
+                )
                 .join("\n");
 
             return {
                 Quiz_ID: quizId,
                 Tiêu_đề: quizName,
                 Số_lần_làm: count,
-                "Điểm_trung_bình(%)": `${avgPercent}%`,
+                "Điểm_tb(%)": `${avgPercent}%`,
                 Tổng_thời_gian: `${totalTime}s`,
-                Thời_gian_hoàn_thành: `\n${times}`,
+                "Chi_tiết_từng_lần": `\n${times}`,
             };
         });
 
@@ -301,7 +307,8 @@ function formatFullUserText(user) {
             text += `  • ${quizName} [${quizId}]\n`;
             text += `    → Số lần làm: ${sessions.length}, Trung bình: ${avgPercent}%, Tổng thời gian: ${totalTime}s\n`;
             sessions.forEach((s, i) => {
-                text += `      #${i + 1} ${s.completedAt?.toLocaleString() || "?"} (${s.timeSpent}s)\n`;
+                const percent = ((s.score / s.totalQuestions) * 100).toFixed(2);
+                text += `      #${i + 1} ${s.completedAt?.toLocaleString() || "?"} (${s.timeSpent}s) → ${percent}%\n`;
             });
             text += "\n";
         }
