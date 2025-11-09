@@ -197,8 +197,30 @@
 
 /* Stabilize layout to avoid viewport width thrash at scrollbar show/hide */
 html, body {
-  /* Only reserve gutter when scrollbar actually appears */
+/* Only reserve gutter when scrollbar actually appears */
   scrollbar-gutter: auto;
+}
+
+/* Chat scrollbar - thinner and subtle */
+.chat-scroll, .input-scroll {
+  scrollbar-width: thin; /* Firefox */
+}
+.chat-scroll::-webkit-scrollbar,
+.input-scroll::-webkit-scrollbar {
+  width: 6px; /* thinner ~50% */
+}
+.chat-scroll::-webkit-scrollbar-track,
+.input-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb,
+.input-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.6); /* slate-500 */
+  border-radius: 9999px;
+}
+.chat-scroll:hover::-webkit-scrollbar-thumb,
+.input-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.8);
 }
 
 /* Import responsive styles */

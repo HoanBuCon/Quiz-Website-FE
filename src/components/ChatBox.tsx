@@ -21,8 +21,14 @@ const ChatBox: React.FC = () => {
   const [open, setOpen] = useState(false);
   const openRef = useRef<boolean>(false);
   useEffect(() => { openRef.current = open; }, [open]);
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('chat_unread_count') || '0') || 0; } catch { return 0; }
+  });
   const openChat = () => { if (!openRef.current) { setOpen(true); setUnread(0); } };
+  useEffect(() => {
+    try { localStorage.setItem('chat_unread_count', String(unread)); } catch {}
+    try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch {}
+  }, [unread]);
   const closeChat = () => { if (openRef.current) setOpen(false); };
   const toggleChat = () => setOpen((v) => { const nv = !v; if (nv) setUnread(0); return nv; });
 
@@ -31,6 +37,9 @@ const ChatBox: React.FC = () => {
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const PAGE_SIZE = 10;
+  const [hasMore, setHasMore] = useState(true);
+  const loadingOlderRef = useRef(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isMultiline, setIsMultiline] = useState(false);
@@ -105,19 +114,42 @@ const ChatBox: React.FC = () => {
   // Initial load flag
   const hasLoadedRef = useRef(false);
 
-  // Load history
-  const loadRecent = async () => {
+  // Load initial (latest PAGE_SIZE)
+  const loadInitial = async () => {
     if (!token) return;
     try {
-      const data = await ChatAPI.list({ limit: 50 }, token);
-      setMessages((prev) => mergeMessages(prev, data));
-      if (!hasLoadedRef.current) {
-        hasLoadedRef.current = true;
+      const data = await ChatAPI.list({ limit: PAGE_SIZE }, token);
+      setMessages(() => mergeMessages([], data));
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      hasLoadedRef.current = true;
+      requestAnimationFrame(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
+      });
+    } catch {}
+  };
+
+  // Load older messages before the earliest currently loaded
+  const loadOlder = async () => {
+    if (!token || loadingOlderRef.current || !hasMore) return;
+    const earliest = messages.length ? messages[0].createdAt : null;
+    if (!earliest) return;
+    loadingOlderRef.current = true;
+    const el = listRef.current;
+    const prevH = el?.scrollHeight || 0;
+    try {
+      const data = await ChatAPI.list({ limit: PAGE_SIZE, before: earliest }, token);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      if (data && data.length) {
+        setMessages((prev) => mergeMessages(data, prev));
         requestAnimationFrame(() => {
-          listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
+          const newH = el?.scrollHeight || 0;
+          if (el) el.scrollTop = newH - prevH;
         });
       }
     } catch {}
+    finally {
+      loadingOlderRef.current = false;
+    }
   };
 
   // Viewport tracking
@@ -228,11 +260,13 @@ const ChatBox: React.FC = () => {
     return () => { es.close(); esRef.current = null; };
   }, [token]);
 
-  // Open → load history and init input height
+  // Open → load initial PAGE_SIZE and init input height
   useEffect(() => {
     if (!open) return;
     hasLoadedRef.current = false;
-    loadRecent();
+    setMessages([]);
+    setHasMore(true);
+    loadInitial();
     requestAnimationFrame(() => { if (inputRef.current) autoResizeTextarea(inputRef.current); });
   }, [open]);
 
@@ -591,8 +625,12 @@ const ChatBox: React.FC = () => {
         {/* Messages */}
         <div 
           ref={listRef} 
-          className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 dark:bg-slate-800"
+          className="chat-scroll flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 dark:bg-slate-800"
           style={{ userSelect: 'text' }}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            if (el.scrollTop < 40) loadOlder();
+          }}
         >
           {messages.map((m) => {
             const mine = currentUserId === m.userId;
@@ -763,6 +801,7 @@ const ChatBox: React.FC = () => {
             <div className={`flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 ${isMultiline ? 'rounded-xl' : 'rounded-full'} px-4 py-2 border border-slate-200 dark:border-slate-700`}>
               <textarea
                 ref={inputRef}
+                className="input-scroll flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none"
                 value={input}
                 onChange={(e) => { setInput(e.target.value); autoResizeTextarea(e.currentTarget); }}
                 onKeyDown={async (e) => {
@@ -780,7 +819,6 @@ const ChatBox: React.FC = () => {
                 maxLength={2000}
                 enterKeyHint={isMobile ? 'enter' : 'send'}
                 placeholder="Aa"
-                className="flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none"
                 style={{ height: 'auto', overflowY: 'hidden' }}
               />
               <label className="cursor-pointer text-primary-600 hover:text-primary-700 dark:text-primary-400">

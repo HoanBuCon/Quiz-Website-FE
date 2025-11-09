@@ -18,6 +18,22 @@ import { toast } from "react-hot-toast";
 
 // Component Header chính của website
 const Header: React.FC = () => {
+  const [chatUnread, setChatUnread] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('chat_unread_count') || '0') || 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    const readUnread = () => {
+      try { setChatUnread(parseInt(localStorage.getItem('chat_unread_count') || '0') || 0); } catch { setChatUnread(0); }
+    };
+    const onStorage = (e: StorageEvent) => { if (!e.key || e.key === 'chat_unread_count') readUnread(); };
+    const onCustom = () => readUnread();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('chat:unread', onCustom as any);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('chat:unread', onCustom as any);
+    };
+  }, []);
   const { isDarkMode, toggleTheme } = useTheme();
   const { showMusicPlayer, toggleMusicPlayer, isPlaying } = useMusic();
   const location = useLocation();
@@ -477,12 +493,19 @@ const Header: React.FC = () => {
                 window.dispatchEvent(new Event("chat:open"));
                 setIsMobileMenuOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
-              </svg>
-              <span>Chat</span>
+              <span className="flex items-center gap-3">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
+                </svg>
+                <span>Chat</span>
+              </span>
+              {chatUnread > 0 && (
+                <span className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">
+                  {chatUnread > 99 ? '99+' : chatUnread}
+                </span>
+              )}
             </button>
 
             {/* Mobile Auth Links */}
