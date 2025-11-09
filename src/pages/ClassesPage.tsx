@@ -797,8 +797,9 @@ const ClassesPage: React.FC = () => {
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
-                  overflow-hidden group
+                  overflow-hidden group isolate
                 "
+                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
               >
                 {/* Overlay pattern: vân chéo */}
                 <div
@@ -846,8 +847,9 @@ const ClassesPage: React.FC = () => {
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
-                  overflow-hidden group
+                  overflow-hidden group isolate
                 "
+                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
               >
                 <div
                   className="
@@ -893,8 +895,9 @@ const ClassesPage: React.FC = () => {
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
-                  overflow-hidden group
+                  overflow-hidden group isolate
                 "
+                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
               >
                 <div
                   className="
@@ -937,8 +940,9 @@ const ClassesPage: React.FC = () => {
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
-                  overflow-hidden group
+                  overflow-hidden group isolate
                 "
+                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
               >
                 <div
                   className="
