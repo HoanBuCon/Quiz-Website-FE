@@ -195,6 +195,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Stabilize layout to avoid viewport width thrash at scrollbar show/hide */
+html, body {
+  scrollbar-gutter: stable both-edges;
+}
+
 /* Import responsive styles */
 @import './styles/responsive.css';
 

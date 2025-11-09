@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getToken } from "../utils/auth";
 import { ChatAPI, getApiBaseUrl } from "../utils/api";
 
@@ -14,17 +15,23 @@ interface ChatMessage {
 
 const ChatBox: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const openRef = useRef<boolean>(false);
+  useEffect(() => { openRef.current = open; }, [open]);
+  const openChat = () => { if (!openRef.current) setOpen(true); };
+  const closeChat = () => { if (openRef.current) setOpen(false); };
+  const toggleChat = () => setOpen((v) => !v);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const esRef = useRef<EventSource | null>(null);
 
   // Event-based open/close so Header can trigger
   useEffect(() => {
-    const handleChatOpen: EventListener = () => setOpen(true);
-    const handleChatClose: EventListener = () => setOpen(false);
-    const handleChatToggle: EventListener = () => setOpen((v) => !v);
+    const handleChatOpen: EventListener = () => openChat();
+    const handleChatClose: EventListener = () => closeChat();
+    const handleChatToggle: EventListener = () => toggleChat();
 
     window.addEventListener("chat:open", handleChatOpen);
     window.addEventListener("chat:close", handleChatClose);
@@ -37,7 +44,7 @@ const ChatBox: React.FC = () => {
     };
   }, []);
 
-  const token = useMemo(() => getToken(), [open]);
+  const token = useMemo(() => getToken(), []);
   const currentUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -48,46 +55,71 @@ const ChatBox: React.FC = () => {
     }
   }, [token]);
 
+  // Merge helper to avoid flicker (do not replace entire list)
+  const mergeMessages = (prev: ChatMessage[], incoming: ChatMessage[]) => {
+    const map = new Map<string, ChatMessage>();
+    for (const m of prev) map.set(m.id, m);
+    for (const m of incoming) map.set(m.id, m);
+    return Array.from(map.values()).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  };
+
+  // Flag to track if we've done initial load
+  const hasLoadedRef = useRef(false);
+
   async function loadRecent() {
     if (!token) return;
     try {
       const data = await ChatAPI.list({ limit: 50 }, token);
-      setMessages(data);
-      // Scroll to bottom
-      requestAnimationFrame(() => {
-        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
-      });
+      setMessages((prev) => mergeMessages(prev, data));
+      // Scroll to bottom on initial load only
+      if (!hasLoadedRef.current) {
+        hasLoadedRef.current = true;
+        requestAnimationFrame(() => {
+          listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
+        });
+      }
     } catch (e) {
       // no-op
     }
   }
 
   useEffect(() => {
-    if (!open) return;
-    let es: EventSource | null = null;
+    if (!open || !token) return;
+    
     (async () => {
       await loadRecent();
-      if (token) {
+      
+      // Setup EventSource only once
+      if (!esRef.current) {
         const url = `${getApiBaseUrl()}/chat/stream?token=${encodeURIComponent(token)}`;
-        es = new EventSource(url);
+        const es = new EventSource(url);
         es.addEventListener("message", (ev) => {
           try {
             const msg = JSON.parse((ev as MessageEvent).data);
-            setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-            requestAnimationFrame(() => {
-              listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-            });
+            setMessages((prev) => mergeMessages(prev, [msg]));
+            // Only smooth scroll for new messages, debounced
+            setTimeout(() => {
+              if (listRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+                const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+                if (isNearBottom) {
+                  listRef.current.scrollTo({ top: scrollHeight, behavior: "smooth" });
+                }
+              }
+            }, 50);
           } catch {}
         });
+        esRef.current = es;
       }
     })();
+    
     return () => {
-      if (es) {
-        es.close();
-        es = null;
+      // Cleanup when closing chat
+      if (!open && esRef.current) {
+        esRef.current.close();
+        esRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, token]);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -181,101 +213,109 @@ const ChatBox: React.FC = () => {
     );
   };
 
-  return (
+  const panel = (
     <>
-      {/* Desktop floating button (>=1024px) */}
+      {/* Desktop floating button (always fixed, independent of breakpoint) */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="hidden nav:flex fixed left-4 bottom-4 z-40 items-center justify-center w-14 h-14 rounded-full shadow-lg bg-primary-600 text-white hover:bg-primary-700 focus:outline-none"
+        onClick={toggleChat}
+        className="fixed left-4 bottom-4 z-[60] hidden md:flex items-center justify-center w-14 h-14 rounded-full shadow-lg bg-primary-600 text-white hover:bg-primary-700 focus:outline-none"
         aria-label="Mở chat"
       >
-        {/* Chat icon */}
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
           <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
         </svg>
       </button>
 
-      {/* Panel */}
-      {open && (
-        <div className="fixed z-50 left-4 bottom-20 nav:left-4 nav:bottom-4 nav:w-[380px] w-[calc(100vw-1rem)] right-2 nav:right-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2 bg-primary-600 text-white">
-            <div className="font-semibold">Chat box</div>
-            <button onClick={() => setOpen(false)} aria-label="Đóng">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+      {/* Panel (always mounted, portal to body to avoid parent reflows) */}
+      <div
+        className={`fixed z-[55] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden ${
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{
+          transition: 'opacity 150ms ease-in-out',
+          left: '1rem',
+          bottom: '1rem',
+          width: 'min(380px, calc(100vw - 1rem))'
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2 bg-primary-600 text-white">
+          <div className="font-semibold">Chat box</div>
+          <button onClick={closeChat} aria-label="Đóng">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div ref={listRef} className="max-h-80 overflow-y-auto p-3 space-y-3 bg-slate-50 dark:bg-slate-900">
+          {messages.map((m) => (
+            <div key={m.id} className="bg-white dark:bg-slate-800 rounded-lg p-2 shadow border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">
+                  {m.user?.name || m.user?.email?.split("@")[0] || "Người dùng"}
+                </div>
+                <div className="text-xs text-slate-400">{new Date(m.createdAt).toLocaleString()}</div>
+              </div>
+              {m.content && <div className="text-sm whitespace-pre-wrap break-words mb-1">{m.content}</div>}
+              {renderAttachment(m)}
+              {token && currentUserId === m.userId && (
+                <div className="mt-1 text-right">
+                  <button
+                    onClick={() => handleDelete(m.id)}
+                    className="text-xs text-red-600 hover:underline"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {messages.length === 0 && (
+            <div className="text-center text-sm text-slate-500">Chưa có tin nhắn</div>
+          )}
+        </div>
+
+        {/* Input */}
+        <form onSubmit={handleSend} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="flex items-center gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Nhập tin nhắn..."
+              className="flex-1 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <label className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm">
+              Tệp
+              <input
+                type="file"
+                hidden
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50"
+            >
+              Gửi
             </button>
           </div>
-
-          {/* Messages */}
-          <div ref={listRef} className="max-h-80 overflow-y-auto p-3 space-y-3 bg-slate-50 dark:bg-slate-900">
-            {messages.map((m) => (
-              <div key={m.id} className="bg-white dark:bg-slate-800 rounded-lg p-2 shadow border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">
-                    {m.user?.name || m.user?.email?.split("@")[0] || "Người dùng"}
-                  </div>
-                  <div className="text-xs text-slate-400">{new Date(m.createdAt).toLocaleString()}</div>
-                </div>
-                {m.content && <div className="text-sm whitespace-pre-wrap break-words mb-1">{m.content}</div>}
-                {renderAttachment(m)}
-                {/* Delete (only for own messages) */}
-                {token && currentUserId === m.userId && (
-                  <div className="mt-1 text-right">
-                    <button
-                      onClick={() => handleDelete(m.id)}
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-            {messages.length === 0 && (
-              <div className="text-center text-sm text-slate-500">Chưa có tin nhắn</div>
-            )}
-          </div>
-
-          {/* Input */}
-          <form onSubmit={handleSend} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <div className="flex items-center gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Nhập tin nhắn..."
-                className="flex-1 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <label className="cursor-pointer inline-flex items-center justify-center px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm">
-                Tệp
-                <input
-                  type="file"
-                  hidden
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-3 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 disabled:opacity-50"
-              >
-                Gửi
+          {file && (
+            <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
+              <span className="truncate max-w-[70%]">{file.name}</span>
+              <button type="button" className="text-red-600" onClick={() => setFile(null)}>
+                Bỏ chọn
               </button>
             </div>
-            {file && (
-              <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
-                <span className="truncate max-w-[70%]">{file.name}</span>
-                <button type="button" className="text-red-600" onClick={() => setFile(null)}>
-                  Bỏ chọn
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-      )}
+          )}
+        </form>
+      </div>
     </>
   );
+
+  return createPortal(panel, document.body);
 };
 
-export default ChatBox;
+export default React.memo(ChatBox);
