@@ -471,6 +471,20 @@ const Header: React.FC = () => {
               );
             })}
 
+            {/* Chat open button (mobile) */}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new Event("chat:open"));
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
+              </svg>
+              <span>Chat</span>
+            </button>
+
             {/* Mobile Auth Links */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4">
               {isLoggedIn ? (

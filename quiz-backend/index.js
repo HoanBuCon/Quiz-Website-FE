@@ -93,7 +93,10 @@ const prisma = new PrismaClient();
 // ====== Express app setup ======
 const app = express();
 app.set('trust proxy', 1);
-app.use(helmet());
+app.use(helmet({
+  // Allow embedding static resources (images/videos) from different origin (e.g. :3000 frontend)
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
@@ -138,8 +141,24 @@ if (!fs.existsSync(uploadPath)) {
   console.log(`Created upload directory: ${uploadPath}`);
 }
 
-// Serve uploads under BASE_PATH
-app.use(`${BASE_PATH}/uploads`, express.static(uploadPath));
+// Chatbox uploads path (separate root per requirement)
+const chatUploadPath = isProd
+  ? path.join(__dirname, '../../public_html/chatbox/uploads')
+  : path.join(__dirname, 'public/chatbox/uploads');
+if (!fs.existsSync(chatUploadPath)) {
+  fs.mkdirSync(chatUploadPath, { recursive: true });
+  console.log(`Created chat upload directory: ${chatUploadPath}`);
+}
+
+// Serve uploads under BASE_PATH (dev). In production, Apache serves /uploads and /chatbox/uploads.
+app.use(`${BASE_PATH}/uploads`, (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(uploadPath));
+app.use(`${BASE_PATH}/chatbox/uploads`, (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(chatUploadPath));
 
 // ====== Health check ======
 app.get(`${BASE_PATH}/health`, (_req, res) => {
@@ -160,6 +179,7 @@ const sessionsRouter = require('./routes/sessions');
 const filesRouter = require('./routes/files');
 const visibilityRouter = require('./routes/visibility');
 const imagesRouter = require('./routes/images');
+const chatRouter = require('./routes/chat');
 
 // ====== Mount routers ======
 console.log(`Mounting routers at: ${BASE_PATH || '(root)'}`);
@@ -170,6 +190,7 @@ app.use(`${BASE_PATH}/sessions`, sessionsRouter);
 app.use(`${BASE_PATH}/files`, filesRouter);
 app.use(`${BASE_PATH}/visibility`, visibilityRouter);
 app.use(`${BASE_PATH}/images`, imagesRouter);
+app.use(`${BASE_PATH}/chat`, chatRouter);
 
 // ====== 404 handler ======
 app.use((req, res) => {
@@ -177,7 +198,7 @@ app.use((req, res) => {
     message: 'Not Found',
     path: req.path,
     method: req.method,
-    availablePaths: [
+availablePaths: [
       `${BASE_PATH}/health`,
       `${BASE_PATH}/auth/*`,
       `${BASE_PATH}/classes/*`,
@@ -186,6 +207,9 @@ app.use((req, res) => {
       `${BASE_PATH}/files/*`,
       `${BASE_PATH}/visibility/*`,
       `${BASE_PATH}/images/*`,
+      `${BASE_PATH}/chat/*`,
+      `${BASE_PATH}/uploads/*`,
+      `${BASE_PATH}/chatbox/uploads/*`,
     ],
   });
 });

@@ -21,6 +21,7 @@ model User {
   sharedItems    ShareItem[]
   sharedAccesses SharedAccess[]
   files          UploadedFile[]
+  messages       ChatMessage[]
 }
 
 model Class {
@@ -146,6 +147,22 @@ enum TargetType {
 enum AccessLevel {
   full
   navigationOnly
+}
+
+enum ChatAttachmentType {
+  image
+  video
+  file
+}
+
+model ChatMessage {
+  id             String              @id @default(cuid())
+  userId         String
+  content        String?
+  attachmentUrl  String?
+  attachmentType ChatAttachmentType?
+  createdAt      DateTime            @default(now())
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordReset {

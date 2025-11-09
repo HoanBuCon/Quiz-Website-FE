@@ -247,6 +247,36 @@ export const FilesAPI = {
     apiRequest<void>(`/files/${id}`, { method: "DELETE", token }),
 };
 
+// Chat API
+export const ChatAPI = {
+  list: (params: { limit?: number; before?: string }, token: string) => {
+    const q = new URLSearchParams();
+    if (params.limit) q.set("limit", String(params.limit));
+    if (params.before) q.set("before", params.before);
+    return apiRequest<any[]>(`/chat/messages${q.toString() ? `?${q.toString()}` : ""}`, { token });
+  },
+  send: async (
+    { content, file }: { content?: string; file?: File },
+    token: string
+  ) => {
+    const form = new FormData();
+    if (content) form.append("content", content);
+    if (file) form.append("attachment", file);
+    const res = await fetch(`${API_BASE_URL}/chat/messages`, {
+      method: "POST",
+      headers: token ? ({ Authorization: `Bearer ${token}` } as any) : undefined,
+      body: form,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Request failed: ${res.status}`);
+    }
+    return await res.json();
+  },
+  remove: (id: string, token: string) =>
+    apiRequest<void>(`/chat/messages/${id}`, { method: "DELETE", token }),
+};
+
 export const AuthAPI = {
   me: (token: string) =>
     apiRequest<{ user: { id: string; email: string; name: string } }>(
