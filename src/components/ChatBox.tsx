@@ -276,14 +276,16 @@ const ChatBox: React.FC = () => {
             }
           }, 50);
         } else {
-          // Increment local counter when chat is closed
-          setUnread((n) => Math.min(999, n + 1));
+          // Increment local counter when chat is closed, but only for messages from others
+          if (msg.userId !== currentUserId) {
+            setUnread((n) => Math.min(999, n + 1));
+          }
         }
       } catch {}
     });
     esRef.current = es;
     return () => { es.close(); esRef.current = null; };
-  }, [token]);
+  }, [token, currentUserId]);
 
   // Open → load initial PAGE_SIZE and init input height
   useEffect(() => {
@@ -741,7 +743,7 @@ const ChatBox: React.FC = () => {
 
                     {/* User name (for others' messages) */}
                     {!mine && (
-                      <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">
+                      <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-3">
                         {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
                       </div>
                     )}

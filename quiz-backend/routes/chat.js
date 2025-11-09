@@ -88,13 +88,14 @@ router.get('/unread-count', authRequired, async (req, res) => {
       where: { userId },
     });
     
-    // If no read status, count all messages
+    // If no read status, count all messages from others
     const lastReadAt = readStatus?.lastReadAt || new Date(0);
     
-    // Count messages created after lastReadAt
+    // Count messages created after lastReadAt, excluding user's own messages
     const count = await prisma.chatMessage.count({
       where: {
         createdAt: { gt: lastReadAt },
+        userId: { not: userId }, // Exclude own messages
       },
     });
     
