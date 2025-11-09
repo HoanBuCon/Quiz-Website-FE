@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getToken } from "../utils/auth";
 import { ChatAPI, getApiBaseUrl } from "../utils/api";
-import { FiPaperclip, FiSend } from "react-icons/fi";
+import { FiPaperclip, FiSend, FiTrash2, FiEyeOff } from "react-icons/fi";
 
 interface ChatMessage {
   id: string;
@@ -12,6 +12,8 @@ interface ChatMessage {
   attachmentType?: "image" | "video" | "file" | null;
   createdAt: string;
   user?: { id: string; name?: string | null; email: string };
+  replyTo?: string | null;
+  hidden?: boolean;
 }
 
 const ChatBox: React.FC = () => {
@@ -29,8 +31,28 @@ const ChatBox: React.FC = () => {
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const esRef = useRef<EventSource | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Load hidden messages from localStorage
+  const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('chat_hidden_messages');
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch {}
+    return new Set();
+  });
+  // Persist hidden messages to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('chat_hidden_messages', JSON.stringify(Array.from(hiddenMessages)));
+    } catch {}
+  }, [hiddenMessages]);
 
   // Header event integration
   useEffect(() => {
@@ -45,6 +67,17 @@ const ChatBox: React.FC = () => {
       window.removeEventListener("chat:close", handleChatClose);
       window.removeEventListener("chat:toggle", handleChatToggle);
     };
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Auth
@@ -88,6 +121,7 @@ const ChatBox: React.FC = () => {
   // Viewport tracking
   const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1200));
   const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 800));
+  const isMobile = vw < 1024;
   
   useEffect(() => {
     const onResize = () => { 
@@ -98,16 +132,16 @@ const ChatBox: React.FC = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Button and Panel position (linked together)
-  const btnSize = 56;
+  // Button and Panel position
+  const btnSize = isMobile ? 56 : 60;
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-  const panelWidth = Math.min(380, vw - 16);
-  const panelHeight = 500;
-  const gap = 16; // Gap between button and panel
+  const panelWidth = isMobile ? Math.min(vw - 16, 400) : 500;
+  const panelHeight = isMobile ? vh - 80 : Math.min(650, vh - 100);
+  const gap = 16;
   
   const getDefaultBtnPos = (viewportWidth: number, viewportHeight: number) => ({
-    x: viewportWidth - btnSize - 24,  // Right side with padding
-    y: viewportHeight - btnSize - 100  // Bottom with padding
+    x: viewportWidth - btnSize - 24,
+    y: viewportHeight - btnSize - 24
   });
 
   const readBtnPos = (viewportWidth: number, viewportHeight: number) => {
@@ -128,12 +162,11 @@ const ChatBox: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    // Clamp to keep button within viewport bounds
     setBtnPos(p => ({ 
       x: clamp(p.x, 8, vw - btnSize - 8), 
       y: clamp(p.y, 8, vh - btnSize - 8) 
     }));
-  }, [vw, vh]);
+  }, [vw, vh, btnSize]);
 
   const persistBtnPos = (p: { x: number; y: number }) => {
     try { 
@@ -141,18 +174,22 @@ const ChatBox: React.FC = () => {
     } catch {}
   };
 
-  // Calculate panel position based on button position
+  // Calculate panel position
   const getPanelPos = () => {
-    // Panel appears to the right of button
+    if (isMobile) {
+      return { 
+        x: (vw - panelWidth) / 2, 
+        y: 40 
+      };
+    }
+
     let panelX = btnPos.x + btnSize + gap;
     let panelY = btnPos.y;
 
-    // If panel would overflow right edge, show it to the left of button
     if (panelX + panelWidth > vw - 8) {
       panelX = btnPos.x - panelWidth - gap;
     }
 
-    // Clamp panel Y to viewport
     panelY = clamp(panelY, 8, vh - panelHeight - 8);
 
     return { x: panelX, y: panelY };
@@ -204,7 +241,7 @@ const ChatBox: React.FC = () => {
       setLoading(true);
       await ChatAPI.send({ 
         content: input.trim() || undefined, 
-        file: file || undefined 
+        file: file || undefined
       }, token);
       setInput("");
       setFile(null);
@@ -222,7 +259,42 @@ const ChatBox: React.FC = () => {
     try { 
       await ChatAPI.remove(id, token); 
       setMessages((prev) => prev.filter((m) => m.id !== id)); 
+      setActiveMenu(null);
     } catch {}
+  };
+
+  // Hide message
+  const handleHide = (id: string) => {
+    setHiddenMessages(prev => {
+      const newSet = new Set(prev);
+      newSet.add(id);
+      return newSet;
+    });
+    setActiveMenu(null);
+  };
+
+  // Unhide message
+  const handleUnhide = (id: string) => {
+    setHiddenMessages(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  // Long press handlers for mobile
+  const handleLongPressStart = (msgId: string) => {
+    const timer = setTimeout(() => {
+      setActiveMenu(msgId);
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
   };
 
   const renderAttachment = (m: ChatMessage) => {
@@ -239,7 +311,7 @@ const ChatBox: React.FC = () => {
           <img
             src={primaryUrl}
             alt="attachment"
-            className="max-h-48 rounded-md"
+            className="max-h-48 rounded-lg"
             onError={(e) => {
               const img = e.currentTarget as HTMLImageElement;
               if (img.src !== fallbackUrl) img.src = fallbackUrl;
@@ -250,7 +322,7 @@ const ChatBox: React.FC = () => {
     }
     if (m.attachmentType === "video") {
       return (
-        <video controls preload="metadata" className="max-h-60 rounded-md bg-black/10">
+        <video controls preload="metadata" className="max-h-60 rounded-lg bg-black/10">
           <source
             src={primaryUrl}
             onError={(e) => {
@@ -282,56 +354,17 @@ const ChatBox: React.FC = () => {
     );
   };
 
-  // Drag handlers (both button and panel move together)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Drag handlers - unified for both button and panel
+  const startDrag = (startX: number, startY: number) => {
     setIsDragging(true);
-    const startX = e.clientX;
-    const startY = e.clientY;
     const sx = btnPos.x;
     const sy = btnPos.y;
     let hasMoved = false;
 
-    const onMove = (ev: MouseEvent) => {
+    const onMove = (clientX: number, clientY: number) => {
       hasMoved = true;
-      const nx = clamp(sx + (ev.clientX - startX), 8, vw - btnSize - 8);
-      const ny = clamp(sy + (ev.clientY - startY), 8, vh - btnSize - 8);
-      setBtnPos({ x: nx, y: ny });
-    };
-
-    const onUp = () => {
-      setIsDragging(false);
-      if (hasMoved) {
-        persistBtnPos(btnPos);
-      } else {
-        // Click without drag - toggle chat
-        toggleChat();
-      }
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    setIsDragging(true);
-    const t = e.touches[0];
-    const startX = t.clientX;
-    const startY = t.clientY;
-    const sx = btnPos.x;
-    const sy = btnPos.y;
-    let hasMoved = false;
-
-    const onMove = (ev: TouchEvent) => {
-      const tt = ev.touches[0];
-      if (!tt) return;
-      hasMoved = true;
-      const nx = clamp(sx + (tt.clientX - startX), 8, vw - btnSize - 8);
-      const ny = clamp(sy + (tt.clientY - startY), 8, vh - btnSize - 8);
+      const nx = clamp(sx + (clientX - startX), 8, vw - btnSize - 8);
+      const ny = clamp(sy + (clientY - startY), 8, vh - btnSize - 8);
       setBtnPos({ x: nx, y: ny });
     };
 
@@ -339,173 +372,372 @@ const ChatBox: React.FC = () => {
       setIsDragging(false);
       if (hasMoved) {
         persistBtnPos(btnPos);
-      } else {
+      } else if (!open) {
         toggleChat();
       }
-      window.removeEventListener('touchmove', onMove);
-      window.removeEventListener('touchend', onEnd);
     };
 
-    window.addEventListener('touchmove', onMove);
-    window.addEventListener('touchend', onEnd);
+    return { onMove, onEnd };
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) {
+      if (!open) toggleChat();
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const { onMove, onEnd } = startDrag(e.clientX, e.clientY);
+
+    const mouseMoveHandler = (ev: MouseEvent) => onMove(ev.clientX, ev.clientY);
+    const mouseUpHandler = () => {
+      onEnd();
+      window.removeEventListener('mousemove', mouseMoveHandler);
+      window.removeEventListener('mouseup', mouseUpHandler);
+    };
+
+    window.addEventListener('mousemove', mouseMoveHandler);
+    window.addEventListener('mouseup', mouseUpHandler);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobile) {
+      if (!open) toggleChat();
+      return;
+    }
+    e.stopPropagation();
+    
+    const t = e.touches[0];
+    const { onMove, onEnd } = startDrag(t.clientX, t.clientY);
+
+    const touchMoveHandler = (ev: TouchEvent) => {
+      const tt = ev.touches[0];
+      if (tt) onMove(tt.clientX, tt.clientY);
+    };
+
+    const touchEndHandler = () => {
+      onEnd();
+      window.removeEventListener('touchmove', touchMoveHandler);
+      window.removeEventListener('touchend', touchEndHandler);
+    };
+
+    window.addEventListener('touchmove', touchMoveHandler);
+    window.addEventListener('touchend', touchEndHandler);
+  };
+
+  // Panel drag handlers
+  const handlePanelMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    // Only allow dragging from header
+    const target = e.target as HTMLElement;
+    if (!target.closest('.chat-panel-header')) return;
+    
+    handleMouseDown(e);
+  };
+
+  const handlePanelTouchStart = (e: React.TouchEvent) => {
+    if (isMobile) return;
+    const target = e.target as HTMLElement;
+    if (!target.closest('.chat-panel-header')) return;
+    
+    handleTouchStart(e);
   };
 
   const panelPos = getPanelPos();
 
   const panel = (
     <>
-      {/* Floating button - draggable */}
-      <button
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        className={`hidden md:flex items-center justify-center w-14 h-14 rounded-full shadow-lg bg-primary-600 text-white hover:bg-primary-700 focus:outline-none ${
-          isDragging ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
-        aria-label="Mở chat"
-        style={{ 
-          position: 'fixed',
-          left: `${btnPos.x}px`, 
-          top: `${btnPos.y}px`,
-          zIndex: 9999,
-          touchAction: 'none'
-        }}
-      >
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
+      {/* Backdrop for mobile */}
+      {isMobile && open && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9997]"
+          onClick={closeChat}
+        />
+      )}
+
+      {/* Floating button (hidden when panel open) */}
+      {!open && (
+        <button
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none transition-all ${
+            isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110'
+          } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
+          aria-label="Mở chat"
+          style={{ 
+            position: 'fixed',
+            left: `${btnPos.x}px`, 
+            top: `${btnPos.y}px`,
+            zIndex: 9999,
+            touchAction: 'none',
+            userSelect: 'none'
+          }}
+        >
+        <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
         </svg>
         {unread > 0 && (
           <span 
-            className="min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shadow-md"
+            className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
             style={{
               position: 'absolute',
-              top: '-4px',
-              right: '-4px'
+              top: '-6px',
+              right: '-6px'
             }}
           >
             {unread > 99 ? '99+' : unread}
           </span>
         )}
       </button>
+      )}
 
-      {/* Chat Panel - linked to button */}
+      {/* Chat Panel */}
       <div
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden ${
+        onMouseDown={handlePanelMouseDown}
+        onTouchStart={handlePanelTouchStart}
+        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
         style={{
           position: 'fixed',
-          transition: isDragging ? 'none' : 'opacity 150ms ease-in-out',
+          transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
+          transform: open ? 'scale(1)' : 'scale(0.95)',
           left: `${panelPos.x}px`,
           top: `${panelPos.y}px`,
           width: `${panelWidth}px`,
+          height: `${panelHeight}px`,
           zIndex: 9998,
-          touchAction: 'none'
+          touchAction: 'none',
+          userSelect: 'none'
         }}
       >
-        {/* Header - draggable handle */}
-        <div 
-          className={`chat-panel-header flex items-center justify-between px-4 py-2 bg-primary-600 text-white ${
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
-        >
-          <div className="font-semibold select-none">Chat box</div>
+        {/* Header - Draggable area */}
+        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md ${
+          !isMobile && 'cursor-grab active:cursor-grabbing'
+        }`}>
+          <div className="flex items-center gap-3 pointer-events-none">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-base">Chat Box</div>
+              <div className="text-xs text-white/80">Đang hoạt động</div>
+            </div>
+          </div>
           <button 
             onClick={closeChat} 
             aria-label="Đóng"
-            className="hover:bg-primary-700 rounded p-1"
+            className="hover:bg-white/10 rounded-full p-2 transition-colors pointer-events-auto"
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M6 6l12 12M18 6L6 18" strokeWidth="2" strokeLinecap="round" />
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>
         </div>
 
         {/* Messages */}
-        <div ref={listRef} className="h-80 overflow-y-auto p-3 space-y-3 bg-slate-50 dark:bg-slate-900">
+        <div 
+          ref={listRef} 
+          className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 dark:bg-slate-800"
+          style={{ userSelect: 'text' }}
+        >
           {messages.map((m) => {
             const mine = currentUserId === m.userId;
+            
             return (
-              <div key={m.id} className={`w-full flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <div 
-                  className={`max-w-[80%] rounded-2xl shadow border ${
-                    mine 
-                      ? 'bg-primary-600 text-white border-primary-700/40 rounded-tr-sm' 
-                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-200 border-slate-200 dark:border-slate-700 rounded-tl-sm'
-                  } p-2`}
-                >
-                  <div className="flex items-center justify-between gap-3 mb-1">
-                    <div className={`text-[12px] font-medium ${mine ? 'text-white/80' : 'text-slate-600 dark:text-slate-300'}`}>
-                      {m.user?.name || m.user?.email?.split("@")[0] || (mine ? 'Bạn' : 'Người dùng')}
+              <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}>
+                <div className="relative max-w-[75%]">
+                  {/* Desktop hover menu - Horizontal with proper positioning */}
+                  {!isMobile && (
+                    <div 
+                      className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
+                        mine ? '-left-10' : '-right-10'
+                      }`}
+                    >
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
+                          className="p-1.5 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
+                        >
+                          <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"/>
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="19" r="2"/>
+                          </svg>
+                        </button>
+                        
+                        {/* Action menu - positioned next to button */}
+                        {activeMenu === m.id && (
+                          <div 
+                            ref={menuRef}
+                            className={`absolute top-1/2 -translate-y-1/2 ${
+                              mine ? 'right-full mr-2' : 'left-full ml-2'
+                            } bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                          >
+                            {mine ? (
+                              <button
+                                onClick={() => handleDelete(m.id)}
+                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                                title="Xóa"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                                <span>Xóa</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                                title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                              >
+                                <FiEyeOff className="w-4 h-4" />
+                                <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className={`text-[10px] ${mine ? 'text-white/70' : 'text-slate-400'}`}>
-                      {new Date(m.createdAt).toLocaleTimeString()}
+                  )}
+
+                  {/* Message bubble */}
+                  <div
+                    onTouchStart={() => handleLongPressStart(m.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onTouchMove={handleLongPressEnd}
+                    className={`rounded-2xl shadow-sm ${
+                      mine 
+                        ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-md' 
+                        : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-bl-md'
+                    } px-3 py-2 ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
+                  >
+                    {/* Hidden overlay */}
+                    {hiddenMessages.has(m.id) && (
+                      <div
+                        onClick={() => handleUnhide(m.id)}
+                        className={`absolute inset-0 ${mine ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md'} bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-white/40 dark:border-white/10 flex items-center justify-center cursor-pointer select-none`}
+                        title="Nhấn để hiện lại"
+                        role="button"
+                      >
+                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 text-xs font-medium">
+                          <FiEyeOff className="w-4 h-4" />
+                          <span>Tin nhắn đã ẩn — Nhấn để hiện lại</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* User name (for others' messages) */}
+                    {!mine && (
+                      <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-1">
+                        {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
+                      </div>
+                    )}
+
+                    {/* Message content */}
+                    {m.content && (
+                      <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
+                    )}
+                    
+                    {/* Attachment */}
+                    {renderAttachment(m)}
+
+                    {/* Timestamp */}
+                    <div className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-slate-400'}`}>
+                      {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  {m.content && (
-                    <div className="text-sm whitespace-pre-wrap break-words mb-1">{m.content}</div>
-                  )}
-                  {renderAttachment(m)}
-                  {mine && (
-                    <div className="mt-1 text-right">
-                      <button
-                        onClick={() => handleDelete(m.id)}
-                        className="text-[10px] underline text-white/80 hover:text-white"
-                      >
-                        Xóa
-                      </button>
+
+                  {/* Mobile long press menu */}
+                  {isMobile && activeMenu === m.id && (
+                    <div 
+                      ref={menuRef}
+                      className={`absolute ${mine ? 'right-0' : 'left-0'} mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                    >
+                      {mine ? (
+                        <button
+                          onClick={() => handleDelete(m.id)}
+                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                          title="Xóa"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                          <span>Xóa</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                          title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                        >
+                          <FiEyeOff className="w-4 h-4" />
+                          <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             );
           })}
-          {messages.length === 0 && (
-            <div className="text-center text-sm text-slate-500">Chưa có tin nhắn</div>
+          {messages.filter(m => !hiddenMessages.has(m.id)).length === 0 && (
+            <div className="text-center text-sm text-slate-400 py-8">
+              <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </svg>
+              Chưa có tin nhắn
+            </div>
           )}
+
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSend} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <div className="flex items-center gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Nhập tin nhắn..."
-              className="flex-1 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <label 
-              className="cursor-pointer inline-flex items-center justify-center p-2 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" 
-              title="Đính kèm tệp"
-            >
-              <FiPaperclip className="w-5 h-5" />
+        <form 
+          onSubmit={handleSend} 
+          className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+          style={{ userSelect: 'text' }}
+        >
+          {file && (
+            <div className="mb-2 flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
+              <span className="text-xs text-slate-600 dark:text-slate-300 truncate flex-1">{file.name}</span>
+              <button 
+                type="button" 
+                onClick={() => setFile(null)}
+                className="ml-2 text-red-600 hover:text-red-700 text-xs font-medium"
+              >
+                Bỏ chọn
+              </button>
+            </div>
+          )}
+          <div className="flex items-end gap-2">
+            <div className="flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 border border-slate-200 dark:border-slate-700">
               <input
-                type="file"
-                hidden
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Aa"
+                className="flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
               />
-            </label>
+              <label className="cursor-pointer text-primary-600 hover:text-primary-700 dark:text-primary-400">
+                <FiPaperclip className="w-5 h-5" />
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center justify-center p-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+              disabled={loading || (!input.trim() && !file)}
+              className="w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white shadow-md transition-all hover:shadow-lg"
               title="Gửi"
               aria-label="Gửi"
             >
               <FiSend className="w-5 h-5" />
             </button>
           </div>
-          {file && (
-            <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
-              <span className="truncate max-w-[70%]">{file.name}</span>
-              <button type="button" className="text-red-600" onClick={() => setFile(null)}>
-                Bỏ chọn
-              </button>
-            </div>
-          )}
         </form>
       </div>
     </>
