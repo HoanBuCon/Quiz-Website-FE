@@ -64,6 +64,7 @@ const ChatBox: React.FC = () => {
   const esRef = useRef<EventSource | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   // Load hidden messages from localStorage
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(() => {
@@ -576,6 +577,40 @@ const ChatBox: React.FC = () => {
   };
 
   const panelPos = getPanelPos();
+  // Drag & Drop toàn vùng chat panel
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      if (!open) return;
+      e.preventDefault();
+      const hasImage = Array.from(e.dataTransfer?.items || []).some(item => item.type.startsWith("image/"));
+      if (hasImage) setIsDraggingFile(true);
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      if (!open) return;
+      e.preventDefault();
+      setIsDraggingFile(false);
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      if (!open) return;
+      e.preventDefault();
+      setIsDraggingFile(false);
+      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith("image/"));
+      if (files.length) {
+        setFile(files[0]);
+      }
+    };
+
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("dragleave", handleDragLeave);
+    window.addEventListener("drop", handleDrop);
+    return () => {
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("dragleave", handleDragLeave);
+      window.removeEventListener("drop", handleDrop);
+    };
+  }, [open]);
 
   const panel = (
     <>
@@ -830,8 +865,29 @@ const ChatBox: React.FC = () => {
         </div>
 
         {/* Input */}
-        <form 
-          onSubmit={handleSend} 
+        <form
+          onSubmit={handleSend}
+          onPaste={(e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            Array.from(items).forEach((item) => {
+              if (item.type.startsWith("image/")) {
+                const file = item.getAsFile();
+                if (file) {
+                  setFile(file);
+                  e.preventDefault();
+                }
+              }
+            });
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const file = e.dataTransfer?.files?.[0];
+            if (file && file.type.startsWith("image/")) {
+              setFile(file);
+            }
+          }}
+          onDragOver={(e) => e.preventDefault()}
           className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
           style={{ userSelect: 'text' }}
         >
