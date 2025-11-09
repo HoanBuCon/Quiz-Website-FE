@@ -133,7 +133,7 @@ app.use((req, _res, next) => {
 
 // ====== Static file serving ======
 const uploadPath = isProd
-  ? path.join(__dirname, '../../public_html/uploads')
+  ? path.join(__dirname, '../uploads')
   : path.join(__dirname, 'public/uploads');
 
 if (!fs.existsSync(uploadPath)) {
@@ -143,7 +143,7 @@ if (!fs.existsSync(uploadPath)) {
 
 // Chatbox uploads path (separate root per requirement)
 const chatUploadPath = isProd
-  ? path.join(__dirname, '../../public_html/chatbox/uploads')
+  ? path.join(__dirname, '../chatbox/uploads')
   : path.join(__dirname, 'public/chatbox/uploads');
 if (!fs.existsSync(chatUploadPath)) {
   fs.mkdirSync(chatUploadPath, { recursive: true });

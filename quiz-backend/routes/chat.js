@@ -8,9 +8,9 @@ const jwt = require('jsonwebtoken');
 
 const isProd = process.env.NODE_ENV === 'production';
 // Local dev: quiz-backend/public/chatbox/uploads
-// Production (cPanel): public_html/chatbox/uploads
+// Production (cPanel): public_html/chatbox/uploads (resolve relative to app dir)
 const baseChatUploadDir = isProd
-  ? path.join(__dirname, '../../public_html/chatbox/uploads')
+  ? path.join(__dirname, '../../chatbox/uploads')
   : path.join(__dirname, '../public/chatbox/uploads');
 
 // Ensure base dirs exist
