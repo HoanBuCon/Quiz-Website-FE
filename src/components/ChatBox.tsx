@@ -33,6 +33,7 @@ const ChatBox: React.FC = () => {
     } 
   };
   useEffect(() => {
+    try { localStorage.setItem('chat_unread_count', String(unread)); } catch {}
     try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch {}
   }, [unread]);
   const closeChat = () => { if (openRef.current) setOpen(false); };

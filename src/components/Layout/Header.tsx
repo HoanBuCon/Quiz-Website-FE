@@ -26,7 +26,20 @@ const Header: React.FC = () => {
       try { setChatUnread(parseInt(localStorage.getItem('chat_unread_count') || '0') || 0); } catch { setChatUnread(0); }
     };
     const onStorage = (e: StorageEvent) => { if (!e.key || e.key === 'chat_unread_count') readUnread(); };
-    const onCustom = () => readUnread();
+    const onCustom = (e: Event) => {
+      try {
+        const ce = e as CustomEvent;
+        const count = (ce as any)?.detail?.count;
+        if (typeof count === 'number') {
+          setChatUnread(count);
+          try { localStorage.setItem('chat_unread_count', String(count)); } catch {}
+        } else {
+          readUnread();
+        }
+      } catch {
+        readUnread();
+      }
+    };
     window.addEventListener('storage', onStorage);
     window.addEventListener('chat:unread', onCustom as any);
     return () => {
@@ -444,7 +457,7 @@ const Header: React.FC = () => {
               {/* Mobile menu toggle */}
               <button
                 onClick={toggleMobileMenu}
-                className="p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-600 dark:text-slate-400 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center aspect-square w-10 h-10"
+                className="relative p-2 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-600 dark:text-slate-400 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center aspect-square w-10 h-10"
                 aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen
@@ -454,6 +467,11 @@ const Header: React.FC = () => {
                   : React.createElement(FaBars as React.ComponentType<any>, {
                       className: "w-5 h-5",
                     })}
+                {!isMobileMenuOpen && chatUnread > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md">
+                    {chatUnread > 99 ? '99+' : chatUnread}
+                  </span>
+                )}
               </button>
             </div>
           </div>
