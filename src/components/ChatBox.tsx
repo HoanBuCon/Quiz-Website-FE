@@ -136,7 +136,7 @@ const ChatBox: React.FC = () => {
   const btnSize = isMobile ? 56 : 60;
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
   const panelWidth = isMobile ? Math.min(vw - 16, 400) : 500;
-  const panelHeight = isMobile ? vh - 80 : Math.min(650, vh - 100);
+  const panelHeight = isMobile ? vh - 80 : Math.min(750, vh - 100);
   const gap = 16;
   
   const getDefaultBtnPos = (viewportWidth: number, viewportHeight: number) => ({
@@ -160,6 +160,8 @@ const ChatBox: React.FC = () => {
 
   const [btnPos, setBtnPos] = useState(() => readBtnPos(vw, vh));
   const [isDragging, setIsDragging] = useState(false);
+  const dragRafRef = useRef<number | null>(null);
+  const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setBtnPos(p => ({ 
@@ -232,7 +234,9 @@ const ChatBox: React.FC = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (!input.trim() && !file) return;
+    const text = input.trim();
+    if (!text && !file) return;
+    if (text.length > 2000) { alert('Tin nhắn tối đa 2000 ký tự'); return; }
     if (file && file.size > 10 * 1024 * 1024) { 
       alert('Giới hạn tệp là 10MB'); 
       return; 
@@ -240,7 +244,7 @@ const ChatBox: React.FC = () => {
     try {
       setLoading(true);
       await ChatAPI.send({ 
-        content: input.trim() || undefined, 
+        content: text || undefined, 
         file: file || undefined
       }, token);
       setInput("");
@@ -362,16 +366,31 @@ const ChatBox: React.FC = () => {
     let hasMoved = false;
 
     const onMove = (clientX: number, clientY: number) => {
-      hasMoved = true;
-      const nx = clamp(sx + (clientX - startX), 8, vw - btnSize - 8);
-      const ny = clamp(sy + (clientY - startY), 8, vh - btnSize - 8);
-      setBtnPos({ x: nx, y: ny });
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      if (!hasMoved && Math.hypot(dx, dy) > 3) hasMoved = true; // threshold to prevent accidental clicks
+      const nx = clamp(sx + dx, 8, vw - btnSize - 8);
+      const ny = clamp(sy + dy, 8, vh - btnSize - 8);
+      pendingPosRef.current = { x: nx, y: ny };
+      if (dragRafRef.current == null) {
+        dragRafRef.current = requestAnimationFrame(() => {
+          if (pendingPosRef.current) setBtnPos(pendingPosRef.current);
+          dragRafRef.current = null;
+        });
+      }
     };
 
     const onEnd = () => {
       setIsDragging(false);
+      if (dragRafRef.current != null) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
+      const latest = pendingPosRef.current ?? { x: sx, y: sy };
+      pendingPosRef.current = null;
       if (hasMoved) {
-        persistBtnPos(btnPos);
+        setBtnPos(latest);
+        persistBtnPos(latest);
       } else if (!open) {
         toggleChat();
       }
@@ -380,68 +399,55 @@ const ChatBox: React.FC = () => {
     return { onMove, onEnd };
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) {
-      if (!open) toggleChat();
-      return;
-    }
+  // Unified pointer-based dragging for smoother UX across devices
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Allow click-to-open on mobile when not moved
     e.preventDefault();
     e.stopPropagation();
-    
+
+    const el = e.currentTarget as Element | null;
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
+
     const { onMove, onEnd } = startDrag(e.clientX, e.clientY);
 
-    const mouseMoveHandler = (ev: MouseEvent) => onMove(ev.clientX, ev.clientY);
-    const mouseUpHandler = () => {
+    const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
+    const upHandler = (ev: PointerEvent) => {
       onEnd();
-      window.removeEventListener('mousemove', mouseMoveHandler);
-      window.removeEventListener('mouseup', mouseUpHandler);
+      window.removeEventListener('pointermove', moveHandler);
+      window.removeEventListener('pointerup', upHandler);
+      window.removeEventListener('pointercancel', upHandler);
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
     };
 
-    window.addEventListener('mousemove', mouseMoveHandler);
-    window.addEventListener('mouseup', mouseUpHandler);
+    window.addEventListener('pointermove', moveHandler, { passive: true });
+    window.addEventListener('pointerup', upHandler, { passive: true });
+    window.addEventListener('pointercancel', upHandler, { passive: true });
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isMobile) {
-      if (!open) toggleChat();
-      return;
-    }
+  // Panel drag handler (pointer-based)
+  const handlePanelPointerDown = (e: React.PointerEvent) => {
+    if (isMobile) return;
+    const target = e.target as HTMLElement;
+    if (!target.closest('.chat-panel-header')) return;
+    e.preventDefault();
     e.stopPropagation();
-    
-    const t = e.touches[0];
-    const { onMove, onEnd } = startDrag(t.clientX, t.clientY);
 
-    const touchMoveHandler = (ev: TouchEvent) => {
-      const tt = ev.touches[0];
-      if (tt) onMove(tt.clientX, tt.clientY);
-    };
+    const el = e.currentTarget as Element | null;
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
+    const { onMove, onEnd } = startDrag(e.clientX, e.clientY);
 
-    const touchEndHandler = () => {
+    const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
+    const upHandler = (ev: PointerEvent) => {
       onEnd();
-      window.removeEventListener('touchmove', touchMoveHandler);
-      window.removeEventListener('touchend', touchEndHandler);
+      window.removeEventListener('pointermove', moveHandler);
+      window.removeEventListener('pointerup', upHandler);
+      window.removeEventListener('pointercancel', upHandler);
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
     };
 
-    window.addEventListener('touchmove', touchMoveHandler);
-    window.addEventListener('touchend', touchEndHandler);
-  };
-
-  // Panel drag handlers
-  const handlePanelMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) return;
-    // Only allow dragging from header
-    const target = e.target as HTMLElement;
-    if (!target.closest('.chat-panel-header')) return;
-    
-    handleMouseDown(e);
-  };
-
-  const handlePanelTouchStart = (e: React.TouchEvent) => {
-    if (isMobile) return;
-    const target = e.target as HTMLElement;
-    if (!target.closest('.chat-panel-header')) return;
-    
-    handleTouchStart(e);
+    window.addEventListener('pointermove', moveHandler, { passive: true });
+    window.addEventListener('pointerup', upHandler, { passive: true });
+    window.addEventListener('pointercancel', upHandler, { passive: true });
   };
 
   const panelPos = getPanelPos();
@@ -459,19 +465,20 @@ const ChatBox: React.FC = () => {
       {/* Floating button (hidden when panel open) */}
       {!open && (
         <button
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
+          onPointerDown={handlePointerDown}
           className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none transition-all ${
             isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110'
           } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
           aria-label="Mở chat"
           style={{ 
             position: 'fixed',
-            left: `${btnPos.x}px`, 
-            top: `${btnPos.y}px`,
+            left: 0,
+            top: 0,
+            transform: `translate3d(${btnPos.x}px, ${btnPos.y}px, 0)`,
             zIndex: 9999,
             touchAction: 'none',
-            userSelect: 'none'
+            userSelect: 'none',
+            willChange: 'transform'
           }}
         >
         <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
@@ -494,8 +501,7 @@ const ChatBox: React.FC = () => {
 
       {/* Chat Panel */}
       <div
-        onMouseDown={handlePanelMouseDown}
-        onTouchStart={handlePanelTouchStart}
+        onPointerDown={handlePanelPointerDown}
         className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
@@ -507,15 +513,13 @@ const ChatBox: React.FC = () => {
           top: `${panelPos.y}px`,
           width: `${panelWidth}px`,
           height: `${panelHeight}px`,
-          zIndex: 9998,
-          touchAction: 'none',
-          userSelect: 'none'
+          zIndex: 9998
         }}
       >
         {/* Header - Draggable area */}
-        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md ${
+        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md select-none ${
           !isMobile && 'cursor-grab active:cursor-grabbing'
-        }`}>
+        }`} style={{ touchAction: 'none' }}>
           <div className="flex items-center gap-3 pointer-events-none">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -530,9 +534,10 @@ const ChatBox: React.FC = () => {
           <button 
             onClick={closeChat} 
             aria-label="Đóng"
-            className="hover:bg-white/10 rounded-full p-2 transition-colors pointer-events-auto"
+            className="hover:bg-white/10 rounded-full p-2 transition-colors pointer-events-auto no-drag"
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
@@ -613,7 +618,7 @@ const ChatBox: React.FC = () => {
                       mine 
                         ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-md' 
                         : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-bl-md'
-                    } px-3 py-2 ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
+                    } px-3 py-3 cursor-text ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
                   >
                     {/* Hidden overlay */}
                     {hiddenMessages.has(m.id) && (
@@ -639,7 +644,7 @@ const ChatBox: React.FC = () => {
 
                     {/* Message content */}
                     {m.content && (
-                      <div className="text-sm whitespace-pre-wrap break-words">{m.content}</div>
+                      <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
                     )}
                     
                     {/* Attachment */}
