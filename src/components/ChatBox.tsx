@@ -162,6 +162,7 @@ const ChatBox: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragRafRef = useRef<number | null>(null);
   const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setBtnPos(p => ({ 
@@ -374,7 +375,9 @@ const ChatBox: React.FC = () => {
       pendingPosRef.current = { x: nx, y: ny };
       if (dragRafRef.current == null) {
         dragRafRef.current = requestAnimationFrame(() => {
-          if (pendingPosRef.current) setBtnPos(pendingPosRef.current);
+          if (pendingPosRef.current && bubbleRef.current) {
+            bubbleRef.current.style.transform = `translate3d(${pendingPosRef.current.x}px, ${pendingPosRef.current.y}px, 0)`;
+          }
           dragRafRef.current = null;
         });
       }
@@ -389,6 +392,7 @@ const ChatBox: React.FC = () => {
       const latest = pendingPosRef.current ?? { x: sx, y: sy };
       pendingPosRef.current = null;
       if (hasMoved) {
+        // Commit position to state and storage
         setBtnPos(latest);
         persistBtnPos(latest);
       } else if (!open) {
@@ -465,6 +469,7 @@ const ChatBox: React.FC = () => {
       {/* Floating button (hidden when panel open) */}
       {!open && (
         <button
+          ref={bubbleRef}
           onPointerDown={handlePointerDown}
           className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none transition-all ${
             isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110'

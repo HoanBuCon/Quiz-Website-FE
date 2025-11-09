@@ -197,7 +197,8 @@
 
 /* Stabilize layout to avoid viewport width thrash at scrollbar show/hide */
 html, body {
-  scrollbar-gutter: stable both-edges;
+  /* Only reserve gutter when scrollbar actually appears */
+  scrollbar-gutter: auto;
 }
 
 /* Import responsive styles */
