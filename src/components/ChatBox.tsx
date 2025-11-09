@@ -33,9 +33,11 @@ const ChatBox: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const esRef = useRef<EventSource | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Load hidden messages from localStorage
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(() => {
@@ -163,6 +165,8 @@ const ChatBox: React.FC = () => {
   const dragRafRef = useRef<number | null>(null);
   const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
   const bubbleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const pendingPanelPosRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setBtnPos(p => ({ 
@@ -224,38 +228,57 @@ const ChatBox: React.FC = () => {
     return () => { es.close(); esRef.current = null; };
   }, [token]);
 
-  // Open → load history
+  // Open → load history and init input height
   useEffect(() => {
     if (!open) return;
     hasLoadedRef.current = false;
     loadRecent();
+    requestAnimationFrame(() => { if (inputRef.current) autoResizeTextarea(inputRef.current); });
   }, [open]);
 
-  // Send
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Send core logic (shared by submit and Enter key)
+  const doSend = async () => {
     if (!token) return;
     const text = input.trim();
     if (!text && !file) return;
     if (text.length > 2000) { alert('Tin nhắn tối đa 2000 ký tự'); return; }
-    if (file && file.size > 10 * 1024 * 1024) { 
-      alert('Giới hạn tệp là 10MB'); 
-      return; 
-    }
+    if (file && file.size > 10 * 1024 * 1024) { alert('Giới hạn tệp là 10MB'); return; }
     try {
       setLoading(true);
-      await ChatAPI.send({ 
-        content: text || undefined, 
-        file: file || undefined
-      }, token);
+      await ChatAPI.send({ content: text || undefined, file: file || undefined }, token);
       setInput("");
       setFile(null);
       requestAnimationFrame(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
       });
-    } finally { 
-      setLoading(false); 
-    }
+    } finally { setLoading(false); }
+  };
+
+  // Form submit
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doSend();
+    // reset height after send
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.overflowY = 'hidden';
+      }
+    });
+  };
+
+  // Auto-resize textarea up to 5 lines
+  const autoResizeTextarea = (el: HTMLTextAreaElement) => {
+    try {
+      el.style.height = 'auto';
+      const styles = window.getComputedStyle(el);
+      const lineHeight = parseFloat(styles.lineHeight || '20');
+      const maxH = lineHeight * 5;
+      const newH = Math.min(el.scrollHeight, maxH);
+      el.style.height = `${newH}px`;
+      el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
+      setIsMultiline(newH > lineHeight * 1.6);
+    } catch {}
   };
 
   // Delete
@@ -360,46 +383,60 @@ const ChatBox: React.FC = () => {
   };
 
   // Drag handlers - unified for both button and panel
-  const startDrag = (startX: number, startY: number) => {
+  // Drag bubble (button) smoothly - direct DOM transform during drag
+  const startDragBubble = (startX: number, startY: number) => {
     setIsDragging(true);
     const sx = btnPos.x;
     const sy = btnPos.y;
     let hasMoved = false;
-
     const onMove = (clientX: number, clientY: number) => {
       const dx = clientX - startX;
       const dy = clientY - startY;
-      if (!hasMoved && Math.hypot(dx, dy) > 3) hasMoved = true; // threshold to prevent accidental clicks
+      if (!hasMoved && Math.hypot(dx, dy) > 3) hasMoved = true;
       const nx = clamp(sx + dx, 8, vw - btnSize - 8);
       const ny = clamp(sy + dy, 8, vh - btnSize - 8);
-      pendingPosRef.current = { x: nx, y: ny };
-      if (dragRafRef.current == null) {
-        dragRafRef.current = requestAnimationFrame(() => {
-          if (pendingPosRef.current && bubbleRef.current) {
-            bubbleRef.current.style.transform = `translate3d(${pendingPosRef.current.x}px, ${pendingPosRef.current.y}px, 0)`;
-          }
-          dragRafRef.current = null;
-        });
+      if (bubbleRef.current) {
+        bubbleRef.current.style.transform = `translate3d(${nx}px, ${ny}px, 0)`;
       }
+      pendingPosRef.current = { x: nx, y: ny };
     };
-
     const onEnd = () => {
       setIsDragging(false);
-      if (dragRafRef.current != null) {
-        cancelAnimationFrame(dragRafRef.current);
-        dragRafRef.current = null;
-      }
       const latest = pendingPosRef.current ?? { x: sx, y: sy };
       pendingPosRef.current = null;
+      if (hasMoved) { setBtnPos(latest); persistBtnPos(latest); } else if (!open) { toggleChat(); }
+    };
+    return { onMove, onEnd };
+  };
+
+  // Drag panel by header - move panel DOM smoothly, then commit btnPos to match panel pos
+  const startDragPanel = (startX: number, startY: number) => {
+    setIsDragging(true);
+    const startPanel = getPanelPos();
+    let hasMoved = false;
+    const onMove = (clientX: number, clientY: number) => {
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      if (!hasMoved && Math.hypot(dx, dy) > 3) hasMoved = true;
+      let nx = clamp(startPanel.x + dx, 8, vw - panelWidth - 8);
+      let ny = clamp(startPanel.y + dy, 8, vh - panelHeight - 8);
+      if (panelRef.current) {
+        panelRef.current.style.transform = `translate3d(${nx}px, ${ny}px, 0)`;
+      }
+      pendingPanelPosRef.current = { x: nx, y: ny };
+    };
+    const onEnd = () => {
+      setIsDragging(false);
+      const latest = pendingPanelPosRef.current ?? startPanel;
+      pendingPanelPosRef.current = null;
       if (hasMoved) {
-        // Commit position to state and storage
-        setBtnPos(latest);
-        persistBtnPos(latest);
-      } else if (!open) {
-        toggleChat();
+        // Place bubble to the left of panel (so next open uses this position)
+        const nx = clamp(latest.x - btnSize - gap, 8, vw - btnSize - 8);
+        const ny = clamp(latest.y, 8, vh - btnSize - 8);
+        setBtnPos({ x: nx, y: ny });
+        persistBtnPos({ x: nx, y: ny });
       }
     };
-
     return { onMove, onEnd };
   };
 
@@ -412,7 +449,7 @@ const ChatBox: React.FC = () => {
     const el = e.currentTarget as Element | null;
     try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
 
-    const { onMove, onEnd } = startDrag(e.clientX, e.clientY);
+    const { onMove, onEnd } = startDragBubble(e.clientX, e.clientY);
 
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -438,7 +475,7 @@ const ChatBox: React.FC = () => {
 
     const el = e.currentTarget as Element | null;
     try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
-    const { onMove, onEnd } = startDrag(e.clientX, e.clientY);
+    const { onMove, onEnd } = startDragPanel(e.clientX, e.clientY);
 
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -467,7 +504,7 @@ const ChatBox: React.FC = () => {
       )}
 
       {/* Floating button (hidden when panel open) */}
-      {!open && (
+      {!open && !isMobile && (
         <button
           ref={bubbleRef}
           onPointerDown={handlePointerDown}
@@ -506,6 +543,7 @@ const ChatBox: React.FC = () => {
 
       {/* Chat Panel */}
       <div
+        ref={panelRef}
         onPointerDown={handlePanelPointerDown}
         className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -513,9 +551,9 @@ const ChatBox: React.FC = () => {
         style={{
           position: 'fixed',
           transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
-          transform: open ? 'scale(1)' : 'scale(0.95)',
-          left: `${panelPos.x}px`,
-          top: `${panelPos.y}px`,
+          transform: `translate3d(${panelPos.x}px, ${panelPos.y}px, 0) ${open ? '' : 'scale(0.95)'}`,
+          left: 0,
+          top: 0,
           width: `${panelWidth}px`,
           height: `${panelHeight}px`,
           zIndex: 9998
@@ -722,12 +760,28 @@ const ChatBox: React.FC = () => {
             </div>
           )}
           <div className="flex items-end gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 border border-slate-200 dark:border-slate-700">
-              <input
+            <div className={`flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 ${isMultiline ? 'rounded-xl' : 'rounded-full'} px-4 py-2 border border-slate-200 dark:border-slate-700`}>
+              <textarea
+                ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); autoResizeTextarea(e.currentTarget); }}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    if (!isMobile && !e.shiftKey) {
+                      e.preventDefault();
+                      await doSend();
+                      return;
+                    }
+                  }
+                  // next tick adjust height
+                  requestAnimationFrame(() => { if (inputRef.current) autoResizeTextarea(inputRef.current); });
+                }}
+                rows={1}
+                maxLength={2000}
+                enterKeyHint={isMobile ? 'enter' : 'send'}
                 placeholder="Aa"
-                className="flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                className="flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none"
+                style={{ height: 'auto', overflowY: 'hidden' }}
               />
               <label className="cursor-pointer text-primary-600 hover:text-primary-700 dark:text-primary-400">
                 <FiPaperclip className="w-5 h-5" />
