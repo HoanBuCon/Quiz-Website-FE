@@ -2873,41 +2873,99 @@ const ClassesPage: React.FC = () => {
 
       {/* Import Modal */}
       {importOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Nhập ID/Link lớp học hoặc quiz
-            </h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200 dark:border-slate-700 animate-slideUp">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Nhập ID/Link
+              </h3>
+            </div>
+
+            <div className="space-y-5">
+              {/* Type Selector */}
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Kiểu
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Kiểu truy cập
                 </label>
                 <select
                   value={importType}
                   onChange={(e) => setImportType(e.target.value as any)}
-                  className="select w-full text-black"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white font-medium focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                 >
                   <option value="auto">Tự động (dựa theo link)</option>
                   <option value="class">Lớp học</option>
                   <option value="quiz">Quiz</option>
                 </select>
               </div>
+
+              {/* Input Field */}
               <div>
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   ID hoặc Link
                 </label>
-                <input
-                  value={importInput}
-                  onChange={(e) => setImportInput(e.target.value)}
-                  placeholder="Ví dụ: https://.../class/abc123 hoặc abc123"
-                  className="input w-full text-black"
-                />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={importInput}
+                      onChange={(e) => setImportInput(e.target.value)}
+                      placeholder="abc123 hoặc https://..."
+                      autoComplete="off"
+                      className="w-full px-4 py-3 pr-10 rounded-xl border-2 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 font-mono text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                      style={{ 
+                        WebkitAppearance: 'none',
+                        appearance: 'none',
+                        minHeight: '48px'
+                      }}
+                    />
+                    {importInput && (
+                      <button
+                        onClick={() => setImportInput('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        type="button"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        setImportInput(text.trim());
+                      } catch (err) {
+                        // Fallback: prompt user to paste manually
+                        alert('⚠️ Không thể đọc clipboard.\n\nVui lòng dán thủ công (Ctrl+V / Cmd+V) vào ô nhập.');
+                      }
+                    }}
+                    className="px-4 py-3 rounded-xl font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 border-2 border-blue-200 dark:border-blue-500/30 transition-all flex items-center gap-2 whitespace-nowrap"
+                    type="button"
+                    title="Dán từ clipboard"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span className="hidden sm:inline">Dán</span>
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  📌 Bấm nút <span className="font-semibold text-blue-600 dark:text-blue-400">Dán</span> hoặc nhập/dán (Ctrl+V) thủ công
+                </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6">
               <button
-                className="btn-secondary"
+                className="flex-1 px-4 py-3 rounded-xl font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 border-2 border-transparent transition-all"
                 onClick={() => {
                   setImportOpen(false);
                   setImportInput("");
@@ -2916,7 +2974,11 @@ const ClassesPage: React.FC = () => {
               >
                 Hủy
               </button>
-              <button className="btn-primary" onClick={handleImport}>
+              <button 
+                className="flex-1 px-4 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                onClick={handleImport}
+                disabled={!importInput.trim()}
+              >
                 Nhập
               </button>
             </div>
