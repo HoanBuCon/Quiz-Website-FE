@@ -38,6 +38,9 @@ const QuizPage: React.FC = () => {
   const [isLarge, setIsLarge] = useState<boolean>(() =>
     typeof window !== "undefined" ? window.innerWidth >= 1024 : false
   );
+  // State để theo dõi vị trí focus bằng bàn phím
+  // focusedOption: index của đáp án đang focus (-1: không focus, >= 0: index đáp án, 9999: nút Xác nhận)
+  const [focusedOption, setFocusedOption] = useState<number>(-1);
 
   // Hàm trộn mảng (Fisher-Yates shuffle)
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -155,6 +158,113 @@ const QuizPage: React.FC = () => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Reset focus khi chuyển câu hỏi
+  useEffect(() => {
+    setFocusedOption(-1);
+  }, [currentQuestionIndex]);
+
+  // ======================
+  // Keyboard Navigation (arrow keys + Enter)
+  // ======================
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Nếu đang hiển thị mode chooser thì bỏ qua
+      if (showModeChooser) return;
+
+      const currentQuestion = questions[currentQuestionIndex];
+      if (!currentQuestion) return;
+
+      // Không xử lý nếu đang focus vào input hoặc textarea
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag && ["input", "textarea"].includes(activeTag)) return;
+
+      const totalOptions = Array.isArray(currentQuestion.options)
+        ? currentQuestion.options.length
+        : 0;
+      const isLocked = uiMode === "instant" && revealed.has(currentQuestion.id);
+
+      // Xác định có nút Xác nhận hay không
+      const hasConfirmButton =
+        uiMode === "instant" &&
+        ["multiple", "text", "drag", "composite"].includes(
+          currentQuestion.type as string
+        );
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          handlePrevQuestion();
+          break;
+
+        case "ArrowRight":
+          e.preventDefault();
+          handleNextQuestion();
+          break;
+
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusedOption((prev) => {
+            if (prev === -1) return totalOptions - 1;
+            if (prev === 9999) return totalOptions - 1;
+            if (prev <= 0) return prev;
+            return prev - 1;
+          });
+          break;
+
+        case "ArrowDown":
+          e.preventDefault();
+          setFocusedOption((prev) => {
+            if (prev === -1) return 0; // bắt đầu từ đáp án đầu
+            if (prev === totalOptions - 1) {
+              if (hasConfirmButton && !isLocked) return 9999; // xuống nút Xác nhận
+              return prev;
+            }
+            if (prev === 9999) return prev; // giữ nguyên nếu đang ở nút xác nhận
+            return prev + 1;
+          });
+          break;
+
+        case "Enter":
+        case " ":
+        case "Spacebar":
+          e.preventDefault();
+          if (focusedOption === 9999 && hasConfirmButton && !isLocked) {
+            // Bấm Enter trên nút Xác nhận
+            markRevealed(currentQuestion.id);
+          } else if (
+            focusedOption >= 0 &&
+            focusedOption < totalOptions &&
+            !isLocked
+          ) {
+            // Bấm Enter để chọn đáp án
+            const opts = Array.isArray(currentQuestion.options)
+              ? currentQuestion.options
+              : [];
+            const option = opts[focusedOption] as string | undefined;
+            if (option) handleAnswerSelect(currentQuestion.id, option);
+          } else if (focusedOption === -1 && totalOptions > 0) {
+            // Chưa chọn gì -> focus đáp án đầu tiên
+            setFocusedOption(0);
+          }
+          break;
+
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    currentQuestionIndex,
+    questions,
+    showModeChooser,
+    focusedOption,
+    uiMode,
+    revealed,
+  ]);
+
 
   // Đồng hồ thời gian làm bài
   useEffect(() => {
@@ -619,6 +729,7 @@ const QuizPage: React.FC = () => {
                       const locked =
                         uiMode === "instant" &&
                         revealed.has(currentQuestion.id);
+                      const isFocused = focusedOption === index;
                       const base =
                         "w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base disabled:cursor-not-allowed";
                       const chosenStyle =
@@ -639,6 +750,10 @@ const QuizPage: React.FC = () => {
                         : isChosen
                         ? chosenStyle
                         : normalStyle;
+                      
+                      const focusedStyle = isFocused
+                        ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
+                        : "";
 
                       return (
                         <button
@@ -647,7 +762,7 @@ const QuizPage: React.FC = () => {
                           onClick={() =>
                             handleAnswerSelect(currentQuestion.id, option)
                           }
-                          className={`${base} ${cls}`}
+                          className={`${base} ${cls} ${focusedStyle}`}
                         >
                           <div className="flex flex-col items-start gap-2 w-full">
                             <span className="flex items-center gap-2">
@@ -953,19 +1068,24 @@ const QuizPage: React.FC = () => {
                 <button
                   onClick={() => markRevealed(currentQuestion.id)}
                   disabled={isRevealed(currentQuestion.id)}
-                  className="
-    col-span-2 w-full sm:col-span-auto sm:order-2 sm:flex-1
-    text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]
-    rounded-lg font-medium border-2
-    border-blue-500 dark:border-blue-400
-    bg-gray-50 dark:bg-blue-900/40
-    text-blue-600 dark:text-blue-300
-    hover:bg-blue-50 dark:hover:bg-blue-800/60
-    hover:text-blue-700 dark:hover:text-blue-200
-    hover:shadow-md hover:shadow-blue-400/25 dark:hover:shadow-blue-900/40
-    transition-all duration-200
-    disabled:opacity-60 disabled:cursor-not-allowed
-  "
+                  className={`
+                    col-span-2 w-full sm:col-span-auto sm:order-2 sm:flex-1
+                    text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]
+                    rounded-lg font-medium border-2
+                    border-blue-500 dark:border-blue-400
+                    bg-gray-50 dark:bg-blue-900/40
+                    text-blue-600 dark:text-blue-300
+                    hover:bg-blue-50 dark:hover:bg-blue-800/60
+                    hover:text-blue-700 dark:hover:text-blue-200
+                    hover:shadow-md hover:shadow-blue-400/25 dark:hover:shadow-blue-900/40
+                    transition-all duration-200
+                    disabled:opacity-60 disabled:cursor-not-allowed
+                    ${
+                      focusedOption === 9999
+                        ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
+                        : ""
+                    }
+                  `}
                 >
                   Xác nhận
                 </button>
