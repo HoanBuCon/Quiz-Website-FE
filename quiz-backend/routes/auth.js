@@ -25,10 +25,11 @@ router.post('/signup', async (req, res) => {
   const prisma = req.prisma;
   const { email, password, name } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing) return res.status(409).json({ message: 'Email already registered' });
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { email, passwordHash, name } });
+  const user = await prisma.user.create({ data: { email: normalizedEmail, passwordHash, name } });
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
   const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
@@ -39,7 +40,8 @@ router.post('/login', async (req, res) => {
   const prisma = req.prisma;
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
@@ -54,7 +56,8 @@ router.post('/forgot', async (req, res) => {
   const prisma = req.prisma;
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ message: 'Email is required' });
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   // Do not reveal whether user exists
   if (!user) return res.status(204).end();
 
@@ -107,7 +110,8 @@ router.post('/forgot-otp', async (req, res) => {
   const prisma = req.prisma;
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ message: 'Email is required' });
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
 
   const throttleSec = Number(process.env.OTP_THROTTLE_SECONDS || 60);
@@ -115,7 +119,7 @@ router.post('/forgot-otp', async (req, res) => {
 
   // throttle: if a recent request within throttleSec exists, deny
   const recent = await prisma.passwordReset.findFirst({
-    where: { email, usedAt: null, expiresAt: { gt: new Date() } },
+    where: { email: normalizedEmail, usedAt: null, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   });
   if (recent) {
@@ -132,13 +136,13 @@ router.post('/forgot-otp', async (req, res) => {
     const from = process.env.SMTP_FROM || process.env.SMTP_USER;
     await transporter.sendMail({
       from,
-      to: email,
+      to: normalizedEmail,
       subject: 'Mã xác thực đặt lại mật khẩu (OTP)',
       text: `Mã OTP của bạn là: ${otp}. Mã sẽ hết hạn sau ${Math.round(ttlSec/60)} phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.`,
       html: `<p>Mã OTP của bạn là: <b>${otp}</b></p><p>Mã sẽ hết hạn sau ${Math.round(ttlSec/60)} phút.</p>`
     });
     // Only persist after successful send
-    await prisma.passwordReset.create({ data: { email, userId: user.id, otpHash, expiresAt } });
+    await prisma.passwordReset.create({ data: { email: normalizedEmail, userId: user.id, otpHash, expiresAt } });
     return res.status(204).end();
   } catch (e) {
     console.error('Failed to send OTP email');
@@ -150,11 +154,12 @@ router.post('/reset-with-otp', async (req, res) => {
   const prisma = req.prisma;
   const { email, otp, newPassword } = req.body || {};
   if (!email || !otp || !newPassword) return res.status(400).json({ message: 'Thiếu dữ liệu' });
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
 
   const record = await prisma.passwordReset.findFirst({
-    where: { email, usedAt: null, expiresAt: { gt: new Date() } },
+    where: { email: normalizedEmail, usedAt: null, expiresAt: { gt: new Date() } },
     orderBy: { createdAt: 'desc' }
   });
   if (!record) return res.status(400).json({ message: 'OTP không hợp lệ hoặc đã hết hạn' });

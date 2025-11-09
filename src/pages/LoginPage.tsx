@@ -26,9 +26,13 @@ const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
+      const normalizedData = {
+        ...formData,
+        email: formData.email.toLowerCase().trim(),
+      };
       const response = await apiRequest<{ token: string }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(normalizedData),
       });
       setToken(response.token);
       toast.success("Đăng nhập thành công!");

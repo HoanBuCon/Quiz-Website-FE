@@ -40,9 +40,13 @@ const RegisterPage: React.FC = () => {
     setLoading(true);
     try {
       const { confirmPassword, ...registerData } = formData;
+      const normalizedData = {
+        ...registerData,
+        email: registerData.email.toLowerCase().trim(),
+      };
       const response = await apiRequest<{ token: string }>("/auth/signup", {
         method: "POST",
-        body: JSON.stringify(registerData),
+        body: JSON.stringify(normalizedData),
       });
       setToken(response.token);
       toast.success("Đăng ký thành công!");
