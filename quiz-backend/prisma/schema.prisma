@@ -9,12 +9,12 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
+  id             String          @id @default(cuid())
+  email          String          @unique
   passwordHash   String
   name           String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   classes        Class[]
   quizzes        Quiz[]
   sessions       QuizSession[]
@@ -22,6 +22,7 @@ model User {
   sharedAccesses SharedAccess[]
   files          UploadedFile[]
   messages       ChatMessage[]
+  chatReadStatus ChatReadStatus?
 }
 
 model Class {
@@ -163,6 +164,14 @@ model ChatMessage {
   attachmentType ChatAttachmentType?
   createdAt      DateTime            @default(now())
   user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatReadStatus {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  lastReadAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordReset {

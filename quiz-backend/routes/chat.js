@@ -77,6 +77,58 @@ function buildPublicUrl(filename, mimetype) {
   return `/chatbox/uploads/${sub}/${filename}`;
 }
 
+// Get unread count for current user
+router.get('/unread-count', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const userId = req.user.id;
+  
+  try {
+    // Get user's last read timestamp
+    const readStatus = await prisma.chatReadStatus.findUnique({
+      where: { userId },
+    });
+    
+    // If no read status, count all messages
+    const lastReadAt = readStatus?.lastReadAt || new Date(0);
+    
+    // Count messages created after lastReadAt
+    const count = await prisma.chatMessage.count({
+      where: {
+        createdAt: { gt: lastReadAt },
+      },
+    });
+    
+    res.json({ count });
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy số tin nhắn chưa đọc' });
+  }
+});
+
+// Mark messages as read (update lastReadAt to now)
+router.post('/mark-read', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const userId = req.user.id;
+  
+  try {
+    await prisma.chatReadStatus.upsert({
+      where: { userId },
+      create: {
+        userId,
+        lastReadAt: new Date(),
+      },
+      update: {
+        lastReadAt: new Date(),
+      },
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking as read:', error);
+    res.status(500).json({ message: 'Lỗi khi đánh dấu đã đọc' });
+  }
+});
+
 // List recent messages (public for all authenticated users)
 router.get('/messages', authRequired, async (req, res) => {
   const prisma = req.prisma;

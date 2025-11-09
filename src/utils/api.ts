@@ -275,6 +275,10 @@ export const ChatAPI = {
   },
   remove: (id: string, token: string) =>
     apiRequest<void>(`/chat/messages/${id}`, { method: "DELETE", token }),
+  getUnreadCount: (token: string) =>
+    apiRequest<{ count: number }>(`/chat/unread-count`, { token }),
+  markAsRead: (token: string) =>
+    apiRequest<{ success: boolean }>(`/chat/mark-read`, { method: "POST", token }),
 };
 
 export const AuthAPI = {

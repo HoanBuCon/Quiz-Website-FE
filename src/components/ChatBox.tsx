@@ -21,16 +21,32 @@ const ChatBox: React.FC = () => {
   const [open, setOpen] = useState(false);
   const openRef = useRef<boolean>(false);
   useEffect(() => { openRef.current = open; }, [open]);
-  const [unread, setUnread] = useState<number>(() => {
-    try { return parseInt(localStorage.getItem('chat_unread_count') || '0') || 0; } catch { return 0; }
-  });
-  const openChat = () => { if (!openRef.current) { setOpen(true); setUnread(0); } };
+  const [unread, setUnread] = useState<number>(0);
+  const openChat = () => { 
+    if (!openRef.current) { 
+      setOpen(true); 
+      setUnread(0);
+      // Mark as read when opening chat
+      if (token) {
+        ChatAPI.markAsRead(token).catch(() => {});
+      }
+    } 
+  };
   useEffect(() => {
-    try { localStorage.setItem('chat_unread_count', String(unread)); } catch {}
     try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch {}
   }, [unread]);
   const closeChat = () => { if (openRef.current) setOpen(false); };
-  const toggleChat = () => setOpen((v) => { const nv = !v; if (nv) setUnread(0); return nv; });
+  const toggleChat = () => setOpen((v) => { 
+    const nv = !v; 
+    if (nv) {
+      setUnread(0);
+      // Mark as read when toggling open
+      if (token) {
+        ChatAPI.markAsRead(token).catch(() => {});
+      }
+    }
+    return nv; 
+  });
 
   // Messages state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -101,6 +117,14 @@ const ChatBox: React.FC = () => {
     } catch {
       return null;
     }
+  }, [token]);
+
+  // Load unread count from backend on mount
+  useEffect(() => {
+    if (!token) return;
+    ChatAPI.getUnreadCount(token)
+      .then(data => setUnread(data.count))
+      .catch(() => {});
   }, [token]);
 
   // Merge helper (stable UI)
@@ -252,6 +276,7 @@ const ChatBox: React.FC = () => {
             }
           }, 50);
         } else {
+          // Increment local counter when chat is closed
           setUnread((n) => Math.min(999, n + 1));
         }
       } catch {}
@@ -282,7 +307,12 @@ const ChatBox: React.FC = () => {
       await ChatAPI.send({ content: text || undefined, file: file || undefined }, token);
       setInput("");
       setFile(null);
+      setIsMultiline(false);
       requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.style.height = 'auto';
+          inputRef.current.style.overflowY = 'hidden';
+        }
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
       });
     } finally { setLoading(false); }
@@ -292,13 +322,6 @@ const ChatBox: React.FC = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     await doSend();
-    // reset height after send
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-        inputRef.current.style.overflowY = 'hidden';
-      }
-    });
   };
 
   // Auto-resize textarea up to 5 lines
