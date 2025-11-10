@@ -13,7 +13,7 @@ console.log(`
  CHỨC NĂNG QUẢN TRỊ HỆ THỐNG
 =============================
 1. Xóa tài khoản người dùng
-2. Xóa toàn bộ tin nhắn của người dùng
+2. Xóa tin nhắn người dùng
 3. Quản lý quiz và lớp học của người dùng
 `);
 
@@ -26,9 +26,7 @@ rl.question("Nhập lựa chọn (1/2/3): ", async (choice) => {
       case "1": {
         rl.question("Nhập email hoặc username cần xóa: ", async (input) => {
           const user = await prisma.user.findFirst({
-            where: {
-              OR: [{ email: input.trim() }, { name: input.trim() }],
-            },
+            where: { OR: [{ email: input.trim() }, { name: input.trim() }] },
           });
 
           if (!user) {
@@ -54,14 +52,12 @@ rl.question("Nhập lựa chọn (1/2/3): ", async (choice) => {
       }
 
       // ==================================================
-      // 2. XÓA TOÀN BỘ TIN NHẮN CỦA NGƯỜI DÙNG
+      // 2. XÓA TIN NHẮN NGƯỜI DÙNG
       // ==================================================
       case "2": {
         rl.question("Nhập email hoặc username của người dùng cần xóa tin nhắn: ", async (input) => {
           const user = await prisma.user.findFirst({
-            where: {
-              OR: [{ email: input.trim() }, { name: input.trim() }],
-            },
+            where: { OR: [{ email: input.trim() }, { name: input.trim() }] },
           });
 
           if (!user) {
@@ -71,13 +67,105 @@ rl.question("Nhập lựa chọn (1/2/3): ", async (choice) => {
             return;
           }
 
-          const count = await prisma.chatMessage.deleteMany({
-            where: { userId: user.id },
-          });
+          console.log(`
+=============================================
+👤 Người dùng: ${user.name || "(không có tên)"} (${user.email})
+=============================================
+Bạn muốn làm gì?
+a. Xóa 1 tin nhắn chỉ định
+b. Xóa số lượng tin nhắn gần nhất
+c. Xóa toàn bộ tin nhắn
+=============================================
+`);
+          rl.question("Nhập lựa chọn (a/b/c): ", async (subChoice) => {
+            switch (subChoice.trim().toLowerCase()) {
+              case "a": {
+                const messages = await prisma.chatMessage.findMany({
+                  where: { userId: user.id },
+                  orderBy: { createdAt: "desc" },
+                  take: 20,
+                });
 
-          console.log(`✅ Đã xóa ${count.count} tin nhắn của người dùng ${user.email || user.name}.`);
-          rl.close();
-          await prisma.$disconnect();
+                if (messages.length === 0) {
+                  console.log("⚠️ Người dùng này chưa có tin nhắn nào.");
+                  rl.close();
+                  await prisma.$disconnect();
+                  return;
+                }
+
+                console.log("\n🗨️ Các tin nhắn gần nhất:");
+                messages.forEach((m, i) => {
+                  console.log(
+                    `${i + 1}. [${m.id}] ${new Date(m.createdAt).toLocaleString()} → ${m.content}`
+                  );
+                });
+
+                rl.question("\nNhập ID tin nhắn cần xóa: ", async (msgId) => {
+                  const msg = await prisma.chatMessage.findUnique({ where: { id: msgId.trim() } });
+                  if (!msg) {
+                    console.log("❌ Không tìm thấy tin nhắn với ID này.");
+                  } else {
+                    await prisma.chatMessage.delete({ where: { id: msg.id } });
+                    console.log("✅ Đã xóa tin nhắn.");
+                  }
+                  rl.close();
+                  await prisma.$disconnect();
+                });
+                break;
+              }
+
+              case "b": {
+                rl.question("Nhập số lượng tin nhắn gần nhất cần xóa: ", async (numStr) => {
+                  const num = parseInt(numStr);
+                  if (isNaN(num) || num <= 0) {
+                    console.log("❌ Số lượng không hợp lệ.");
+                    rl.close();
+                    await prisma.$disconnect();
+                    return;
+                  }
+
+                  const recentMessages = await prisma.chatMessage.findMany({
+                    where: { userId: user.id },
+                    orderBy: { createdAt: "desc" },
+                    take: num,
+                  });
+
+                  const ids = recentMessages.map((m) => m.id);
+                  const deleted = await prisma.chatMessage.deleteMany({
+                    where: { id: { in: ids } },
+                  });
+
+                  console.log(`✅ Đã xóa ${deleted.count} tin nhắn gần nhất của ${user.email || user.name}.`);
+                  rl.close();
+                  await prisma.$disconnect();
+                });
+                break;
+              }
+
+              case "c": {
+                console.log("⚠️ Bạn sắp xóa toàn bộ tin nhắn của người dùng này.");
+                rl.question("Bạn có chắc chắn không? (yes/no): ", async (confirm) => {
+                  if (confirm.toLowerCase() === "yes") {
+                    const deleted = await prisma.chatMessage.deleteMany({
+                      where: { userId: user.id },
+                    });
+                    console.log(`✅ Đã xóa toàn bộ ${deleted.count} tin nhắn.`);
+                  } else {
+                    console.log("❎ Đã hủy thao tác.");
+                  }
+                  rl.close();
+                  await prisma.$disconnect();
+                });
+                break;
+              }
+
+              default:
+                console.log("❌ Lựa chọn không hợp lệ.");
+                rl.close();
+                await prisma.$disconnect();
+                break;
+            }
+          });
         });
         break;
       }
@@ -120,7 +208,7 @@ async function handleUserQuizClass() {
 
     if (!user) {
       console.log("❌ Không tìm thấy người dùng này. Vui lòng nhập lại.\n");
-      return handleUserQuizClass(); // fallback nhập lại
+      return handleUserQuizClass();
     }
 
     console.log(`\n👤 Người dùng: ${user.name || "(không có tên)"} (${user.email})`);
@@ -132,10 +220,9 @@ async function handleUserQuizClass() {
     if (!hasClasses && !hasQuizzes) {
       console.log("\n⚠️ Người dùng này chưa tạo lớp học hoặc quiz nào.");
       console.log("🔁 Vui lòng nhập người dùng khác.\n");
-      return handleUserQuizClass(); // fallback nhập lại user khác
+      return handleUserQuizClass();
     }
 
-    // In danh sách lớp học
     if (hasClasses) {
       console.log("\n📚 LỚP HỌC ĐÃ TẠO:");
       console.table(
@@ -149,7 +236,6 @@ async function handleUserQuizClass() {
       );
     }
 
-    // In danh sách quiz
     if (hasQuizzes) {
       console.log("\n🧩 QUIZ ĐÃ TẠO:");
       console.table(
@@ -177,9 +263,8 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
         case "a": {
           rl.question("Nhập ID lớp học cần xóa: ", async (classId) => {
             const cls = await prisma.class.findUnique({ where: { id: classId.trim() } });
-            if (!cls) {
-              console.log("❌ Không tìm thấy lớp học với ID đó.");
-            } else {
+            if (!cls) console.log("❌ Không tìm thấy lớp học với ID đó.");
+            else {
               await prisma.class.delete({ where: { id: cls.id } });
               console.log(`✅ Đã xóa lớp học "${cls.name}".`);
             }
@@ -192,9 +277,8 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
         case "b": {
           rl.question("Nhập ID quiz cần xóa: ", async (quizId) => {
             const quiz = await prisma.quiz.findUnique({ where: { id: quizId.trim() } });
-            if (!quiz) {
-              console.log("❌ Không tìm thấy quiz với ID đó.");
-            } else {
+            if (!quiz) console.log("❌ Không tìm thấy quiz với ID đó.");
+            else {
               await prisma.quiz.delete({ where: { id: quiz.id } });
               console.log(`✅ Đã xóa quiz "${quiz.title}".`);
             }
