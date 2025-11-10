@@ -179,9 +179,20 @@ const QuizPage: React.FC = () => {
       const activeTag = document.activeElement?.tagName.toLowerCase();
       if (activeTag && ["input", "textarea"].includes(activeTag)) return;
 
-      const totalOptions = Array.isArray(currentQuestion.options)
-        ? currentQuestion.options.length
-        : 0;
+      const totalOptions = (() => {
+        if (currentQuestion.type === "composite") {
+          const subs = (currentQuestion as any).subQuestions || [];
+          return subs.reduce((acc: number, sub: Question) => {
+            if (sub.type === "text") return acc + 1; // input box đếm như 1 option
+            return acc + (Array.isArray(sub.options) ? sub.options.length : 0);
+          }, 0);
+        }
+        if (currentQuestion.type === "text") return 1; // input box
+        return Array.isArray(currentQuestion.options)
+          ? currentQuestion.options.length
+          : 0;
+      })();
+
       const isLocked = uiMode === "instant" && revealed.has(currentQuestion.id);
 
       // Xác định có nút Xác nhận hay không
@@ -206,8 +217,53 @@ const QuizPage: React.FC = () => {
           e.preventDefault();
           setFocusedOption((prev) => {
             if (prev === -1) return totalOptions - 1;
-            if (prev === 9999) return totalOptions - 1;
-            if (prev <= 0) return prev;
+            if (prev === 9999) {
+              // THÊM: Từ nút Xác nhận lên lại option cuối
+              return totalOptions - 1;
+            }
+            if (prev <= 0) {
+              // THÊM: Nếu đang ở option đầu tiên và là text input, blur input
+              if (currentQuestion.type === "text") {
+                const inputElement = document.querySelector(
+                  `input[data-question-id="${currentQuestion.id}"]`
+                ) as HTMLInputElement;
+                if (inputElement && document.activeElement === inputElement) {
+                  inputElement.blur();
+                }
+              } else if (currentQuestion.type === "composite") {
+                // Kiểm tra xem option đầu tiên có phải text input không
+                const subs = (currentQuestion as any).subQuestions || [];
+                if (subs[0]?.type === "text") {
+                  const inputElement = document.querySelector(
+                    `input[data-question-id="${subs[0].id}"]`
+                  ) as HTMLInputElement;
+                  if (inputElement && document.activeElement === inputElement) {
+                    inputElement.blur();
+                  }
+                }
+              }
+              return prev;
+            }
+            
+            // THÊM: Blur input nếu đang rời khỏi text input trong composite
+            if (currentQuestion.type === "composite") {
+              const subs = (currentQuestion as any).subQuestions || [];
+              let cumulative = 0;
+              for (let i = 0; i < subs.length; i++) {
+                const sub = subs[i];
+                const subOptionsCount = sub.type === "text" ? 1 : (Array.isArray(sub.options) ? sub.options.length : 0);
+                if (prev >= cumulative && prev < cumulative + subOptionsCount && sub.type === "text") {
+                  const inputElement = document.querySelector(
+                    `input[data-question-id="${sub.id}"]`
+                  ) as HTMLInputElement;
+                  if (inputElement && document.activeElement === inputElement) {
+                    inputElement.blur();
+                  }
+                }
+                cumulative += subOptionsCount;
+              }
+            }
+            
             return prev - 1;
           });
           break;
@@ -217,37 +273,114 @@ const QuizPage: React.FC = () => {
           setFocusedOption((prev) => {
             if (prev === -1) return 0; // bắt đầu từ đáp án đầu
             if (prev === totalOptions - 1) {
-              if (hasConfirmButton && !isLocked) return 9999; // xuống nút Xác nhận
+              if (hasConfirmButton && !isLocked) {
+                // THÊM: Blur input nếu đang ở text input cuối cùng
+                if (currentQuestion.type === "text") {
+                  const inputElement = document.querySelector(
+                    `input[data-question-id="${currentQuestion.id}"]`
+                  ) as HTMLInputElement;
+                  if (inputElement && document.activeElement === inputElement) {
+                    inputElement.blur();
+                  }
+                } else if (currentQuestion.type === "composite") {
+                  // Tìm text input cuối cùng trong composite
+                  const subs = (currentQuestion as any).subQuestions || [];
+                  for (let i = subs.length - 1; i >= 0; i--) {
+                    if (subs[i].type === "text") {
+                      const inputElement = document.querySelector(
+                        `input[data-question-id="${subs[i].id}"]`
+                      ) as HTMLInputElement;
+                      if (inputElement && document.activeElement === inputElement) {
+                        inputElement.blur();
+                      }
+                      break;
+                    }
+                  }
+                }
+                return 9999; // xuống nút Xác nhận
+              }
               return prev;
             }
             if (prev === 9999) return prev; // giữ nguyên nếu đang ở nút xác nhận
+            
+            // THÊM: Blur input nếu đang rời khỏi text input trong composite
+            if (currentQuestion.type === "composite") {
+              const subs = (currentQuestion as any).subQuestions || [];
+              let cumulative = 0;
+              for (let i = 0; i < subs.length; i++) {
+                const sub = subs[i];
+                const subOptionsCount = sub.type === "text" ? 1 : (Array.isArray(sub.options) ? sub.options.length : 0);
+                if (prev >= cumulative && prev < cumulative + subOptionsCount && sub.type === "text") {
+                  const inputElement = document.querySelector(
+                    `input[data-question-id="${sub.id}"]`
+                  ) as HTMLInputElement;
+                  if (inputElement && document.activeElement === inputElement) {
+                    inputElement.blur();
+                  }
+                }
+                cumulative += subOptionsCount;
+              }
+            }
+            
             return prev + 1;
           });
           break;
 
-        case "Enter":
-        case " ":
-        case "Spacebar":
-          e.preventDefault();
-          if (focusedOption === 9999 && hasConfirmButton && !isLocked) {
-            // Bấm Enter trên nút Xác nhận
-            markRevealed(currentQuestion.id);
-          } else if (
-            focusedOption >= 0 &&
-            focusedOption < totalOptions &&
-            !isLocked
-          ) {
-            // Bấm Enter để chọn đáp án
-            const opts = Array.isArray(currentQuestion.options)
-              ? currentQuestion.options
-              : [];
-            const option = opts[focusedOption] as string | undefined;
-            if (option) handleAnswerSelect(currentQuestion.id, option);
-          } else if (focusedOption === -1 && totalOptions > 0) {
-            // Chưa chọn gì -> focus đáp án đầu tiên
-            setFocusedOption(0);
-          }
-          break;
+          case "Enter":
+          case " ":
+          case "Spacebar":
+            e.preventDefault();
+            
+            if (focusedOption === 9999 && hasConfirmButton && !isLocked) {
+              // Bấm Enter trên nút Xác nhận
+              markRevealed(currentQuestion.id);
+            } else if (focusedOption >= 0 && focusedOption < totalOptions && !isLocked) {
+              // Xử lý cho composite
+              if (currentQuestion.type === "composite") {
+                const subs = (currentQuestion as any).subQuestions || [];
+                let cumulativeIndex = 0;
+                
+                for (const sub of subs) {
+                  const subOptionsCount = sub.type === "text" ? 1 : (Array.isArray(sub.options) ? sub.options.length : 0);
+                  
+                  if (focusedOption < cumulativeIndex + subOptionsCount) {
+                    const localIndex = focusedOption - cumulativeIndex;
+                    
+                    if (sub.type === "text") {
+                      // Focus vào input box
+                      const inputElement = document.querySelector(`input[data-question-id="${sub.id}"]`) as HTMLInputElement;
+                      if (inputElement) {
+                        inputElement.focus();
+                        inputElement.select();
+                      }
+                    } else if (Array.isArray(sub.options)) {
+                      const option = sub.options[localIndex] as string;
+                      if (option) handleAnswerSelect(sub.id, option, sub.type as "single" | "multiple");
+                    }
+                    break;
+                  }
+                  cumulativeIndex += subOptionsCount;
+                }
+              } 
+              // Xử lý cho text question thông thường
+              else if (currentQuestion.type === "text") {
+                const inputElement = document.querySelector(`input[data-question-id="${currentQuestion.id}"]`) as HTMLInputElement;
+                if (inputElement) {
+                  inputElement.focus();
+                  inputElement.select();
+                }
+              }
+              // Xử lý cho single/multiple thông thường
+              else {
+                const opts = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
+                const option = opts[focusedOption] as string | undefined;
+                if (option) handleAnswerSelect(currentQuestion.id, option);
+              }
+            } else if (focusedOption === -1 && totalOptions > 0) {
+              // Chưa chọn gì -> focus đáp án đầu tiên
+              setFocusedOption(0);
+            }
+            break;
 
         default:
           break;
@@ -677,9 +810,12 @@ const QuizPage: React.FC = () => {
                 <div className="space-y-2">
                   <input
                     type="text"
+                    data-question-id={currentQuestion.id}  // THÊM dòng này
                     disabled={isRevealed(currentQuestion.id)}
                     className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${
-                      isRevealed(currentQuestion.id)
+                      focusedOption === 0  // THÊM điều kiện focus
+                        ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
+                        : isRevealed(currentQuestion.id)
                         ? isTextAnswerCorrect(
                             currentQuestion,
                             (getCurrentAnswer(
@@ -884,9 +1020,22 @@ const QuizPage: React.FC = () => {
                               <div className="space-y-2">
                                 <input
                                   type="text"
+                                  data-question-id={sub.id}  // THÊM dòng này
                                   disabled={parentRevealed}
                                   className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${
-                                    parentRevealed
+                                    (() => {  // THÊM logic tính globalIndex cho input trong composite
+                                      const subs = (currentQuestion as any).subQuestions || [];
+                                      let cumulative = 0;
+                                      for (let i = 0; i < idx; i++) {
+                                        const prevSub = subs[i];
+                                        cumulative += prevSub.type === "text" 
+                                          ? 1 
+                                          : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
+                                      }
+                                      return focusedOption === cumulative;
+                                    })()
+                                      ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
+                                      : parentRevealed
                                       ? isTextAnswerCorrect(
                                           sub,
                                           (getCurrentAnswer(
@@ -925,51 +1074,77 @@ const QuizPage: React.FC = () => {
                               sub.type !== "drag" &&
                               Array.isArray(sub.options) && (
                                 <div className="space-y-2">
-                                  {sub.options.map((opt, oidx) => {
-                                    const selected = getCurrentAnswer(sub.id);
-                                    const shouldReveal = isChoiceReveal(
-                                      sub,
-                                      selected,
-                                      parentRevealed
-                                    );
-                                    const isCorrect = (
-                                      Array.isArray(sub.correctAnswers)
-                                        ? (sub.correctAnswers as string[])
-                                        : []
-                                    ).includes(opt);
-                                    const isChosen = selected.includes(opt);
-                                    const base =
-                                      "w-full p-3 text-left rounded-lg border transition-all duration-200 disabled:cursor-not-allowed";
-                                    const chosenStyle =
-                                      "bg-primary-100 border-primary-600 text-primary-900 shadow-sm dark:bg-primary-900/50 dark:border-primary-400 dark:text-primary-100";
-                                    const normalStyle =
-                                      "bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700";
-                                    const correctStyle =
-                                      "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
-                                    const wrongChosenStyle =
-                                      "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
-                                    const cls = shouldReveal
-                                      ? isCorrect
-                                        ? correctStyle
-                                        : isChosen
-                                        ? wrongChosenStyle
-                                        : normalStyle
+                                {sub.options.map((opt, oidx) => {
+                                  const selected = getCurrentAnswer(sub.id);
+                                  const shouldReveal = isChoiceReveal(
+                                    sub,
+                                    selected,
+                                    parentRevealed
+                                  );
+                                  const isCorrect = (
+                                    Array.isArray(sub.correctAnswers)
+                                      ? (sub.correctAnswers as string[])
+                                      : []
+                                  ).includes(opt);
+                                  const isChosen = selected.includes(opt);
+                                  
+                                  // THÊM: Tính toán globalIndex để xác định focus
+                                  const globalIndex = (() => {
+                                    const subs = (currentQuestion as any).subQuestions || [];
+                                    let cumulative = 0;
+                                    // Cộng dồn số options của các sub-question trước đó
+                                    for (let i = 0; i < idx; i++) {
+                                      const prevSub = subs[i];
+                                      cumulative += prevSub.type === "text" 
+                                        ? 1 
+                                        : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
+                                    }
+                                    // Cộng thêm index của option hiện tại trong sub-question này
+                                    return cumulative + oidx;
+                                  })();
+                                  
+                                  // THÊM: Kiểm tra xem option này có đang được focus không
+                                  const isFocused = focusedOption === globalIndex;
+                                  
+                                  const base =
+                                    "w-full p-3 text-left rounded-lg border transition-all duration-200 disabled:cursor-not-allowed";
+                                  const chosenStyle =
+                                    "bg-primary-100 border-primary-600 text-primary-900 shadow-sm dark:bg-primary-900/50 dark:border-primary-400 dark:text-primary-100";
+                                  const normalStyle =
+                                    "bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700";
+                                  const correctStyle =
+                                    "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                                  const wrongChosenStyle =
+                                    "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                                  
+                                  // THÊM: Style cho focus state
+                                  const focusedStyle = isFocused
+                                    ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
+                                    : "";
+                                  
+                                  const cls = shouldReveal
+                                    ? isCorrect
+                                      ? correctStyle
                                       : isChosen
-                                      ? chosenStyle
-                                      : normalStyle;
-                                    return (
-                                      <button
-                                        key={oidx}
-                                        disabled={parentRevealed}
-                                        onClick={() =>
-                                          handleAnswerSelect(
-                                            sub.id,
-                                            opt,
-                                            sub.type as "single" | "multiple"
-                                          )
-                                        }
-                                        className={`${base} ${cls}`}
-                                      >
+                                      ? wrongChosenStyle
+                                      : normalStyle
+                                    : isChosen
+                                    ? chosenStyle
+                                    : normalStyle;
+                                  
+                                  return (
+                                    <button
+                                      key={oidx}
+                                      disabled={parentRevealed}
+                                      onClick={() =>
+                                        handleAnswerSelect(
+                                          sub.id,
+                                          opt,
+                                          sub.type as "single" | "multiple"
+                                        )
+                                      }
+                                      className={`${base} ${cls} ${focusedStyle}`}  // THÊM focusedStyle vào đây
+                                    >
                                         <div className="text-left w-full flex items-center gap-2">
                                           {shouldReveal && isCorrect && (
                                             <svg
@@ -1010,6 +1185,8 @@ const QuizPage: React.FC = () => {
                                         </div>
                                       </button>
                                     );
+                                    
+                                    
                                   })}
                                 </div>
                               )}
