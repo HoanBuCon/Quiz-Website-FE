@@ -893,10 +893,12 @@ const QuizPage: React.FC = () => {
                       const chosenShadow = "shadow-md shadow-primary-500/20 dark:shadow-md dark:shadow-primary-500/25";
                       const normalStyle =
                         "bg-white text-gray-800 border-gray-400 hover:border-gray-500 hover:bg-stone-100 hover:shadow-md hover:shadow-gray-400/15 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-700/50 dark:hover:shadow-md dark:hover:shadow-gray-400/20";
-                      const correctStyle =
-                        "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
-                      const wrongChosenStyle =
-                        "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                      const correctStyle_Base =
+                        "bg-green-500 text-white border-green-600 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                      const correctShadow = "shadow-md shadow-green-500/20";
+                      const wrongChosenStyle_Base =
+                        "bg-red-600 text-white border-red-700 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                      const wrongChosenShadow = "shadow-md shadow-red-600/20";
                       const focusNormal =
                         "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,0.7)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
                       const focusChosen =
@@ -910,9 +912,9 @@ const QuizPage: React.FC = () => {
                       let computedClassName = "";
                       if (shouldReveal) {
                         if (isCorrect) {
-                          computedClassName = isFocused ? `${correctStyle} ${focusCorrect}` : correctStyle;
+                          computedClassName = isFocused ? `${correctStyle_Base} ${focusCorrect}` : `${correctStyle_Base} ${correctShadow}`;
                         } else if (isChosen) {
-                          computedClassName = isFocused ? `${wrongChosenStyle} ${focusWrong}` : wrongChosenStyle;
+                          computedClassName = isFocused ? `${wrongChosenStyle_Base} ${focusWrong}` : `${wrongChosenStyle_Base} ${wrongChosenShadow}`;
                         } else {
                           computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
                         }
@@ -1166,10 +1168,12 @@ const QuizPage: React.FC = () => {
                                   const chosenShadow = "shadow-md shadow-primary-500/20 dark:shadow-md dark:shadow-primary-500/25";
                                   const normalStyle =
                                     "bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700";
-                                  const correctStyle =
-                                    "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
-                                  const wrongChosenStyle =
-                                    "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                                  const correctStyle_Base =
+                                    "bg-green-500 text-white border-green-600 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                                  const correctShadow = "shadow-md shadow-green-500/20";
+                                  const wrongChosenStyle_Base =
+                                    "bg-red-600 text-white border-red-700 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                                  const wrongChosenShadow = "shadow-md shadow-red-600/20";
                                   
                                   {/* === BẮT ĐẦU SỬA MỤC 4 === */}                          
                                   {/* Định nghĩa các style focus (Trỏ) */}
@@ -1182,9 +1186,9 @@ const QuizPage: React.FC = () => {
                                   let computedClassName = "";
                                   if (shouldReveal) {
                                     if (isCorrect) {
-                                      computedClassName = isFocused ? `${correctStyle} ${focusCorrect}` : correctStyle;
+                                      computedClassName = isFocused ? `${correctStyle_Base} ${focusCorrect}` : `${correctStyle_Base} ${correctShadow}`;
                                     } else if (isChosen) {
-                                      computedClassName = isFocused ? `${wrongChosenStyle} ${focusWrong}` : wrongChosenStyle;
+                                      computedClassName = isFocused ? `${wrongChosenStyle_Base} ${focusWrong}` : `${wrongChosenStyle_Base} ${wrongChosenShadow}`;
                                     } else {
                                       computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
                                     }
