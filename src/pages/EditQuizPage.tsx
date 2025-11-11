@@ -220,68 +220,46 @@ const EditQuizPage: React.FC = () => {
   const [previewContent, setPreviewContent] = useState("");
   // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
   const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
-  // Theo dõi scroll để tránh bị trả về đầu trang khi chỉnh sửa
-  const lastScrollYRef = useRef(0);
-  const userScrollingRef = useRef(false);
-  const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const restoringScrollRef = useRef(false);
+  // Lưu lại thông tin vị trí phần tử để giữ nguyên viewport sau các thao tác chỉnh sửa
+  const scrollAnchorRef = useRef<{
+    id: string;
+    offsetTop: number;
+    ts: number;
+  } | null>(null);
 
-  useEffect(() => {
-    const updateLastScroll = () => {
-      if (restoringScrollRef.current) return;
-      if (userScrollingRef.current) {
-        lastScrollYRef.current =
-          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-      }
+  const setScrollAnchor = (questionId: string) => {
+    const element = document.querySelector<HTMLElement>(`[data-qid="${questionId}"]`);
+    if (!element) {
+      scrollAnchorRef.current = null;
+      return;
+    }
+    const rect = element.getBoundingClientRect();
+    scrollAnchorRef.current = {
+      id: questionId,
+      offsetTop: rect.top,
+      ts: Date.now(),
     };
-
-    const markUserScrolling = () => {
-      userScrollingRef.current = true;
-      if (userScrollTimeoutRef.current) {
-        clearTimeout(userScrollTimeoutRef.current);
-      }
-      userScrollTimeoutRef.current = setTimeout(() => {
-        userScrollingRef.current = false;
-      }, 200);
-    };
-
-    window.addEventListener("scroll", updateLastScroll, { passive: true });
-    window.addEventListener("wheel", markUserScrolling, { passive: true });
-    window.addEventListener("touchmove", markUserScrolling, { passive: true });
-    window.addEventListener("keydown", markUserScrolling);
-
-    // Khởi tạo scroll ban đầu
-    lastScrollYRef.current =
-      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-
-    return () => {
-      window.removeEventListener("scroll", updateLastScroll);
-      window.removeEventListener("wheel", markUserScrolling);
-      window.removeEventListener("touchmove", markUserScrolling);
-      window.removeEventListener("keydown", markUserScrolling);
-      if (userScrollTimeoutRef.current) {
-        clearTimeout(userScrollTimeoutRef.current);
-      }
-    };
-  }, []);
+  };
 
   useLayoutEffect(() => {
-    if (isEditing === null) {
+    const anchor = scrollAnchorRef.current;
+    if (!anchor) return;
+
+    // Chỉ restore scroll nếu không quá 50ms (tránh restore khi user đã scroll đi nơi khác)
+    if (Date.now() - anchor.ts > 50) {
+      scrollAnchorRef.current = null;
       return;
     }
 
-    const expected = lastScrollYRef.current;
-    const actual =
-      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+    const element = document.querySelector<HTMLElement>(`[data-qid="${anchor.id}"]`);
+    scrollAnchorRef.current = null;
+    if (!element) return;
 
-    if (!userScrollingRef.current && Math.abs(actual - expected) > 4) {
-      restoringScrollRef.current = true;
-      window.scrollTo({ top: expected, behavior: "auto" });
-      requestAnimationFrame(() => {
-        restoringScrollRef.current = false;
-        lastScrollYRef.current =
-          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-      });
+    // Giữ phần tử tại cùng offsetTop so với viewport
+    const rect = element.getBoundingClientRect();
+    const delta = rect.top - anchor.offsetTop;
+    if (Math.abs(delta) > 1) {
+      window.scrollBy({ top: delta, behavior: "auto" });
     }
   });
 
@@ -822,9 +800,7 @@ const EditQuizPage: React.FC = () => {
   }, [state, navigate]);
 
   const handleQuestionEdit = (questionId: string) => {
-    lastScrollYRef.current =
-      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-
+    setScrollAnchor(questionId);
     // Khôi phục edited state nếu có (từ lần edit trước)
     const question = questions.find(q => q.id === questionId);
     if (question && !editedQuestionsMapRef.current.has(questionId)) {
@@ -1111,7 +1087,14 @@ const EditQuizPage: React.FC = () => {
       return question;
     };
 
-    const [editedQuestion, setEditedQuestion] = useState<QuestionWithImages>(getInitialState);
+    const [editedQuestion, _setEditedQuestion] = useState<QuestionWithImages>(getInitialState);
+    const setEditedQuestion = (
+      updater: React.SetStateAction<QuestionWithImages>
+    ) => {
+      // LUÔN GỌI SET ANCHOR TRƯỚC KHI CẬP NHẬT STATE TỪ TƯƠNG TÁC
+      setScrollAnchor(question.id); 
+      _setEditedQuestion(updater);
+    };
 
     // Lưu state vào map mỗi khi thay đổi để persist qua scroll/remount
     useEffect(() => {
@@ -1135,10 +1118,10 @@ const EditQuizPage: React.FC = () => {
           ...question,
           correctAnswers: [""],
         };
-        setEditedQuestion(newState);
+        _setEditedQuestion(newState);
         editedQuestionsMapRef.current.set(question.id, newState);
       } else {
-        setEditedQuestion(question);
+        _setEditedQuestion(question);
         editedQuestionsMapRef.current.set(question.id, question);
       }
 
@@ -1176,6 +1159,7 @@ const EditQuizPage: React.FC = () => {
         };
 
         console.log("Saving text question with data:", updatedData); // Debug log
+        setScrollAnchor(question.id);
         handleQuestionSave(question.id, updatedData);
       } else if (editedQuestion.type === "drag") {
         // Lưu cấu trúc kéo thả: options.targets, options.items, correctAnswers là map itemId->targetId
@@ -1216,6 +1200,7 @@ const EditQuizPage: React.FC = () => {
           options: { targets, items },
           correctAnswers: cleanedMap, // Không bắt buộc phải map hết
         };
+        setScrollAnchor(question.id);
         handleQuestionSave(question.id, updatedData);
       } else if (editedQuestion.type === "composite") {
         // Đối với câu hỏi mẹ
@@ -1271,6 +1256,7 @@ const EditQuizPage: React.FC = () => {
         };
 
         console.log("Saving composite question with data:", updatedData); // Debug log
+        setScrollAnchor(question.id);
         handleQuestionSave(question.id, updatedData);
       } else {
         // Đối với câu hỏi trắc nghiệm
@@ -1301,14 +1287,16 @@ const EditQuizPage: React.FC = () => {
         };
 
         console.log("Saving multiple choice question with data:", updatedData); // Debug log
+        setScrollAnchor(question.id);
         handleQuestionSave(question.id, updatedData);
       }
     };
 
     const handleCancel = () => {
+      setScrollAnchor(question.id);
       // Xóa state đã lưu khi cancel (khôi phục về state gốc)
       editedQuestionsMapRef.current.delete(question.id);
-      setEditedQuestion(question);
+      _setEditedQuestion(question);
       setIsEditing(null);
     };
 
