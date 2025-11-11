@@ -23,6 +23,10 @@ model User {
   files          UploadedFile[]
   messages       ChatMessage[]
   chatReadStatus ChatReadStatus?
+  lastLoginAt    DateTime?
+  lastLogoutAt   DateTime?
+  lastActivityAt DateTime?
+  quizAttempts   QuizAttempt[]
 }
 
 model Class {
@@ -50,6 +54,7 @@ model Quiz {
   class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
   owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   sessions    QuizSession[]
+  quizAttempts QuizAttempt[] // Liên kết đến các lần bắt đầu làm quiz
 }
 
 model Question {
@@ -80,6 +85,7 @@ model QuizSession {
   userId         String
   quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAttempt    QuizAttempt?
 }
 
 model UploadedFile {
@@ -185,4 +191,20 @@ model PasswordReset {
   createdAt  DateTime @default(now())
 
   @@index([email, createdAt])
+}
+
+model QuizAttempt {
+  id            String        @id @default(cuid())
+  userId        String
+  quizId        String
+  startedAt     DateTime      @default(now())
+  endedAt       DateTime? 
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz          Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  quizSessionId String?       @unique
+  quizSession   QuizSession?  @relation(fields: [quizSessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, quizId, startedAt])
 }

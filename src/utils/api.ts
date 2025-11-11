@@ -213,6 +213,7 @@ export const SessionsAPI = {
       quizId: string;
       answers: Record<string, any>;
       timeSpent: number;
+      attemptId?: string;
     },
     token: string
   ) =>
@@ -220,6 +221,12 @@ export const SessionsAPI = {
       method: "POST",
       token,
       body: JSON.stringify(payload),
+    }),
+  endAttempt: (attemptId: string, token: string) =>
+    apiRequest<void>(`/sessions/attempt/end`, {
+      method: "POST",
+      token,
+      body: JSON.stringify({ attemptId }),
     }),
   byQuiz: (quizId: string, token: string) =>
     apiRequest<any[]>(`/sessions/by-quiz/${quizId}`, { token }),
@@ -255,6 +262,8 @@ export const ChatAPI = {
     if (params.before) q.set("before", params.before);
     return apiRequest<any[]>(`/chat/messages${q.toString() ? `?${q.toString()}` : ""}`, { token });
   },
+  getOnlineCount: (token: string) =>
+    apiRequest<{ count: number; windowMinutes: number }>(`/chat/online-count`, { token }),
   send: async (
     { content, file }: { content?: string; file?: File },
     token: string

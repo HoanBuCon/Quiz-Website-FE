@@ -24,6 +24,9 @@ const QuizPage: React.FC = () => {
   const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
   const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const attemptRef = React.useRef<string | null>(null);
+  useEffect(() => { attemptRef.current = attemptId; }, [attemptId]);
 
   // UI mode: 'default' (nộp bài mới xem kết quả) | 'instant' (xem kết quả ngay)
   const [uiMode, setUiMode] = useState<"default" | "instant">("default");
@@ -143,6 +146,45 @@ const QuizPage: React.FC = () => {
 
     loadQuiz();
   }, [quizId, navigate]);
+
+  // Tạo QuizAttempt khi đã biết quizId hiệu lực
+  useEffect(() => {
+    if (!effectiveQuizId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getToken } = await import("../utils/auth");
+        const token = getToken();
+        if (!token) return;
+        const { SessionsAPI } = await import("../utils/api");
+        const res = await SessionsAPI.start(effectiveQuizId, token);
+        if (!cancelled) setAttemptId(res.attemptId || null);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [effectiveQuizId]);
+
+  // Gửi endAttempt khi rời trang hoặc reload
+  useEffect(() => {
+    const sendEnd = async () => {
+      const id = attemptRef.current;
+      if (!id) return;
+      try {
+        const { getToken } = await import("../utils/auth");
+        const token = getToken();
+        if (!token) return;
+        const { SessionsAPI } = await import("../utils/api");
+        await SessionsAPI.endAttempt(id, token);
+      } catch {}
+    };
+    const handleBeforeUnload = () => { navigator.sendBeacon?.('', new Blob()); };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // best-effort end on unmount
+      sendEnd();
+    };
+  }, []);
 
   // Hỏi người dùng chọn định dạng khi vào trang
   useEffect(() => {
@@ -648,7 +690,7 @@ const QuizPage: React.FC = () => {
         const { SessionsAPI } = await import("../utils/api");
         const qid = effectiveQuizId || quizId!;
         const created = await SessionsAPI.submit(
-          { quizId: qid, answers: answersMap, timeSpent },
+          { quizId: qid, answers: answersMap, timeSpent, attemptId: attemptId || undefined },
           token
         );
         try {

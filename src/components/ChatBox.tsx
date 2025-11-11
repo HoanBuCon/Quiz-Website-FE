@@ -65,6 +65,8 @@ const ChatBox: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  const [onlineWindow, setOnlineWindow] = useState<number>(5);
 
   // Load hidden messages from localStorage
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(() => {
@@ -82,6 +84,9 @@ const ChatBox: React.FC = () => {
       localStorage.setItem('chat_hidden_messages', JSON.stringify(Array.from(hiddenMessages)));
     } catch {}
   }, [hiddenMessages]);
+
+  // Poll online count periodically (sau khi có token)
+  // Moved xuống sau phần Auth để tránh dùng token trước khi khai báo
 
   // Header event integration
   useEffect(() => {
@@ -119,6 +124,22 @@ const ChatBox: React.FC = () => {
     } catch {
       return null;
     }
+  }, [token]);
+
+  // Poll online count periodically (sau khi có token)
+  useEffect(() => {
+    let timer: any;
+    const fetchOnline = async () => {
+      if (!token) return;
+      try {
+        const res = await ChatAPI.getOnlineCount(token);
+        setOnlineCount(res.count);
+        setOnlineWindow(res.windowMinutes);
+      } catch {}
+    };
+    fetchOnline();
+    timer = setInterval(fetchOnline, 30000);
+    return () => clearInterval(timer);
   }, [token]);
 
   // Load unread count from backend on mount
@@ -690,7 +711,9 @@ const ChatBox: React.FC = () => {
             </div>
             <div>
               <div className="font-semibold text-base">Cộng đồng Liêm Đại Hiệp</div>
-              <div className="text-xs text-white/80">Đang hoạt động</div>
+              <div className="text-xs text-white/80">
+                {onlineCount === null ? 'Đang hoạt động' : `Đang hoạt động: ${onlineCount}`}
+              </div>
             </div>
           </div>
           <button 

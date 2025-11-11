@@ -67,6 +67,21 @@ const upload = multer({
   },
 });
 
+// Online count (users active within last N minutes)
+router.get('/online-count', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const minutes = Number(process.env.ONLINE_WINDOW_MINUTES || 5);
+  const since = new Date(Date.now() - minutes * 60 * 1000);
+  try {
+    const count = await prisma.user.count({
+      where: { lastActivityAt: { gt: since } },
+    });
+    res.json({ count, windowMinutes: minutes });
+  } catch (e) {
+    res.status(500).json({ message: 'Lỗi khi lấy số người online' });
+  }
+});
+
 // Build public URL for saved file relative to root (Apache/Dev serve)
 function buildPublicUrl(filename, mimetype) {
   const sub = mimetype.startsWith('image/')

@@ -48,9 +48,29 @@ router.post('/login', async (req, res) => {
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
   const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
+  // update lastLoginAt + lastActivityAt
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date(), lastActivityAt: new Date() },
+    });
+  } catch (_) {}
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
+// Logout: update lastLogoutAt
+router.post('/logout', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { lastLogoutAt: new Date() },
+    });
+    res.status(204).end();
+  } catch (_e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // Forgot password: return resetToken/resetLink (demo; normally email this)
 router.post('/forgot', async (req, res) => {
   const prisma = req.prisma;

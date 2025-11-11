@@ -8,13 +8,21 @@ router.post('/start', authRequired, async (req, res) => {
   const { quizId } = req.body || {};
   const quiz = await prisma.quiz.findUnique({ where: { id: quizId }, include: { questions: true } });
   if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
-  res.json({ quizId: quiz.id, totalQuestions: quiz.questions.length });
+  // Create a QuizAttempt to log that user started the quiz
+  const attempt = await prisma.quizAttempt.create({
+    data: {
+      userId: req.user.id,
+      quizId: quiz.id,
+      startedAt: new Date(),
+    },
+  });
+  res.json({ quizId: quiz.id, totalQuestions: quiz.questions.length, attemptId: attempt.id });
 });
 
 // Submit answers and score server-side (supports composite and drag)
 router.post('/submit', authRequired, async (req, res) => {
   const prisma = req.prisma;
-  const { quizId, answers, timeSpent } = req.body || {};
+  const { quizId, answers, timeSpent, attemptId } = req.body || {};
   const quiz = await prisma.quiz.findUnique({ where: { id: quizId }, include: { questions: true } });
   if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
   const allQs = quiz.questions;
@@ -87,6 +95,19 @@ router.post('/submit', authRequired, async (req, res) => {
     }
   });
 
+  // If an attemptId was provided, link it to this session and mark endedAt
+  if (attemptId) {
+    try {
+      const attempt = await prisma.quizAttempt.findUnique({ where: { id: attemptId } });
+      if (attempt && attempt.userId === req.user.id && attempt.quizId === quiz.id) {
+        await prisma.quizAttempt.update({
+          where: { id: attemptId },
+          data: { endedAt: new Date(), quizSessionId: session.id },
+        });
+      }
+    } catch (_) {}
+  }
+
   res.status(201).json({
     sessionId: session.id,
     score,
@@ -95,6 +116,22 @@ router.post('/submit', authRequired, async (req, res) => {
   });
 });
 
+// Mark attempt ended without submission (user left quiz page)
+router.post('/attempt/end', authRequired, async (req, res) => {
+  const prisma = req.prisma;
+  const { attemptId } = req.body || {};
+  if (!attemptId) return res.status(400).json({ message: 'Missing attemptId' });
+  try {
+    const attempt = await prisma.quizAttempt.findUnique({ where: { id: attemptId } });
+    if (!attempt || attempt.userId !== req.user.id) return res.status(404).json({ message: 'Not found' });
+    if (!attempt.endedAt) {
+      await prisma.quizAttempt.update({ where: { id: attemptId }, data: { endedAt: new Date() } });
+    }
+    res.status(204).end();
+  } catch (_e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // Get my results for a quiz (privacy-safe: no answers payload)
 router.get('/by-quiz/:quizId', authRequired, async (req, res) => {
   const prisma = req.prisma;
