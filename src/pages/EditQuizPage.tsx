@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Question, Quiz } from "../types";
 import { ParsedQuestion } from "../utils/docsParser";
@@ -218,6 +218,72 @@ const EditQuizPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
+  // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
+  const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
+  // Theo dõi scroll để tránh bị trả về đầu trang khi chỉnh sửa
+  const lastScrollYRef = useRef(0);
+  const userScrollingRef = useRef(false);
+  const userScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const restoringScrollRef = useRef(false);
+
+  useEffect(() => {
+    const updateLastScroll = () => {
+      if (restoringScrollRef.current) return;
+      if (userScrollingRef.current) {
+        lastScrollYRef.current =
+          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      }
+    };
+
+    const markUserScrolling = () => {
+      userScrollingRef.current = true;
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+      userScrollTimeoutRef.current = setTimeout(() => {
+        userScrollingRef.current = false;
+      }, 200);
+    };
+
+    window.addEventListener("scroll", updateLastScroll, { passive: true });
+    window.addEventListener("wheel", markUserScrolling, { passive: true });
+    window.addEventListener("touchmove", markUserScrolling, { passive: true });
+    window.addEventListener("keydown", markUserScrolling);
+
+    // Khởi tạo scroll ban đầu
+    lastScrollYRef.current =
+      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    return () => {
+      window.removeEventListener("scroll", updateLastScroll);
+      window.removeEventListener("wheel", markUserScrolling);
+      window.removeEventListener("touchmove", markUserScrolling);
+      window.removeEventListener("keydown", markUserScrolling);
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (isEditing === null) {
+      return;
+    }
+
+    const expected = lastScrollYRef.current;
+    const actual =
+      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    if (!userScrollingRef.current && Math.abs(actual - expected) > 4) {
+      restoringScrollRef.current = true;
+      window.scrollTo({ top: expected, behavior: "auto" });
+      requestAnimationFrame(() => {
+        restoringScrollRef.current = false;
+        lastScrollYRef.current =
+          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      });
+    }
+  });
 
   // Hàm xử lý khi nội dung preview được chỉnh sửa
   const handlePreviewEdit = (content: string) => {
@@ -755,37 +821,20 @@ const EditQuizPage: React.FC = () => {
     }
   }, [state, navigate]);
 
-  // Track and restore scroll position/anchor when closing editor
-  const restoreTargetId = useRef<string | null>(null);
-  const restoreScrollY = useRef<number>(0);
-
   const handleQuestionEdit = (questionId: string) => {
-    // Lưu vị trí scroll trước mở editor
-    const scrollY = window.scrollY || window.pageYOffset || 0;
-    restoreScrollY.current = scrollY;
-    restoreTargetId.current = questionId;
+    lastScrollYRef.current =
+      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    // Khôi phục edited state nếu có (từ lần edit trước)
+    const question = questions.find(q => q.id === questionId);
+    if (question && !editedQuestionsMapRef.current.has(questionId)) {
+      // Lưu state hiện tại của câu hỏi vào map
+      editedQuestionsMapRef.current.set(questionId, { ...question });
+    }
 
     // Mở editor
     setIsEditing(questionId);
-
-    // Ngăn chặn browser scroll tự động bằng cách ngay lập tức restore vị trí
-    requestAnimationFrame(() => {
-      window.scrollTo(0, scrollY);
-    });
   };
-
-  // Khi editor đóng, khôi phục vị trí scroll
-  useEffect(() => {
-    if (isEditing === null && restoreScrollY.current > 0) {
-      // Sở dụng setTimeout để đợi cho React render xong trước khi restore
-      const timer = setTimeout(() => {
-        window.scrollTo(0, restoreScrollY.current);
-        restoreTargetId.current = null;
-        restoreScrollY.current = 0;
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [isEditing]);
 
   const handleQuestionSave = (
     questionId: string,
@@ -797,7 +846,6 @@ const EditQuizPage: React.FC = () => {
       const updated = prev.map((q) => {
         if (q.id === questionId) {
           // ensure restore target follows saved question id
-          restoreTargetId.current = questionId;
           const result = { ...q, ...updatedQuestion };
 
           // Đảm bảo câu hỏi text không có options
@@ -814,6 +862,9 @@ const EditQuizPage: React.FC = () => {
               result.options = ["", "", "", ""];
             }
           }
+
+          // Cập nhật map với dữ liệu đã lưu
+          editedQuestionsMapRef.current.set(questionId, result);
 
           console.log("Question after save:", result); // Debug log
           return result;
@@ -1034,39 +1085,61 @@ const EditQuizPage: React.FC = () => {
     question: QuestionWithImages;
     index: number;
   }> = ({ question, index }) => {
-    const [editedQuestion, setEditedQuestion] =
-      useState<QuestionWithImages>(question);
     const savedOptionsRef = useRef<string[]>(
       Array.isArray(question.options)
         ? (question.options as string[])
         : ["", ""]
     );
-    // Track question.id đã được initialize để tránh reset khi scroll/re-render
-    const initializedQuestionIdRef = useRef<string | null>(null);
 
-    useEffect(() => {
-      // Chỉ initialize state khi question.id thay đổi (mở editor cho câu hỏi khác)
-      // KHÔNG reset nếu đang edit cùng một câu hỏi (tránh mất dữ liệu khi scroll)
-      if (initializedQuestionIdRef.current === question.id) {
-        // Đã initialize rồi, không reset state
-        return;
+    // Lấy state từ map nếu có (từ lần edit trước), nếu không thì dùng question prop
+    const getInitialState = (): QuestionWithImages => {
+      const savedState = editedQuestionsMapRef.current.get(question.id);
+      if (savedState) {
+        return savedState;
       }
-
-      // Đánh dấu đã initialize cho question.id này
-      initializedQuestionIdRef.current = question.id;
-
-      // Chỉ initialize state khi component lần đầu mở (dựa vào question.id)
-      // Điều này tránh reset state khi parent re-render
+      
+      // Khởi tạo state mới từ question prop
       if (
         question.type === "text" &&
         (!question.correctAnswers || question.correctAnswers.length === 0)
       ) {
-        setEditedQuestion({
+        return {
           ...question,
           correctAnswers: [""], // Tạo 1 đáp án trống mặc định
-        });
+        };
+      }
+      return question;
+    };
+
+    const [editedQuestion, setEditedQuestion] = useState<QuestionWithImages>(getInitialState);
+
+    // Lưu state vào map mỗi khi thay đổi để persist qua scroll/remount
+    useEffect(() => {
+      editedQuestionsMapRef.current.set(question.id, editedQuestion);
+    }, [editedQuestion, question.id]);
+
+    // Chỉ sync với prop khi question.id thay đổi (mở editor cho câu hỏi khác)
+    // KHÔNG sync khi scroll/re-render cùng một câu hỏi
+    useEffect(() => {
+      // Nếu đã có state được lưu trong map, không sync với prop
+      if (editedQuestionsMapRef.current.has(question.id)) {
+        return;
+      }
+
+      // Câu hỏi mới - khởi tạo từ prop
+      if (
+        question.type === "text" &&
+        (!question.correctAnswers || question.correctAnswers.length === 0)
+      ) {
+        const newState = {
+          ...question,
+          correctAnswers: [""],
+        };
+        setEditedQuestion(newState);
+        editedQuestionsMapRef.current.set(question.id, newState);
       } else {
         setEditedQuestion(question);
+        editedQuestionsMapRef.current.set(question.id, question);
       }
 
       // Luôn đảm bảo có ít nhất 2 options để backup
@@ -1233,6 +1306,8 @@ const EditQuizPage: React.FC = () => {
     };
 
     const handleCancel = () => {
+      // Xóa state đã lưu khi cancel (khôi phục về state gốc)
+      editedQuestionsMapRef.current.delete(question.id);
       setEditedQuestion(question);
       setIsEditing(null);
     };
