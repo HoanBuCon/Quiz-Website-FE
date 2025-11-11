@@ -6,6 +6,9 @@ const fs = require('fs');
 const { authRequired } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 
+let onlineCountCache = { count: 0, timestamp: 0, windowMinutes: 5 };
+const CACHE_DURATION_MS = 10000; 
+
 const isProd = process.env.NODE_ENV === 'production';
 // Local dev: quiz-backend/public/chatbox/uploads
 // Production (cPanel): public_html/chatbox/uploads (resolve relative to app dir)
@@ -69,14 +72,25 @@ const upload = multer({
 
 // Online count (users active within last N minutes)
 router.get('/online-count', authRequired, async (req, res) => {
+  // 1. Kiểm tra cache trước
+  const now = Date.now();
+  if (now - onlineCountCache.timestamp < CACHE_DURATION_MS) {
+    // Cache còn hạn, trả về cache
+    return res.json(onlineCountCache);
+  }
+
+  // 2. Nếu cache cũ, truy vấn DB
   const prisma = req.prisma;
   const minutes = Number(process.env.ONLINE_WINDOW_MINUTES || 5);
-  const since = new Date(Date.now() - minutes * 60 * 1000);
+  const since = new Date(now - minutes * 60 * 1000);
   try {
     const count = await prisma.user.count({
       where: { lastActivityAt: { gt: since } },
     });
-    res.json({ count, windowMinutes: minutes });
+    
+    // 3. Cập nhật cache và trả về
+    onlineCountCache = { count, timestamp: now, windowMinutes: minutes };
+    res.json(onlineCountCache);
   } catch (e) {
     res.status(500).json({ message: 'Lỗi khi lấy số người online' });
   }

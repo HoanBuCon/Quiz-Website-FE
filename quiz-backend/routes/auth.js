@@ -58,19 +58,66 @@ router.post('/login', async (req, res) => {
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
-// Logout: update lastLogoutAt
+// Logout
 router.post('/logout', authRequired, async (req, res) => {
   const prisma = req.prisma;
   try {
+    // Đặt lastActivityAt về 6 phút trước để
+    // user rớt khỏi danh sách online ngay lập tức.
+    const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+    
     await prisma.user.update({
       where: { id: req.user.id },
-      data: { lastLogoutAt: new Date() },
+      data: { 
+        lastLogoutAt: new Date(),
+        lastActivityAt: sixMinutesAgo
+      },
     });
     res.status(204).end();
   } catch (_e) {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Endpoint này được gọi bằng sendBeacon từ frontend khi tab trình duyệt đóng
+router.post('/offline-signal', async (req, res) => {
+  const prisma = req.prisma;
+  const token = req.query.token; // Lấy token từ query
+  
+  if (!token) {
+    return res.status(401).end();
+  }
+
+  let userId;
+  try {
+    // Tự xác thực token
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
+    if (!secret) return res.status(500).end();
+    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+    userId = payload.sub;
+    if (!userId) return res.status(401).end();
+    
+  } catch (e) {
+    return res.status(401).end(); // Token hỏng hoặc hết hạn
+  }
+
+  // Nếu token hợp lệ, thực hiện logic tương tự như logout
+  try {
+    const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+    
+    await prisma.user.update({
+      where: { id: userId }, // Dùng userId từ token
+      data: { 
+        lastActivityAt: sixMinutesAgo 
+      },
+    });
+    
+    res.status(204).end();
+  } catch (_e) {
+    res.status(500).end();
+  }
+});
+
 // Forgot password: return resetToken/resetLink (demo; normally email this)
 router.post('/forgot', async (req, res) => {
   const prisma = req.prisma;

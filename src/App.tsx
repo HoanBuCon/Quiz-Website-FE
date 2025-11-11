@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
@@ -18,6 +18,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ClassViewPage from "./pages/ClassViewPage";
+import { getToken } from "./utils/auth";
+import { getApiBaseUrl } from "./utils/api";
 
 // ThemedToaster component để đổi màu theo theme
 function ThemedToaster() {
@@ -154,6 +156,23 @@ function ThemedToaster() {
 }
 
 function App() {
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        const token = getToken();
+        if (navigator.sendBeacon && token) {
+          const url = `${getApiBaseUrl()}/auth/offline-signal?token=${encodeURIComponent(token)}`;
+          navigator.sendBeacon(url);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   return (
     <ThemeProvider>
       <MusicProvider>

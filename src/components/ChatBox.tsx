@@ -138,7 +138,7 @@ const ChatBox: React.FC = () => {
       } catch {}
     };
     fetchOnline();
-    timer = setInterval(fetchOnline, 30000);
+    timer = setInterval(fetchOnline, 10000);
     return () => clearInterval(timer);
   }, [token]);
 
