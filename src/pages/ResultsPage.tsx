@@ -457,6 +457,17 @@ const ResultsPage: React.FC = () => {
                           </span>
                         </div>
 
+                        {/* Hiển thị ảnh câu hỏi con nếu có */}
+                        {subQ.questionImage && (
+                          <div className="mb-3">
+                            <img
+                              src={subQ.questionImage}
+                              alt="Question"
+                              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                            />
+                          </div>
+                        )}
+
                         {/* Hiển thị đáp án của câu con */}
                         <div className="space-y-2">
                           {subQ.type === "text" ? (
@@ -547,6 +558,16 @@ const ResultsPage: React.FC = () => {
                                           )}
                                         </div>
                                       </div>
+                                      {/* Hiển thị ảnh đáp án câu con nếu có */}
+                                      {subQ.optionImages && subQ.optionImages[option] && (
+                                        <div className="mt-2">
+                                          <img
+                                            src={subQ.optionImages[option]}
+                                            alt={`Option ${String.fromCharCode(65 + optIndex)}`}
+                                            className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 }
@@ -601,6 +622,17 @@ const ResultsPage: React.FC = () => {
               <p className="text-gray-900 dark:text-white mb-4 text-lg">
                 {q.question}
               </p>
+
+              {/* Hiển thị ảnh câu hỏi nếu có */}
+              {(q as any).questionImage && (
+                <div className="mb-4">
+                  <img
+                    src={(q as any).questionImage}
+                    alt="Question"
+                    className="max-w-full max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                  />
+                </div>
+              )}
 
               <div className="space-y-3">
                 {q.type === "text" ? (
@@ -716,6 +748,16 @@ const ResultsPage: React.FC = () => {
                                 <div className="font-medium text-gray-900 dark:text-white mb-2">
                                   📝 {item.label}
                                 </div>
+                                {/* Hiển thị ảnh đáp án kéo thả nếu có */}
+                                {(q as any).optionImages && (q as any).optionImages[item.label] && (
+                                  <div className="mb-2">
+                                    <img
+                                      src={(q as any).optionImages[item.label]}
+                                      alt={`Item ${item.label}`}
+                                      className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                    />
+                                  </div>
+                                )}
                                 <div className="space-y-1 text-sm">
                                   <div
                                     className={`${
@@ -823,6 +865,16 @@ const ResultsPage: React.FC = () => {
                                 )}
                               </div>
                             </div>
+                            {/* Hiển thị ảnh đáp án nếu có */}
+                            {(q as any).optionImages && (q as any).optionImages[option] && (
+                              <div className="mt-2">
+                                <img
+                                  src={(q as any).optionImages[option]}
+                                  alt={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                                  className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                />
+                              </div>
+                            )}
                           </div>
                         );
                       }

@@ -1041,8 +1041,20 @@ const EditQuizPage: React.FC = () => {
         ? (question.options as string[])
         : ["", ""]
     );
+    // Track question.id đã được initialize để tránh reset khi scroll/re-render
+    const initializedQuestionIdRef = useRef<string | null>(null);
 
     useEffect(() => {
+      // Chỉ initialize state khi question.id thay đổi (mở editor cho câu hỏi khác)
+      // KHÔNG reset nếu đang edit cùng một câu hỏi (tránh mất dữ liệu khi scroll)
+      if (initializedQuestionIdRef.current === question.id) {
+        // Đã initialize rồi, không reset state
+        return;
+      }
+
+      // Đánh dấu đã initialize cho question.id này
+      initializedQuestionIdRef.current = question.id;
+
       // Chỉ initialize state khi component lần đầu mở (dựa vào question.id)
       // Điều này tránh reset state khi parent re-render
       if (
