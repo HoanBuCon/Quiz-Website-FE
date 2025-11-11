@@ -808,32 +808,52 @@ const QuizPage: React.FC = () => {
             <div className="space-y-2 sm:space-y-3">
               {currentQuestion.type === "text" && (
                 <div className="space-y-2">
-                  <input
-                    type="text"
-                    data-question-id={currentQuestion.id}  // THÊM dòng này
-                    disabled={isRevealed(currentQuestion.id)}
-                    className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${
-                      focusedOption === 0  // THÊM điều kiện focus
-                        ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
-                        : isRevealed(currentQuestion.id)
-                        ? isTextAnswerCorrect(
-                            currentQuestion,
-                            (getCurrentAnswer(
-                              currentQuestion.id
-                            )[0] as string) || ""
-                          )
-                          ? "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500"
-                          : "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
-                        : "border-gray-400 dark:border-gray-600"
-                    }`}
-                    placeholder="Nhập câu trả lời của bạn"
-                    value={
-                      (getCurrentAnswer(currentQuestion.id)[0] || "") as string
+                  {/* === BẮT ĐẦU SỬA MỤC 1 === */}
+                  {(() => {
+                    // Định nghĩa các style state (Trạng thái)
+                    const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                    const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                    const stateNormal = "border-gray-400 dark:border-gray-600";
+                    
+                    // Định nghĩa các style focus (Trỏ)
+                    const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                    const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
+                    const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
+
+                    const isFocused = focusedOption === 0;
+                    const revealed = isRevealed(currentQuestion.id);
+                    const isCorrect = isTextAnswerCorrect(currentQuestion, (getCurrentAnswer(currentQuestion.id)[0] as string) || "");
+                    
+                    let computedClassName = "";
+                    if (isFocused) {
+                      if (revealed) {
+                        computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
+                      } else {
+                        // Khi focus mà chưa reveal, dùng stateNormal (chỉ border) + focusNormal
+                        computedClassName = `${stateNormal} ${focusNormal}`;
+                      }
+                    } else {
+                      // Khi không focus
+                      computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
                     }
-                    onChange={(e) =>
-                      handleAnswerSelect(currentQuestion.id, e.target.value)
-                    }
-                  />
+
+                    return (
+                      <input
+                        type="text"
+                        data-question-id={currentQuestion.id}
+                        disabled={revealed}
+                        className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${computedClassName}`}
+                        placeholder="Nhập câu trả lời của bạn"
+                        value={
+                          (getCurrentAnswer(currentQuestion.id)[0] || "") as string
+                        }
+                        onChange={(e) =>
+                          handleAnswerSelect(currentQuestion.id, e.target.value)
+                        }
+                      />
+                    );
+                  })()}
+                  {/* === KẾT THÚC SỬA MỤC 1 === */}
                   {uiMode === "instant" && isRevealed(currentQuestion.id) && (
                     <TextRevealPanel
                       question={currentQuestion}
@@ -868,28 +888,41 @@ const QuizPage: React.FC = () => {
                       const isFocused = focusedOption === index;
                       const base =
                         "w-full p-3 sm:p-4 text-left rounded-lg transition-all duration-200 border text-sm sm:text-base disabled:cursor-not-allowed";
-                      const chosenStyle =
-                        "bg-primary-100 text-primary-900 border-primary-600 shadow-md shadow-primary-500/20 dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25";
+                      const chosenStyle_Base =
+                        "bg-primary-100 text-primary-900 border-primary-600 dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-400";
+                      const chosenShadow = "shadow-md shadow-primary-500/20 dark:shadow-md dark:shadow-primary-500/25";
                       const normalStyle =
                         "bg-white text-gray-800 border-gray-400 hover:border-gray-500 hover:bg-stone-100 hover:shadow-md hover:shadow-gray-400/15 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-700/50 dark:hover:shadow-md dark:hover:shadow-gray-400/20";
                       const correctStyle =
                         "bg-green-500 text-white border-green-600 shadow-md shadow-green-500/20 dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
                       const wrongChosenStyle =
                         "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                      const focusNormal =
+                        "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,0.7)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
+                      const focusChosen =
+                        "border-primary-600 shadow-[0_0_18px_rgba(59,130,246,0.7)] dark:border-primary-400 dark:shadow-[0_0_18px_rgba(96,165,250,0.7)]";
+                      const focusCorrect =
+                        "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                      const focusWrong =
+                        "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
 
-                      const cls = shouldReveal
-                        ? isCorrect
-                          ? correctStyle
-                          : isChosen
-                          ? wrongChosenStyle
-                          : normalStyle
-                        : isChosen
-                        ? chosenStyle
-                        : normalStyle;
-                      
-                      const focusedStyle = isFocused
-                        ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
-                        : "";
+                      // THÊM LOGIC MỚI NÀY
+                      let computedClassName = "";
+                      if (shouldReveal) {
+                        if (isCorrect) {
+                          computedClassName = isFocused ? `${correctStyle} ${focusCorrect}` : correctStyle;
+                        } else if (isChosen) {
+                          computedClassName = isFocused ? `${wrongChosenStyle} ${focusWrong}` : wrongChosenStyle;
+                        } else {
+                          computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
+                        }
+                      } else {
+                        if (isChosen) {
+                          computedClassName = isFocused ? `${chosenStyle_Base} ${focusChosen}` : `${chosenStyle_Base} ${chosenShadow}`;
+                        } else {
+                          computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
+                        }
+                      }
 
                       return (
                         <button
@@ -898,7 +931,7 @@ const QuizPage: React.FC = () => {
                           onClick={() =>
                             handleAnswerSelect(currentQuestion.id, option)
                           }
-                          className={`${base} ${cls} ${focusedStyle}`}
+                          className={`${base} ${computedClassName}`}
                         >
                           <div className="flex flex-col items-start gap-2 w-full">
                             <span className="flex items-center gap-2">
@@ -1018,47 +1051,67 @@ const QuizPage: React.FC = () => {
                             </div>
                             {sub.type === "text" && (
                               <div className="space-y-2">
-                                <input
-                                  type="text"
-                                  data-question-id={sub.id}  // THÊM dòng này
-                                  disabled={parentRevealed}
-                                  className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${
-                                    (() => {  // THÊM logic tính globalIndex cho input trong composite
-                                      const subs = (currentQuestion as any).subQuestions || [];
-                                      let cumulative = 0;
-                                      for (let i = 0; i < idx; i++) {
-                                        const prevSub = subs[i];
-                                        cumulative += prevSub.type === "text" 
-                                          ? 1 
-                                          : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
+                                {/* === BẮT ĐẦU SỬA MỤC 3 === */}
+                                {(() => {
+                                  // Định nghĩa các style state
+                                  const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                                  const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                                  const stateNormal = "border-gray-400"; // class gốc
+                                  
+                                  // Định nghĩa các style focus (Trỏ)
+                                  const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                                  const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
+                                  const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
+
+                                  // Tính globalIndex để xác định focus
+                                  const isFocused = (() => {
+                                    const subs = (currentQuestion as any).subQuestions || [];
+                                    let cumulative = 0;
+                                    for (let i = 0; i < idx; i++) {
+                                      const prevSub = subs[i];
+                                      cumulative += prevSub.type === "text" 
+                                        ? 1 
+                                        : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
+                                    }
+                                    return focusedOption === cumulative;
+                                  })();
+
+                                  const revealed = parentRevealed;
+                                  const isCorrect = isTextAnswerCorrect(sub, (getCurrentAnswer(sub.id)[0] as string) || "");
+                                  
+                                  let computedClassName = "";
+                                  if (isFocused) {
+                                    if (revealed) {
+                                      computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
+                                    } else {
+                                      computedClassName = `${stateNormal} ${focusNormal}`;
+                                    }
+                                  } else {
+                                    computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
+                                  }
+
+                                  return (
+                                    <input
+                                      type="text"
+                                      data-question-id={sub.id}
+                                      disabled={revealed}
+                                      className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${computedClassName}`}
+                                      placeholder="Nhập câu trả lời của bạn"
+                                      value={
+                                        (getCurrentAnswer(sub.id)[0] ||
+                                          "") as string
                                       }
-                                      return focusedOption === cumulative;
-                                    })()
-                                      ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
-                                      : parentRevealed
-                                      ? isTextAnswerCorrect(
-                                          sub,
-                                          (getCurrentAnswer(
-                                            sub.id
-                                          )[0] as string) || ""
+                                      onChange={(e) =>
+                                        handleAnswerSelect(
+                                          sub.id,
+                                          e.target.value,
+                                          "text"
                                         )
-                                        ? "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500"
-                                        : "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
-                                      : "border-gray-400"
-                                  }`}
-                                  placeholder="Nhập câu trả lời của bạn"
-                                  value={
-                                    (getCurrentAnswer(sub.id)[0] ||
-                                      "") as string
-                                  }
-                                  onChange={(e) =>
-                                    handleAnswerSelect(
-                                      sub.id,
-                                      e.target.value,
-                                      "text"
-                                    )
-                                  }
-                                />
+                                      }
+                                    />
+                                  );
+                                })()}
+                                {/* === KẾT THÚC SỬA MỤC 3 === */}
                                 {uiMode === "instant" && parentRevealed && (
                                   <TextRevealPanel
                                     question={sub}
@@ -1108,8 +1161,9 @@ const QuizPage: React.FC = () => {
                                   
                                   const base =
                                     "w-full p-3 text-left rounded-lg border transition-all duration-200 disabled:cursor-not-allowed";
-                                  const chosenStyle =
-                                    "bg-primary-100 border-primary-600 text-primary-900 shadow-sm dark:bg-primary-900/50 dark:border-primary-400 dark:text-primary-100";
+                                  const chosenStyle_Base =
+                                    "bg-primary-100 border-primary-600 text-primary-900 dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-400";
+                                  const chosenShadow = "shadow-md shadow-primary-500/20 dark:shadow-md dark:shadow-primary-500/25";
                                   const normalStyle =
                                     "bg-white border-gray-400 text-gray-900 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700";
                                   const correctStyle =
@@ -1117,20 +1171,30 @@ const QuizPage: React.FC = () => {
                                   const wrongChosenStyle =
                                     "bg-red-600 text-white border-red-700 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
                                   
-                                  // THÊM: Style cho focus state
-                                  const focusedStyle = isFocused
-                                    ? "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]"
-                                    : "";
+                                  {/* === BẮT ĐẦU SỬA MỤC 4 === */}                          
+                                  {/* Định nghĩa các style focus (Trỏ) */}
+                                  const focusChosen = "border-primary-600 shadow-[0_0_18px_rgba(59,130,246,0.7)] dark:border-primary-400 dark:shadow-[0_0_18px_rgba(96,165,250,0.7)]";
+                                  const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                                  const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
+                                  const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,0.7)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
                                   
-                                  const cls = shouldReveal
-                                    ? isCorrect
-                                      ? correctStyle
-                                      : isChosen
-                                      ? wrongChosenStyle
-                                      : normalStyle
-                                    : isChosen
-                                    ? chosenStyle
-                                    : normalStyle;
+                                  {/* Tính toán className cuối cùng */}
+                                  let computedClassName = "";
+                                  if (shouldReveal) {
+                                    if (isCorrect) {
+                                      computedClassName = isFocused ? `${correctStyle} ${focusCorrect}` : correctStyle;
+                                    } else if (isChosen) {
+                                      computedClassName = isFocused ? `${wrongChosenStyle} ${focusWrong}` : wrongChosenStyle;
+                                    } else {
+                                      computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
+                                    }
+                                  } else {
+                                    if (isChosen) {
+                                      computedClassName = isFocused ? `${chosenStyle_Base} ${focusChosen}` : `${chosenStyle_Base} ${chosenShadow}`;
+                                    } else {
+                                      computedClassName = isFocused ? `${normalStyle} ${focusNormal}` : normalStyle;
+                                    }
+                                  }
                                   
                                   return (
                                     <button
@@ -1143,8 +1207,9 @@ const QuizPage: React.FC = () => {
                                           sub.type as "single" | "multiple"
                                         )
                                       }
-                                      className={`${base} ${cls} ${focusedStyle}`}  // THÊM focusedStyle vào đây
+                                      className={`${base} ${computedClassName}`}
                                     >
+                                  {/* === KẾT THÚC SỬA MỤC 4 === */}
                                         <div className="text-left w-full flex items-center gap-2">
                                           {shouldReveal && isCorrect && (
                                             <svg
