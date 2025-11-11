@@ -245,12 +245,6 @@ const EditQuizPage: React.FC = () => {
     const anchor = scrollAnchorRef.current;
     if (!anchor) return;
 
-    // Chỉ restore scroll nếu không quá 50ms (tránh restore khi user đã scroll đi nơi khác)
-    if (Date.now() - anchor.ts > 50) {
-      scrollAnchorRef.current = null;
-      return;
-    }
-
     const element = document.querySelector<HTMLElement>(`[data-qid="${anchor.id}"]`);
     scrollAnchorRef.current = null;
     if (!element) return;
