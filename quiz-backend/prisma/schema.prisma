@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -42,19 +42,19 @@ model Class {
 }
 
 model Quiz {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  published   Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  ownerId     String
-  classId     String
-  questions   Question[]
-  class       Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
-  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  sessions    QuizSession[]
-  quizAttempts QuizAttempt[] // Liên kết đến các lần bắt đầu làm quiz
+  id           String        @id @default(cuid())
+  title        String
+  description  String?
+  published    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ownerId      String
+  classId      String
+  questions    Question[]
+  class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  sessions     QuizSession[]
+  quizAttempts QuizAttempt[]
 }
 
 model Question {
@@ -74,17 +74,17 @@ model Question {
 }
 
 model QuizSession {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   score          Int
   totalQuestions Int
   timeSpent      Int
   answers        Json
-  startedAt      DateTime @default(now())
-  completedAt    DateTime @default(now())
+  startedAt      DateTime    @default(now())
+  completedAt    DateTime    @default(now())
   quizId         String
   userId         String
-  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz           Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizAttempt    QuizAttempt?
 }
 
@@ -93,7 +93,7 @@ model UploadedFile {
   name       String
   type       FileType
   size       Int
-  content    String?
+  content    String?  @db.LongText
   uploadedAt DateTime @default(now())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -194,17 +194,15 @@ model PasswordReset {
 }
 
 model QuizAttempt {
-  id            String        @id @default(cuid())
+  id            String       @id @default(cuid())
   userId        String
   quizId        String
-  startedAt     DateTime      @default(now())
-  endedAt       DateTime? 
-
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz          Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
-
-  quizSessionId String?       @unique
-  quizSession   QuizSession?  @relation(fields: [quizSessionId], references: [id], onDelete: SetNull)
+  startedAt     DateTime     @default(now())
+  endedAt       DateTime?
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quizSessionId String?      @unique
+  quizSession   QuizSession? @relation(fields: [quizSessionId], references: [id], onDelete: SetNull)
 
   @@index([userId, quizId, startedAt])
 }

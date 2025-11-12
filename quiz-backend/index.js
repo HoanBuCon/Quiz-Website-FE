@@ -129,7 +129,10 @@ app.use(
   })
 );
 
-app.use(morgan('dev'));
+app.use(morgan((tokens, req, res) => {
+  const url = (req.originalUrl || '').replace(/token=[^&]+/, 'token=[REDACTED]');
+  return `${tokens.method(req, res)} ${url} ${tokens.status(req, res)} ${tokens['response-time'](req, res)} ms`;
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
