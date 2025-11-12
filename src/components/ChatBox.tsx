@@ -16,6 +16,33 @@ interface ChatMessage {
   hidden?: boolean;
 }
 
+function formatDateSeparator(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+
+    const isSameDay = (d1: Date, d2: Date) => 
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+    if (isSameDay(date, now)) {
+        return "Hôm nay";
+    }
+    if (isSameDay(date, yesterday)) {
+        return "Hôm qua";
+    }
+
+    // Định dạng đầy đủ: Thứ Ba, 14 tháng 11, 2025
+    return date.toLocaleDateString('vi-VN', {
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+    });
+}
+
 const ChatBox: React.FC = () => {
   // Open/close state
   const [open, setOpen] = useState(false);
@@ -633,6 +660,34 @@ const ChatBox: React.FC = () => {
     };
   }, [open]);
 
+  const messagesToRender = messages.filter(m => !hiddenMessages.has(m.id));
+
+  const messagesWithDateSeparator = messagesToRender.map((m, index) => {
+    const prevMessage = index > 0 ? messagesToRender[index - 1] : null;
+    let showDateSeparator = false;
+
+    if (!prevMessage) {
+        // Luôn hiển thị ngày cho tin nhắn đầu tiên
+        showDateSeparator = true;
+    } else {
+        // Kiểm tra xem ngày của tin nhắn hiện tại có khác ngày của tin nhắn trước đó không
+        const currentDate = new Date(m.createdAt);
+        const prevDate = new Date(prevMessage.createdAt);
+
+        // Hàm kiểm tra xem hai ngày có giống nhau không (bỏ qua giờ, phút, giây)
+        const isSameDay = 
+            currentDate.getFullYear() === prevDate.getFullYear() &&
+            currentDate.getMonth() === prevDate.getMonth() &&
+            currentDate.getDate() === prevDate.getDate();
+
+        if (!isSameDay) {
+            showDateSeparator = true;
+        }
+    }
+
+    return { ...m, showDateSeparator };
+  });
+
   const panel = (
     <>
       {/* Backdrop for mobile */}
@@ -740,11 +795,21 @@ const ChatBox: React.FC = () => {
             if (el.scrollTop < 40) loadOlder();
           }}
         >
-          {messages.map((m) => {
-            const mine = currentUserId === m.userId;
-            
-            return (
-              <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}>
+
+        {messagesWithDateSeparator.map((m) => {
+          const mine = currentUserId === m.userId;
+
+          return (
+            <React.Fragment key={m.id}>
+            {/* DATE SEPARATOR - HIỂN THỊ CHỈ KHI CÓ NGÀY MỚI */}
+            {m.showDateSeparator && (
+            <div className="text-center py-2">
+              <span className="inline-block px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full shadow-sm">
+                {formatDateSeparator(m.createdAt)}
+              </span>
+            </div>
+            )}
+              <div className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}> 
                 <div className="relative max-w-[75%]">
                   {/* Desktop hover menu - Horizontal with proper positioning */}
                   {!isMobile && (
@@ -874,16 +939,18 @@ const ChatBox: React.FC = () => {
                   )}
                 </div>
               </div>
-            );
-          })}
-          {messages.filter(m => !hiddenMessages.has(m.id)).length === 0 && (
-            <div className="text-center text-sm text-slate-400 py-8">
-              <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-              </svg>
-              Chưa có tin nhắn
-            </div>
-          )}
+            </React.Fragment>
+          );
+        })}
+        {/* CẬP NHẬT ĐIỀU KIỆN RỖNG DÙNG MẢNG ĐÃ XỬ LÝ */}
+        {messagesWithDateSeparator.length === 0 && (
+          <div className="text-center text-sm text-slate-400 py-8">
+            <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </svg>
+            Chưa có tin nhắn
+          </div>
+        )}
 
         </div>
 
