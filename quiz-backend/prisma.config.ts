@@ -1,4 +1,4 @@
-import "dotenv/config"; // 👈 Dòng này bắt buộc phải có
+import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
