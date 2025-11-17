@@ -120,3 +120,60 @@
 .animate-spin-reverse {
   animation: spin-reverse 2s linear infinite;
 }
+
+/* Drift nhẹ – chuyển động tự nhiên */
+@keyframes drift {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(18px, -12px) scale(1.05);
+  }
+}
+
+.drift-slow {
+  animation: drift 14s ease-in-out infinite;
+}
+
+.drift-medium {
+  animation: drift 18s ease-in-out infinite;
+}
+
+.drift-deep {
+  animation: drift 22s ease-in-out infinite;
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-25px) translateX(10px) scale(1.2);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(-50px) translateX(-10px) scale(1);
+    opacity: 0.3;
+  }
+}
+
+.particle {
+  animation: particle-float 6s ease-in-out infinite;
+}
+
+.particle-delay-1 {
+  animation-delay: 1.2s;
+}
+
+.particle-delay-2 {
+  animation-delay: 2.4s;
+}
+
+.particle-delay-3 {
+  animation-delay: 3.6s;
+}
+
+.particle-delay-4 {
+  animation-delay: 4.8s;
+}

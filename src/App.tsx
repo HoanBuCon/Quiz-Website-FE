@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { MusicProvider } from "./context/MusicContext";
 import Layout from "./components/Layout/Layout";
-import FixedLayout from "./components/Layout/FixedLayout"; // Import FixedLayout
-import BackgroundMusic from "./components/BackgroundMusic"; // Import BackgroundMusic
+import FixedLayout from "./components/Layout/FixedLayout";
+import BackgroundMusic from "./components/BackgroundMusic";
 import HomePage from "./pages/HomePage";
 import ClassesPage from "./pages/ClassesPage";
 import CreateClassPage from "./pages/CreateClassPage";
@@ -18,8 +18,10 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ClassViewPage from "./pages/ClassViewPage";
+import MaintenancePage from "./pages/MaintenancePage";
 import { getToken } from "./utils/auth";
 import { getApiBaseUrl } from "./utils/api";
+import { IS_MAINTENANCE_MODE, canBypassMaintenance } from "./utils/maintenanceConfig";
 
 // ThemedToaster component để đổi màu theo theme
 function ThemedToaster() {
@@ -155,6 +157,16 @@ function ThemedToaster() {
   );
 }
 
+// Component để bảo vệ các route khi đang bảo trì
+const MaintenanceGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Kiểm tra nếu đang bảo trì và user không được bypass
+  if (IS_MAINTENANCE_MODE && !canBypassMaintenance()) {
+    return <Navigate to="/maintenance" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -173,92 +185,155 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  // Log trạng thái bảo trì khi app khởi động (chỉ trong development)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        `%MAINTENANCE MODE: ${IS_MAINTENANCE_MODE ? 'ON' : 'OFF'}`,
+        `font-size: 14px; font-weight: bold; color: ${IS_MAINTENANCE_MODE ? '#ef4444' : '#10b981'}`
+      );
+      if (IS_MAINTENANCE_MODE) {
+        console.log(
+          '%To bypass maintenance, run: window.setMaintenanceBypass()',
+          'font-size: 12px; color: #3b82f6'
+        );
+      }
+    }
+  }, []);
+
   return (
     <ThemeProvider>
       <MusicProvider>
         <Router>
           <Routes>
-            {/* Routes sử dụng Layout thông thường */}
+            {/* Trang bảo trì - KHÔNG CẦN GUARD */}
+            <Route path="/maintenance" element={<MaintenancePage />} />
+
+            {/* Tất cả các route khác đều được bảo vệ bởi MaintenanceGuard */}
             <Route
               path="/"
               element={
-                <Layout>
-                  <HomePage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <HomePage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/classes"
               element={
-                <Layout>
-                  <ClassesPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <ClassesPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/create"
               element={
-                <Layout>
-                  <CreateClassPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <CreateClassPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/edit-quiz"
               element={
-                <Layout>
-                  <EditQuizPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <EditQuizPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/documents"
               element={
-                <Layout>
-                  <DocumentsPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <DocumentsPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/quiz/:quizId"
               element={
-                <Layout>
-                  <QuizPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <QuizPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/results/:quizId"
               element={
-                <Layout>
-                  <ResultsPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <ResultsPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
             <Route
               path="/class/:classId"
               element={
-                <Layout>
-                  <ClassViewPage />
-                </Layout>
+                <MaintenanceGuard>
+                  <Layout>
+                    <ClassViewPage />
+                  </Layout>
+                </MaintenanceGuard>
               }
             />
-            {/* Auth routes - không có Layout */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            {/* Route sử dụng FixedLayout - KHÔNG SCROLL */}
+
+            {/* Auth routes - cũng được bảo vệ */}
+            <Route
+              path="/login"
+              element={
+                <MaintenanceGuard>
+                  <LoginPage />
+                </MaintenanceGuard>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <MaintenanceGuard>
+                  <RegisterPage />
+                </MaintenanceGuard>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <MaintenanceGuard>
+                  <ForgotPasswordPage />
+                </MaintenanceGuard>
+              }
+            />
+
+            {/* Route với FixedLayout */}
             <Route
               path="/edit-class/:classId"
               element={
-                <FixedLayout>
-                  <EditClassPage />
-                </FixedLayout>
+                <MaintenanceGuard>
+                  <FixedLayout>
+                    <EditClassPage />
+                  </FixedLayout>
+                </MaintenanceGuard>
               }
             />
           </Routes>
-          {/* Background Music Player - Đặt ngoài để không bị reset */}
-          <BackgroundMusic />
+
+          {/* Background Music Player - chỉ hiện khi KHÔNG bảo trì */}
+          {!IS_MAINTENANCE_MODE && <BackgroundMusic />}
+          
           {/* Toast notifications */}
           <ThemedToaster />
         </Router>
@@ -266,4 +341,5 @@ function App() {
     </ThemeProvider>
   );
 }
+
 export default App;
