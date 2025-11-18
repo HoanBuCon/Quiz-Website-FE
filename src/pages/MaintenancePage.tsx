@@ -6,12 +6,31 @@ const MaintenancePage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handlePlayVideo = () => {
     if (videoRef.current) {
       videoRef.current.play();
-      setIsPlaying(true);
     }
+
+    setIsPlaying(true);
+    setIsLoading(true);
+
+    // Fake progress 0 → 100 trong 5s
+    let current = 0;
+    const interval = setInterval(() => {
+      current += 2; // mỗi bước tăng 2%
+      if (current > 100) current = 100;
+      setProgress(current);
+
+      if (current === 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 300);
+      }
+    }, 100); // 100ms * 50 = 5s
   };
 
   const toggleMute = () => {
@@ -45,70 +64,92 @@ const MaintenancePage: React.FC = () => {
       {/* Dark Overlay */}
       <div
         className={`absolute inset-0 transition-all duration-700
-          ${isPlaying ? "bg-black/20 backdrop-blur-sm" : "bg-black/40 backdrop-blur-sm"}
+          ${isPlaying ? "bg-black/20" : "bg-black/40"}
         `}
       />
 
       {/* Content Container */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-      {!isPlaying ? (
-        // Play Button Screen (tách rõ logo/text & button)
-        <div className="text-center animate-fadeIn flex flex-col items-center">
-          {/* ===== Logo + Brand (RIÊNG) ===== */}
-          <div className="mb-6 flex flex-col items-center">
-            <img
-              src={MAINTENANCE_MESSAGE.brand.logo}
-              alt={MAINTENANCE_MESSAGE.brand.text + " Logo"}
-              className="w-20 h-20 object-contain mb-4"
-            />
-            <span className="text-4xl sm:text-5xl lg:text-6xl font-bold logo-text text-white dark:text-primary-300">
-              {MAINTENANCE_MESSAGE.brand.text}
-            </span>
-          </div>
-          {/* ===== Nút Play (RIÊNG) ===== */}
-          <div className="mt-6">
-          <button
-            onClick={handlePlayVideo}
-            className="group relative inline-flex items-center gap-4 
-                      px-3 py-3 rounded-xl
-                      bg-white/10 backdrop-blur-xl border border-white/20
-                      shadow-[0_0_25px_rgba(255,200,100,0.18)]
-                      hover:shadow-[0_0_35px_rgba(255,200,150,0.28)]
-                      transition-all duration-300 active:scale-95
-                      text-white font-semibold text-xl
-                      select-none overflow-hidden w-auto"
-          >
-            {/* Icon */}
-            <div
-              className="w-10 h-10 flex items-center justify-center rounded-full
-                        bg-gradient-to-br from-orange-500 to-amber-400
-                        shadow-lg transition-transform duration-300 
-                        relative z-10 group-hover:scale-110"
-            >
-              <svg
-                className="w-6 h-6 text-white translate-x-[1px]"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M6.5 5.5v9l7-4.5-7-4.5z" />
-              </svg>
+        {isLoading ? (
+          /* ============================
+            🔥 Loading 0–100% trong 5 giây
+            ============================ */
+          <div className="text-center animate-fadeIn flex flex-col items-center">
+            <p className="text-xl text-gray-300 mb-4 font-mono">
+              Loading...
+            </p>
+
+            {/* Progress bar */}
+            <div className="w-64 h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-md border border-white/20">
+              <div
+                className="h-full bg-gradient-to-r from-orange-400 to-amber-300 transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
             </div>
 
-            <span className="tracking-wide text-lg font-mono relative z-10">
-              Liếm luôn
-            </span>
-
-            {/* Shimmer */}
-            <div
-              className="absolute inset-0 rounded-full pointer-events-none
-                        bg-gradient-to-r from-transparent via-white/30 to-transparent
-                        -translate-x-full group-hover:translate-x-full
-                        transition-transform duration-700"
-              style={{ zIndex: 1 }}
-            />
-          </button>
+            <p className="text-sm text-gray-400 mt-3 font-mono">
+              {progress}%
+            </p>
           </div>
-        </div>
+        ) : !isPlaying ? (
+          // ============================
+          //   MÀN HÌNH TRƯỚC KHI PLAY
+          // ============================
+          <div className="text-center animate-fadeIn flex flex-col items-center">
+            {/* ===== Logo + Brand (RIÊNG) ===== */}
+            <div className="mb-6 flex flex-col items-center">
+              <img
+                src={MAINTENANCE_MESSAGE.brand.logo}
+                alt={MAINTENANCE_MESSAGE.brand.text + " Logo"}
+                className="w-20 h-20 object-contain mb-4"
+              />
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-bold logo-text text-white dark:text-primary-300">
+                {MAINTENANCE_MESSAGE.brand.text}
+              </span>
+            </div>
+
+            {/* ===== Nút Play (RIÊNG) ===== */}
+            <div className="mt-6">
+              <button
+                onClick={handlePlayVideo}
+                className="group relative inline-flex items-center gap-4 
+                          px-3 py-3 rounded-xl
+                          bg-white/10 backdrop-blur-xl border border-white/20
+                          shadow-[0_0_25px_rgba(255,200,100,0.18)]
+                          hover:shadow-[0_0_35px_rgba(255,200,150,0.28)]
+                          transition-all duration-300 active:scale-95
+                          text-white font-semibold text-xl
+                          select-none overflow-hidden w-auto"
+              >
+                <div
+                  className="w-10 h-10 flex items-center justify-center rounded-full
+                            bg-gradient-to-br from-orange-500 to-amber-400
+                            shadow-lg transition-transform duration-300 
+                            relative z-10 group-hover:scale-110"
+                >
+                  <svg
+                    className="w-6 h-6 text-white translate-x-[1px]"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M6.5 5.5v9l7-4.5-7-4.5z" />
+                  </svg>
+                </div>
+
+                <span className="tracking-wide text-lg font-mono relative z-10">
+                  Liếm luôn
+                </span>
+
+                <div
+                  className="absolute inset-0 rounded-full pointer-events-none
+                            bg-gradient-to-r from-transparent via-white/30 to-transparent
+                            -translate-x-full group-hover:translate-x-full
+                            transition-transform duration-700"
+                  style={{ zIndex: 1 }}
+                />
+              </button>
+            </div>
+          </div>
         ) : (
           // Maintenance Message with Video Playing
           <div className="text-center animate-slideUp">
@@ -171,48 +212,6 @@ const MaintenancePage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Decorative Elements */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
-      <div
-        className="absolute bottom-10 right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: '1s' }}
-      />
-      <div
-        className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-500/20 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: '2s' }}
-      />
-      <div className="absolute top-[15%] left-[10%] 
-                      w-64 h-64 bg-gradient-to-br from-orange-400/25 to-amber-300/20 
-                      rounded-full blur-[120px]" />
-      <div className="absolute top-[25%] right-[12%] 
-                      w-72 h-72 bg-gradient-to-tr from-yellow-300/20 to-orange-300/15 
-                      rounded-full blur-[130px]" />
-      <div className="absolute bottom-[18%] left-[18%] 
-                      w-80 h-80 bg-gradient-to-br from-amber-400/18 to-yellow-300/15 
-                      rounded-full blur-[150px]" />
-      <div className="absolute bottom-[12%] right-[25%] 
-                      w-56 h-56 bg-gradient-to-bl from-orange-500/18 to-amber-400/15 
-                      rounded-full blur-[130px]" />
-      <div className="absolute top-[45%] left-[40%] 
-                      w-96 h-96 bg-yellow-300/10 
-                      rounded-full blur-[180px]" />
-
-      {/* === Cinematic Particles (Hạt sáng) === */}
-      <div className="absolute top-[20%] left-[30%] w-2 h-2 
-                      bg-amber-300/40 rounded-full blur-[2px] particle" />
-
-      <div className="absolute top-[40%] right-[35%] w-1.5 h-1.5 
-                      bg-orange-300/40 rounded-full blur-[2px] particle particle-delay-1" />
-
-      <div className="absolute bottom-[30%] left-[45%] w-1.5 h-1.5 
-                      bg-yellow-200/40 rounded-full blur-[2px] particle particle-delay-2" />
-
-      <div className="absolute bottom-[20%] right-[20%] w-2 h-2 
-                      bg-amber-200/40 rounded-full blur-[2px] particle particle-delay-3" />
-
-      <div className="absolute top-[55%] left-[20%] w-1.5 h-1.5 
-                      bg-orange-200/40 rounded-full blur-[2px] particle particle-delay-4" />
     </div>
   );
 };
