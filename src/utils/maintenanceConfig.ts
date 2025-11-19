@@ -17,7 +17,7 @@
  */
 
 // ===== CẤU HÌNH CHÍNH =====
-export const IS_MAINTENANCE_MODE = true; // true = Bật bảo trì | false = Tắt bảo trì
+export const IS_MAINTENANCE_MODE = false; // true = Bật bảo trì | false = Tắt bảo trì
 
 // ===== CẤU HÌNH BỔ SUNG =====
 

@@ -31,51 +31,60 @@ const HomePage: React.FC = () => {
     setMousePosition({ x: 0, y: 0 });
   };
 
-  // Tải lớp học công khai từ backend
+  // Fetch public classes data
   useEffect(() => {
-    (async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
         const { getToken } = await import("../utils/auth");
         const token = getToken();
-        setIsLoggedIn(!!token);
+        
         if (!token) {
-          setPublicClasses([]);
-          setTotalClasses(0);
-          setTotalQuizzes(0);
+          setIsLoggedIn(false);
           setLoading(false);
           return;
         }
+        
+        setIsLoggedIn(true);
         const { ClassesAPI, QuizzesAPI } = await import("../utils/api");
-        const pubs: any[] = await ClassesAPI.listPublic(token);
-        // Attach quizzes for each public class
-        const classesWithQuizzes: ClassRoom[] = [] as any;
-        let quizCount = 0;
-        for (const cls of pubs) {
-          const qzs = await QuizzesAPI.byClass(cls.id, token);
-          // Filter only published quizzes (backend already returns metadata only)
-          const visible = (qzs || []).filter((q: any) => q.published === true);
-          quizCount += visible.length;
-          classesWithQuizzes.push({
+        
+        // Fetch public classes
+        const publicClassesData = await ClassesAPI.listPublic(token);
+        
+        // Process public classes with quizzes
+        const processedClasses: ClassRoom[] = [];
+        let totalQuizzesCount = 0;
+        
+        for (const cls of publicClassesData) {
+          const quizzes = await QuizzesAPI.byClass(cls.id, token);
+          const publishedQuizzes = quizzes.filter((q: any) => q.published === true);
+          
+          totalQuizzesCount += publishedQuizzes.length;
+          
+          processedClasses.push({
             id: cls.id,
             name: cls.name,
             description: cls.description,
-            quizzes: visible,
+            quizzes: publishedQuizzes,
             createdAt: new Date(cls.createdAt),
             updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
           } as unknown as ClassRoom);
         }
-        setPublicClasses(classesWithQuizzes);
-        setTotalClasses(classesWithQuizzes.length);
-        setTotalQuizzes(quizCount);
-      } catch (e) {
-        console.error("Failed to load public classes:", e);
+        
+        setPublicClasses(processedClasses);
+        setTotalClasses(processedClasses.length);
+        setTotalQuizzes(totalQuizzesCount);
+      } catch (error) {
+        console.error("Error fetching public classes:", error);
+        setIsLoggedIn(false);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+    
+    fetchData();
   }, []);
 
-  // Handle click outside để đóng dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;

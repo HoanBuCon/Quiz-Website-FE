@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ClassRoom, Quiz } from "../types";
-import { buildShortId, isShortIdCode } from "../utils/share";
+import { useNavigate, Link } from "react-router-dom";
 import { formatDate } from "../utils/fileUtils";
 import {
-  UserIcon,
-  EyeIcon,
-  PencilSquareIcon,
   TrashIcon,
+  ShareIcon,
+  ArrowDownTrayIcon,
+  PlusIcon,
+  EllipsisVerticalIcon,
+  PencilSquareIcon,
+  DocumentDuplicateIcon,
 } from "@heroicons/react/24/solid";
+import { ClassRoom, Quiz } from "../types";
+
+// Helper functions
+const isShortIdCode = (code: string) => /^[A-Z0-9]{6,8}$/.test(code);
+const buildShortId = (id: string) => id.substring(0, 8).toUpperCase();
+const extractId = (val: string, kind: "class" | "quiz") => {
+  const marker = `/${kind}/`;
+  const idx = val.indexOf(marker);
+  if (idx >= 0) return val.substring(idx + marker.length).split(/[?#/]/)[0];
+  return val;
+};
 
 const ClassesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -322,115 +334,72 @@ const ClassesPage: React.FC = () => {
     return validQuizzes;
   };
 
-  // Fetch classes helper
+  // Helper to load stats
+  const loadStats = async (classesToProcess: ClassRoom[]) => {
+    try {
+      const { getToken } = await import("../utils/auth");
+      const token = getToken();
+      if (!token) return;
+      const { SessionsAPI } = await import("../utils/api");
+
+      let totalDone = 0;
+      let totalPercentage = 0;
+
+      for (const cls of classesToProcess) {
+        const validQuizzes = getValidQuizzes(cls);
+        for (const q of validQuizzes) {
+          const sessions = await SessionsAPI.byQuiz(q.id, token);
+          totalDone += sessions.length || 0;
+          for (const s of sessions) {
+            const questionCount =
+              (q as any).questionCount ?? (q as any).questions?.length ?? 0;
+            if (typeof s.score === "number" && questionCount > 0) {
+              totalPercentage += (s.score / questionCount) * 100;
+            }
+          }
+        }
+      }
+      setStatsCompleted(totalDone);
+      setStatsAverage(
+        totalDone > 0
+          ? Math.round((totalPercentage / totalDone / 10) * 10) / 10
+          : 0
+      );
+    } catch (e) {
+      console.error("Stats error", e);
+    }
+  };
+
+  // Fetch classes helper (Fallback)
   const loadMyClasses = async () => {
     try {
       const { getToken } = await import("../utils/auth");
       const token = getToken();
-      if (!token) {
-        setClasses([]);
-        setLoading(false);
-        return;
-      }
+      if (!token) return;
+
       const { ClassesAPI, QuizzesAPI } = await import("../utils/api");
-      const myClasses = await ClassesAPI.listMine(token);
-      const withQuizzes: ClassRoom[] = [] as any;
-      for (const cls of myClasses) {
-        const quizzes = await QuizzesAPI.byClass(cls.id, token);
 
-        // ===== FILTER: Chỉ thêm class nếu có ít nhất 1 quiz accessible =====
-        // Backend đã filter quizzes dựa trên quyền truy cập
-        // Nếu user không có quyền truy cập quiz nào → quizzes = []
-        // Chỉ hiển thị class nếu:
-        // 1. User là owner (luôn thấy tất cả)
-        // 2. User có ít nhất 1 quiz accessible
-        const isOwner = (cls as any).accessType === "owner";
-        if (!isOwner && quizzes.length === 0) {
-          // Skip class này - user không có quyền truy cập quiz nào
-          continue;
-        }
+      // Fetch classes
+      const classesData = await ClassesAPI.listMine(token);
 
-        withQuizzes.push({
-          id: cls.id,
-          name: cls.name,
-          description: cls.description,
-          isPublic: cls.isPublic,
-          accessType: (cls as any).accessType,
-          quizzes: quizzes.map((q: any) => ({
-            ...q,
-            createdAt: new Date(q.createdAt),
-            updatedAt: new Date(q.updatedAt),
-          })),
-          createdAt: new Date(cls.createdAt),
-          updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
-        } as unknown as ClassRoom);
-      }
-      setClasses(withQuizzes);
+      // Fetch quizzes for each class
+      const classesWithQuizzes = await Promise.all(
+        classesData.map(async (cls: any) => {
+          const quizzes = await QuizzesAPI.byClass(cls.id, token);
+          return { ...cls, quizzes };
+        })
+      );
 
-      // Load share status for all classes and quizzes
-      try {
-        const { VisibilityAPI } = await import("../utils/api");
-        const statusMap: Record<string, boolean> = {};
+      setClasses(classesWithQuizzes);
+      await loadStats(classesWithQuizzes);
+      
+      // Update share status map
+      const statusMap: Record<string, boolean> = {};
+      classesWithQuizzes.forEach((c: any) => {
+          if (c.accessType === 'shared') statusMap[c.id] = true;
+      });
+      setShareStatus(statusMap);
 
-        for (const cls of withQuizzes) {
-          // Check class share status
-          const clsStatus = await VisibilityAPI.getShareStatus(
-            "class",
-            cls.id,
-            token
-          );
-          statusMap[`class_${cls.id}`] = clsStatus.isShareable;
-
-          // Check quiz share status
-          const quizzes = (cls.quizzes as Quiz[]) || [];
-          for (const q of quizzes) {
-            const qzStatus = await VisibilityAPI.getShareStatus(
-              "quiz",
-              (q as any).id,
-              token
-            );
-            statusMap[`quiz_${(q as any).id}`] = qzStatus.isShareable;
-          }
-        }
-
-        setShareStatus(statusMap);
-      } catch (e) {
-        console.error("Error loading share status:", e);
-      }
-
-      // Compute statistics from sessions
-      try {
-        const { SessionsAPI } = await import("../utils/api");
-        let totalDone = 0;
-        let totalPercentage = 0;
-        for (const cls of withQuizzes) {
-          const quizzes = (cls.quizzes as Quiz[]) || [];
-          for (const q of quizzes) {
-            const sessions = await SessionsAPI.byQuiz(
-              (q as any).id,
-              token
-            ).catch(() => []);
-            // Assume backend returns only current user's sessions
-            totalDone += sessions.length || 0;
-            for (const s of sessions) {
-              // Calculate percentage: (score / totalQuestions) * 100
-              const questionCount =
-                (q as any).questionCount ?? (q as any).questions?.length ?? 0;
-              if (typeof s.score === "number" && questionCount > 0) {
-                totalPercentage += (s.score / questionCount) * 100;
-              }
-            }
-          }
-        }
-        setStatsCompleted(totalDone);
-        setStatsAverage(
-          totalDone > 0
-            ? Math.round((totalPercentage / totalDone / 10) * 10) / 10
-            : 0
-        );
-      } catch (e) {
-        // ignore stats errors
-      }
     } catch (err) {
       console.error("Error fetching classes:", err);
     } finally {
@@ -440,9 +409,7 @@ const ClassesPage: React.FC = () => {
 
   // Lấy dữ liệu từ backend
   useEffect(() => {
-    (async () => {
-      await loadMyClasses();
-    })();
+    loadMyClasses();
   }, []);
 
   // Handle click outside để đóng dropdown

@@ -1,7 +1,7 @@
 // Simple API client using fetch with JWT support
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api";
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
 export function getApiBaseUrl(): string {
   return API_BASE_URL;
@@ -291,6 +291,16 @@ export const ChatAPI = {
 };
 
 export const AuthAPI = {
+  login: (email: string, password: string) =>
+    apiRequest<{ token: string; user: any }>(`/auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  register: (data: any) =>
+    apiRequest<{ token: string; user: any }>(`/auth/signup`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   me: (token: string) =>
     apiRequest<{ user: { id: string; email: string; name: string } }>(
       `/auth/me`,

@@ -1,42 +1,204 @@
-// src/pages/MaintenancePage.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { MAINTENANCE_MESSAGE, MAINTENANCE_VIDEO_URL } from '../utils/maintenanceConfig';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { MAINTENANCE_MESSAGE, MAINTENANCE_VIDEO_URL, IS_MAINTENANCE_MODE } from '../utils/maintenanceConfig';
+import { getToken, setToken, clearToken } from '../utils/auth';
+import { AuthAPI } from '../utils/api';
+import { useData } from '../context/DataContext';
+
+type TabType = 'start' | 'login' | 'register' | 'forgot-password';
+
+// Render Form Input Helper - Moved outside to prevent re-renders causing focus loss
+const InputField = ({ 
+  type, 
+  placeholder, 
+  value, 
+  onChange, 
+  icon 
+}: { 
+  type: string, 
+  placeholder: string, 
+  value: string, 
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+  icon: React.ReactNode
+}) => (
+  <div className="relative group">
+    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
+      {icon}
+    </div>
+    <input
+      type={type}
+      className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500/50 focus:bg-white/10 transition-all"
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+    />
+  </div>
+);
 
 const MaintenancePage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [showMaintenance, setShowMaintenance] = useState(false);
+  const navigate = useNavigate();
+  const { enterWebsite } = useData();
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('start');
 
-  const handlePlayVideo = () => {
+  // Form States
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Forgot Password States
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1); // 1: Email, 2: OTP & New Pass
+
+  useEffect(() => {
+    // Sync isLoggedIn state
+    const token = getToken();
+    setIsLoggedIn(!!token);
+    if (token) {
+      setActiveTab('start');
+      AuthAPI.me(token)
+        .then(res => setCurrentUser(res.user))
+        .catch(() => {
+          // Token might be invalid, but we let the user try to start and fail or handle logout manually
+        });
+    } else {
+      setActiveTab('login');
+    }
+  }, []);
+
+  const handleStart = () => {
     if (videoRef.current) {
       videoRef.current.play();
     }
-
     setIsPlaying(true);
-    setIsLoading(true);
 
-    // Fake progress 0 → 100 trong 5s
-    let current = 0;
-    const interval = setInterval(() => {
-      current += 2; // mỗi bước tăng 2%
-      if (current > 100) current = 100;
-      setProgress(current);
-
-      if (current === 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 300);
+    if (IS_MAINTENANCE_MODE) {
+      setShowMaintenance(true);
+    } else {
+      // If logged in, go to start tab, else login tab
+      if (getToken()) {
+        setActiveTab('start');
+      } else {
+        setActiveTab('login');
       }
-    }, 100); // 100ms * 50 = 5s
+    }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(!isMuted);
+  const handleEnterWebsite = () => {
+    enterWebsite();
+    navigate('/');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await AuthAPI.login(email, password);
+      setToken(response.token);
+      setIsLoggedIn(true);
+      setCurrentUser(response.user);
+      setActiveTab('start');
+      toast.success('Đăng nhập thành công!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || !email || !fullName || !confirmPassword) {
+      toast.error('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await AuthAPI.register({
+        password,
+        email,
+        name: fullName
+      });
+      toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+      setActiveTab('login');
+      // Clear form
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Đăng ký thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Vui lòng nhập email');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await AuthAPI.forgotOtp(forgotEmail);
+      toast.success('Mã OTP đã được gửi đến email của bạn');
+      setForgotStep(2);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gửi OTP thất bại');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !newPassword || !confirmNewPassword) {
+      toast.error('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await AuthAPI.resetWithOtp(forgotEmail, otp, newPassword);
+      toast.success('Đặt lại mật khẩu thành công! Vui lòng đăng nhập.');
+      setActiveTab('login');
+      // Reset states
+      setForgotStep(1);
+      setForgotEmail('');
+      setOtp('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Đặt lại mật khẩu thất bại');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -64,39 +226,17 @@ const MaintenancePage: React.FC = () => {
       {/* Dark Overlay */}
       <div
         className={`absolute inset-0 transition-all duration-700
-          ${isPlaying ? "bg-black/20" : "bg-black/40"}
+          ${isPlaying ? "bg-black/40 backdrop-blur-sm" : "bg-black/40"}
         `}
       />
 
       {/* Content Container */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        {isLoading ? (
-          /* ============================
-            🔥 Loading 0–100% trong 5 giây
-            ============================ */
-          <div className="text-center animate-fadeIn flex flex-col items-center">
-            <p className="text-xl text-gray-300 mb-4 font-mono">
-              Loading...
-            </p>
-
-            {/* Progress bar */}
-            <div className="w-64 h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-md border border-white/20">
-              <div
-                className="h-full bg-gradient-to-r from-orange-400 to-amber-300 transition-all duration-100"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-
-            <p className="text-sm text-gray-400 mt-3 font-mono">
-              {progress}%
-            </p>
-          </div>
-        ) : !isPlaying ? (
+      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 w-full">
+        {!isPlaying ? (
           // ============================
-          //   MÀN HÌNH TRƯỚC KHI PLAY
+          //   MÀN HÌNH CHỜ (Initial)
           // ============================
           <div className="text-center animate-fadeIn flex flex-col items-center">
-            {/* ===== Logo + Brand (RIÊNG) ===== */}
             <div className="mb-6 flex flex-col items-center">
               <img
                 src={MAINTENANCE_MESSAGE.brand.logo}
@@ -108,106 +248,349 @@ const MaintenancePage: React.FC = () => {
               </span>
             </div>
 
-            {/* ===== Nút Play (RIÊNG) ===== */}
-            <div className="mt-6">
-              <button
-                onClick={handlePlayVideo}
-                className="group relative inline-flex items-center gap-4 
-                          px-3 py-3 rounded-xl
-                          bg-white/10 backdrop-blur-xl border border-white/20
-                          shadow-[0_0_25px_rgba(255,200,100,0.18)]
-                          hover:shadow-[0_0_35px_rgba(255,200,150,0.28)]
-                          transition-all duration-300 active:scale-95
-                          text-white font-semibold text-xl
-                          select-none overflow-hidden w-auto"
+            <button
+              onClick={handleStart}
+              className="
+                group relative inline-flex items-center gap-4 
+                px-8 py-4 rounded-xl
+                bg-white/10 backdrop-blur-xl border border-white/20
+                shadow-[0_0_25px_rgba(255,200,100,0.18)]
+                hover:shadow-[0_0_35px_rgba(255,200,150,0.28)]
+                transition-all duration-300 active:scale-95
+                text-white font-semibold text-xl
+                select-none overflow-hidden w-auto
+              "
+            >
+              <div
+                className="
+                  w-10 h-10 flex items-center justify-center rounded-full
+                  bg-gradient-to-br from-orange-500 to-amber-400
+                  shadow-lg transition-transform duration-300 
+                  relative z-10 group-hover:scale-110
+                "
               >
-                <div
-                  className="w-10 h-10 flex items-center justify-center rounded-full
-                            bg-gradient-to-br from-orange-500 to-amber-400
-                            shadow-lg transition-transform duration-300 
-                            relative z-10 group-hover:scale-110"
-                >
-                  <svg
-                    className="w-6 h-6 text-white translate-x-[1px]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M6.5 5.5v9l7-4.5-7-4.5z" />
-                  </svg>
-                </div>
+                <svg className="w-6 h-6 text-white translate-x-[1px]" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M6.5 5.5v9l7-4.5-7-4.5z" />
+                </svg>
+              </div>
 
-                <span className="tracking-wide text-lg font-mono relative z-10">
-                  Liếm luôn
-                </span>
+              <span className="tracking-wide text-lg font-mono relative z-10">
+                Liếm luôn
+              </span>
 
-                <div
-                  className="absolute inset-0 rounded-full pointer-events-none
-                            bg-gradient-to-r from-transparent via-white/30 to-transparent
-                            -translate-x-full group-hover:translate-x-full
-                            transition-transform duration-700"
-                  style={{ zIndex: 1 }}
-                />
-              </button>
-            </div>
+              {/* Soft Shimmer */}
+              <div
+                className="
+                  absolute inset-0 rounded-full pointer-events-none
+                  -translate-x-full group-hover:translate-x-full
+                  transition-transform duration-[1200ms] ease-out
+                  bg-gradient-to-r from-transparent via-white/15 to-transparent
+                "
+                style={{ zIndex: 1 }}
+              />
+            </button>
+
           </div>
-        ) : (
-          // Maintenance Message with Video Playing
+        ) : showMaintenance ? (
+          // ============================
+          //   MÀN HÌNH BẢO TRÌ
+          // ============================
           <div className="text-center animate-slideUp">
-            {/* Logo liemdai thay cho icon loading – KHÔNG có vòng tròn nền */}
             <div className="flex flex-col items-center justify-center mb-8">
-
-              {/* Logo Trollface */}
               <img
                 src={MAINTENANCE_MESSAGE.brand.logo}
                 alt={MAINTENANCE_MESSAGE.brand.text + " Logo"}
                 className="w-20 h-20 object-contain mb-4"
               />
-
               <span className="text-5xl sm:text-6xl lg:text-7xl font-bold logo-text text-white dark:text-primary-300">
                 {MAINTENANCE_MESSAGE.brand.text}
               </span>
             </div>
             <div className="mb-8 space-y-3">
-              <p className="text-2xl font-semibold text-yellow-500 mb-2">
-                {MAINTENANCE_MESSAGE.content.title}
-              </p>
-              <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-                {MAINTENANCE_MESSAGE.content.description}
-              </p>
-              <p className="text-md text-gray-400 italic">
-                {MAINTENANCE_MESSAGE.content.estimatedTime}
-              </p>
+              <p className="text-2xl font-semibold text-yellow-500 mb-2">{MAINTENANCE_MESSAGE.content.title}</p>
+              <p className="text-lg text-gray-300 max-w-2xl mx-auto">{MAINTENANCE_MESSAGE.content.description}</p>
+              <p className="text-md text-gray-400 italic">{MAINTENANCE_MESSAGE.content.estimatedTime}</p>
             </div>
-
-            {/* Loading Animation */}
             <div className="flex items-center justify-center gap-2 mb-8">
-              <div
-                className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"
-                style={{ animationDelay: '0ms' }}
+              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-3 h-3 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <div className="mt-12 text-center">
+              <p className="text-sm text-gray-400 mb-2">Nếu cần hỗ trợ khẩn cấp, vui lòng liên hệ:</p>
+              <a href="http://hoanbucon.id.vn/" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">hoanbucon.id.vn</a>
+            </div>
+          </div>
+        ) : (
+          // ============================
+          //   MÀN HÌNH LOGIN / REGISTER / START / FORGOT
+          // ============================
+          <div className="w-full max-w-md animate-fadeIn">
+            {/* Logo Header */}
+            <div className="text-center mb-8">
+              <img
+                src={MAINTENANCE_MESSAGE.brand.logo}
+                alt="Logo"
+                className="w-16 h-16 object-contain mx-auto mb-2"
               />
-              <div
-                className="w-3 h-3 bg-amber-500 rounded-full animate-bounce"
-                style={{ animationDelay: '150ms' }}
-              />
-              <div
-                className="w-3 h-3 bg-yellow-500 rounded-full animate-bounce"
-                style={{ animationDelay: '300ms' }}
-              />
+              <h2 className="text-3xl font-bold text-white logo-text">{MAINTENANCE_MESSAGE.brand.text}</h2>
             </div>
 
-            {/* Contact Info */}
-            <div className="mt-12 text-center">
-              <p className="text-sm text-gray-400 mb-2">
-                Nếu cần hỗ trợ khẩn cấp, vui lòng liên hệ:
-              </p>
-              <a
-                href="http://hoanbucon.id.vn/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
-              >
-                hoanbucon.id.vn
-              </a>
+            {/* Main Card */}
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+              
+              {/* START SCREEN (Logged In) */}
+              {activeTab === 'start' && (
+                <div className="text-center space-y-6 animate-fadeIn">
+                  <h3 className="text-2xl font-serif font-light italic text-white tracking-wide my-6">Xin chào {currentUser?.name}!</h3>
+                  <button
+                    onClick={handleEnterWebsite}
+                    className="
+                      w-full relative group inline-flex items-center justify-center
+                      px-10 py-4 rounded-lg
+                      bg-[#0d1a22]/60 border border-cyan-400/40
+                      text-cyan-300 font-semibold tracking-[0.25em]
+                      shadow-[0_0_25px_rgb(0,255,255,0.25)]
+                      transition-all duration-300 active:scale-95
+                      overflow-hidden
+                    "
+                  >
+                    {/* Glow Overlay */}
+                    <div
+                      className="
+                        absolute inset-0 
+                        bg-gradient-to-b from-cyan-400/10 to-cyan-300/5
+                        opacity-40 group-hover:opacity-60
+                        transition-all duration-300
+                      "
+                    />
+
+                    {/* Soft Shimmer Line */}
+                    <div
+                      className="
+                        absolute inset-0
+                        -translate-x-full group-hover:translate-x-full
+                        transition-transform duration-[1200ms] ease-out
+                        bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent
+                      "
+                    />
+
+                    {/* Hover Glow Border */}
+                    <div
+                      className="
+                        absolute inset-0 rounded-lg 
+                        group-hover:shadow-[0_0_15px_3px_rgb(0,255,255,0.55)]
+                        transition-all duration-300
+                      "
+                    />
+
+                    {/* Particle Layer */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                      {[...Array(14)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`
+                            absolute bg-cyan-300/40 rounded-full
+                            animate-particleFloat
+                          `}
+                          style={{
+                            width: Math.random() * 2 + 1 + "px",
+                            height: Math.random() * 2 + 1 + "px",
+                            top: Math.random() * 100 + "%",
+                            left: Math.random() * 100 + "%",
+                            animationDelay: Math.random() * 3 + "s",
+                            animationDuration: 3 + Math.random() * 5 + "s",
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Text */}
+                    <span className="relative z-10 font-mono text-xl tracking-[0.25em]">
+                      START
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      clearToken();
+                      setIsLoggedIn(false);
+                      setActiveTab('login');
+                    }}
+                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+
+              {/* LOGIN SCREEN */}
+              {activeTab === 'login' && (
+                <form onSubmit={handleLogin} className="space-y-5 animate-fadeIn">
+                  <h3 className="text-xl font-mono font-bold text-white text-center mb-6">Đăng nhập</h3>
+                  
+                  <InputField
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>}
+                  />
+                  
+                  <InputField
+                    type="password"
+                    placeholder="Mật khẩu"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+                  />
+
+                  <div className="flex justify-end">
+                    <button type="button" onClick={() => setActiveTab('forgot-password')} tabIndex={-1} className="text-sm text-orange-400 hover:text-orange-300">
+                      Quên mật khẩu?
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
+                  </button>
+
+                  <div className="text-center text-sm text-gray-400 mt-4">
+                    Chưa có tài khoản?{' '}
+                    <button type="button" onClick={() => setActiveTab('register')} className="text-orange-400 hover:text-orange-300 font-medium">
+                      Đăng ký ngay
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* REGISTER SCREEN */}
+              {activeTab === 'register' && (
+                <form onSubmit={handleRegister} className="space-y-4 animate-fadeIn">
+                  <h3 className="text-xl font-bold text-white text-center mb-6">Đăng ký</h3>
+                  
+                  <InputField
+                    type="text"
+                    placeholder="Tên tài khoản"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.95 2-2.5 2H10" /></svg>}
+                  />
+
+                  <InputField
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>}
+                  />
+                  
+                  <InputField
+                    type="password"
+                    placeholder="Mật khẩu"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+                  />
+
+                  <InputField
+                    type="password"
+                    placeholder="Xác nhận mật khẩu"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-2"
+                  >
+                    {isLoading ? 'Đang xử lý...' : 'Đăng ký'}
+                  </button>
+
+                  <div className="text-center text-sm text-gray-400 mt-4">
+                    Đã có tài khoản?{' '}
+                    <button type="button" onClick={() => setActiveTab('login')} className="text-orange-400 hover:text-orange-300 font-medium">
+                      Đăng nhập
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* FORGOT PASSWORD SCREEN */}
+              {activeTab === 'forgot-password' && (
+                <div className="space-y-5 animate-fadeIn">
+                  <h3 className="text-xl font-bold text-white text-center mb-6">
+                    {forgotStep === 1 ? 'Quên mật khẩu' : 'Đặt lại mật khẩu'}
+                  </h3>
+
+                  {forgotStep === 1 ? (
+                    <form onSubmit={handleForgotSubmit} className="space-y-4">
+                      <p className="text-gray-300 text-center text-sm mb-4">
+                        Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.
+                      </p>
+                      <InputField
+                        type="email"
+                        placeholder="Email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-2"
+                      >
+                        {isLoading ? 'Đang xử lý...' : 'Gửi mã OTP'}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleResetSubmit} className="space-y-4">
+                      <p className="text-gray-300 text-center text-sm mb-4">
+                        Nhập mã OTP đã được gửi đến email {forgotEmail}
+                      </p>
+                      <InputField
+                        type="text"
+                        placeholder="Mã OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+                      />
+                      <InputField
+                        type="password"
+                        placeholder="Mật khẩu mới"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+                      />
+                      <InputField
+                        type="password"
+                        placeholder="Xác nhận mật khẩu mới"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-2"
+                      >
+                        {isLoading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
+                      </button>
+                    </form>
+                  )}
+
+                  <div className="text-center text-sm text-gray-400 mt-4">
+                    <button type="button" onClick={() => setActiveTab('login')} className="text-orange-400 hover:text-orange-300 font-medium">
+                      Quay lại đăng nhập
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { MusicProvider } from "./context/MusicContext";
+import { DataProvider, useData } from "./context/DataContext";
 import Layout from "./components/Layout/Layout";
 import FixedLayout from "./components/Layout/FixedLayout";
 import BackgroundMusic from "./components/BackgroundMusic";
@@ -14,9 +15,6 @@ import EditClassPage from "./pages/EditClassPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import QuizPage from "./pages/QuizPage";
 import ResultsPage from "./pages/ResultsPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ClassViewPage from "./pages/ClassViewPage";
 import MaintenancePage from "./pages/MaintenancePage";
 import { getToken } from "./utils/auth";
@@ -157,13 +155,40 @@ function ThemedToaster() {
   );
 }
 
-// Component để bảo vệ các route khi đang bảo trì
+// Component để bảo vệ các route
 const MaintenanceGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Kiểm tra nếu đang bảo trì và user không được bypass
+  const { hasEntered } = useData();
+  const location = useLocation();
+
+  // 1. Kiểm tra chế độ bảo trì
   if (IS_MAINTENANCE_MODE && !canBypassMaintenance()) {
+    // Nếu đang ở trang maintenance thì giữ nguyên
+    if (location.pathname === "/maintenance") {
+      return <>{children}</>;
+    }
+    // Nếu không thì redirect về maintenance
     return <Navigate to="/maintenance" replace />;
   }
+
+  // 2. Chế độ bình thường (Landing Mode)
   
+  // Nếu đang ở trang maintenance -> Luôn cho phép
+  if (location.pathname === "/maintenance") {
+    return <>{children}</>;
+  }
+
+  // Các route public khác (Forgot Password) -> Cho phép truy cập
+  if (location.pathname === '/forgot-password') {
+    return <>{children}</>;
+  }
+
+  // Các route protected (Home, Classes, etc.)
+  // Nếu chưa "Enter" (chưa bấm Start từ Maintenance Page) -> Redirect về maintenance
+  if (!hasEntered) {
+    return <Navigate to="/maintenance" replace />;
+  }
+
+  // Nếu đã Enter -> Cho phép truy cập
   return <>{children}</>;
 };
 
@@ -205,141 +230,134 @@ function App() {
   return (
     <ThemeProvider>
       <MusicProvider>
-        <Router>
-          <Routes>
-            {/* Trang bảo trì - KHÔNG CẦN GUARD */}
-            <Route path="/maintenance" element={<MaintenancePage />} />
+        <DataProvider>
+          <Router>
+            <Routes>
+              {/* Trang bảo trì / Landing Page */}
+              <Route 
+                path="/maintenance" 
+                element={
+                  <MaintenanceGuard>
+                    <MaintenancePage />
+                  </MaintenanceGuard>
+                } 
+              />
 
-            {/* Tất cả các route khác đều được bảo vệ bởi MaintenanceGuard */}
-            <Route
-              path="/"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <HomePage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/classes"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <ClassesPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/create"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <CreateClassPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/edit-quiz"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <EditQuizPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/documents"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <DocumentsPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/quiz/:quizId"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <QuizPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/results/:quizId"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <ResultsPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/class/:classId"
-              element={
-                <MaintenanceGuard>
-                  <Layout>
-                    <ClassViewPage />
-                  </Layout>
-                </MaintenanceGuard>
-              }
-            />
+              {/* Tất cả các route khác đều được bảo vệ bởi MaintenanceGuard */}
+              <Route
+                path="/"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <HomePage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/classes"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <ClassesPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/create"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <CreateClassPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/edit-quiz"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <EditQuizPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/documents"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <DocumentsPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/quiz/:quizId"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <QuizPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/results/:quizId"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <ResultsPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/class/:classId"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <ClassViewPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
 
-            {/* Auth routes - cũng được bảo vệ */}
-            <Route
-              path="/login"
-              element={
-                <MaintenanceGuard>
-                  <LoginPage />
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <MaintenanceGuard>
-                  <RegisterPage />
-                </MaintenanceGuard>
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                <MaintenanceGuard>
-                  <ForgotPasswordPage />
-                </MaintenanceGuard>
-              }
-            />
+              {/* Route với FixedLayout */}
+              <Route
+                path="/edit-class/:classId"
+                element={
+                  <MaintenanceGuard>
+                    <FixedLayout>
+                      <EditClassPage />
+                    </FixedLayout>
+                  </MaintenanceGuard>
+                }
+              />
+            </Routes>
 
-            {/* Route với FixedLayout */}
-            <Route
-              path="/edit-class/:classId"
-              element={
-                <MaintenanceGuard>
-                  <FixedLayout>
-                    <EditClassPage />
-                  </FixedLayout>
-                </MaintenanceGuard>
-              }
-            />
-          </Routes>
-
-          {/* Background Music Player - chỉ hiện khi KHÔNG bảo trì */}
-          {!IS_MAINTENANCE_MODE && <BackgroundMusic />}
-          
-          {/* Toast notifications */}
-          <ThemedToaster />
-        </Router>
+            {/* Background Music Player - Chỉ hiện khi KHÔNG bảo trì VÀ KHÔNG ở trang Maintenance */}
+            <RenderMusicPlayer />
+            
+            {/* Toast notifications */}
+            <ThemedToaster />
+          </Router>
+        </DataProvider>
       </MusicProvider>
     </ThemeProvider>
   );
 }
+
+// Helper component để check location cho Music Player
+const RenderMusicPlayer = () => {
+  const location = useLocation();
+  // Chỉ hiện nhạc khi không phải mode bảo trì VÀ không ở trang /maintenance
+  if (IS_MAINTENANCE_MODE || location.pathname === '/maintenance') {
+    return null;
+  }
+  return <BackgroundMusic />;
+};
 
 export default App;

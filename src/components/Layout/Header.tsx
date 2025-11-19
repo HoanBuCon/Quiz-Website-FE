@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
+import { useData } from "../../context/DataContext";
 import { useMusic } from "../../context/MusicContext";
 import {
   FaMusic,
@@ -117,14 +118,17 @@ const Header: React.FC = () => {
   }, []);
 
   // Hàm đăng xuất
+  const { clearData } = useData();
+
   const handleLogout = () => {
     clearToken();
     setIsLoggedIn(false);
     setUserName(null);
+    clearData(); // Clear pre-fetched data
     toast.success("Đã đăng xuất thành công!");
     // Trigger Header update
     window.dispatchEvent(new Event("authChange"));
-    navigate("/");
+    navigate("/maintenance");
   };
 
   // Danh sách các trang navigation
@@ -327,7 +331,7 @@ const Header: React.FC = () => {
               </button>
 
               {/* Auth Buttons */}
-              {isLoggedIn ? (
+              {isLoggedIn && (
                 <div className="relative user-menu-container">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -380,21 +384,6 @@ const Header: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/login"
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
-                  >
-                    Đăng nhập
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white transition-all duration-300 shadow-sm hover:shadow-md"
-                  >
-                    Đăng ký
-                  </Link>
                 </div>
               )}
             </div>

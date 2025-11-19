@@ -806,7 +806,7 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Question text */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 text-selectable">
               {currentQuestion.question}
             </h2>
             {/* Question image nếu có */}
@@ -1009,7 +1009,7 @@ const QuizPage: React.FC = () => {
                                   />
                                 </svg>
                               )}
-                              <span>
+                              <span className="text-selectable">
                                 {String.fromCharCode(65 + index)}. {option}
                               </span>
                             </span>
@@ -1090,7 +1090,7 @@ const QuizPage: React.FC = () => {
                                   : "Chọn nhiều"}
                               </span>
                             </div>
-                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100">
+                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 text-selectable">
                               {sub.question}
                             </div>
                             {sub.type === "text" && (
@@ -1289,10 +1289,10 @@ const QuizPage: React.FC = () => {
                                                 />
                                               </svg>
                                             )}
-                                          <span className="font-medium">
+                                          <span className="font-medium text-selectable">
                                             {String.fromCharCode(65 + oidx)}.
                                           </span>{" "}
-                                          {opt}
+                                          <span className="text-selectable">{opt}</span>
                                         </div>
                                       </button>
                                     );

@@ -21,7 +21,7 @@ const DocumentsPage: React.FC = () => {
   const [totalQuizzes, setTotalQuizzes] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Hàm xử lý di chuyển chuột để tính toán góc xoay
+  // ... mouse handlers ...
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -47,8 +47,10 @@ const DocumentsPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Load both documents and stats together
-    (async () => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
       try {
         const { getToken } = await import("../utils/auth");
         const token = getToken();
@@ -88,8 +90,7 @@ const DocumentsPage: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    })();
-  }, []);
+  };
 
   // Xử lý khi file được chọn
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
