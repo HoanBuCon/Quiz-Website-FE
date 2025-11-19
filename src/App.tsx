@@ -162,18 +162,18 @@ const MaintenanceGuard: React.FC<{ children: React.ReactNode }> = ({ children })
 
   // 1. Kiểm tra chế độ bảo trì
   if (IS_MAINTENANCE_MODE && !canBypassMaintenance()) {
-    // Nếu đang ở trang maintenance thì giữ nguyên
-    if (location.pathname === "/maintenance") {
+    // Nếu đang ở trang Welcome thì giữ nguyên
+    if (location.pathname === "/welcome") {
       return <>{children}</>;
     }
     // Nếu không thì redirect về maintenance
-    return <Navigate to="/maintenance" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   // 2. Chế độ bình thường (Landing Mode)
   
-  // Nếu đang ở trang maintenance -> Luôn cho phép
-  if (location.pathname === "/maintenance") {
+  // Nếu đang ở trang Welcome -> Luôn cho phép
+  if (location.pathname === "/welcome") {
     return <>{children}</>;
   }
 
@@ -183,9 +183,9 @@ const MaintenanceGuard: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   // Các route protected (Home, Classes, etc.)
-  // Nếu chưa "Enter" (chưa bấm Start từ Maintenance Page) -> Redirect về maintenance
+  // Nếu chưa "Enter" (chưa bấm Start từ Welcome Page) -> Redirect về maintenance
   if (!hasEntered) {
-    return <Navigate to="/maintenance" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   // Nếu đã Enter -> Cho phép truy cập
@@ -235,7 +235,7 @@ function App() {
             <Routes>
               {/* Trang bảo trì / Landing Page */}
               <Route 
-                path="/maintenance" 
+                path="/welcome" 
                 element={
                   <MaintenanceGuard>
                     <MaintenancePage />
@@ -338,7 +338,7 @@ function App() {
               />
             </Routes>
 
-            {/* Background Music Player - Chỉ hiện khi KHÔNG bảo trì VÀ KHÔNG ở trang Maintenance */}
+            {/* Background Music Player - Chỉ hiện khi KHÔNG bảo trì VÀ KHÔNG ở trang Welcome */}
             <RenderMusicPlayer />
             
             {/* Toast notifications */}
@@ -353,8 +353,8 @@ function App() {
 // Helper component để check location cho Music Player
 const RenderMusicPlayer = () => {
   const location = useLocation();
-  // Chỉ hiện nhạc khi không phải mode bảo trì VÀ không ở trang /maintenance
-  if (IS_MAINTENANCE_MODE || location.pathname === '/maintenance') {
+  // Chỉ hiện nhạc khi không phải mode bảo trì VÀ không ở trang /welcome
+  if (IS_MAINTENANCE_MODE || location.pathname === '/welcome') {
     return null;
   }
   return <BackgroundMusic />;

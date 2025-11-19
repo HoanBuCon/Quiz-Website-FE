@@ -128,7 +128,7 @@ const Header: React.FC = () => {
     toast.success("Đã đăng xuất thành công!");
     // Trigger Header update
     window.dispatchEvent(new Event("authChange"));
-    navigate("/maintenance");
+    navigate("/welcome");
   };
 
   // Danh sách các trang navigation

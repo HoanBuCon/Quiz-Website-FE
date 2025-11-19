@@ -426,7 +426,7 @@ const MaintenancePage: React.FC = () => {
               {/* LOGIN SCREEN */}
               {activeTab === 'login' && (
                 <form onSubmit={handleLogin} className="space-y-5 animate-fadeIn">
-                  <h3 className="text-xl font-mono font-bold text-white text-center mb-6">Đăng nhập</h3>
+                  <h3 className="text-xl font-bold text-white text-center mb-6">Đăng nhập</h3>
                   
                   <InputField
                     type="email"
