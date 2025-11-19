@@ -734,6 +734,22 @@ const QuizPage: React.FC = () => {
 
   const currentQuestion = questions[currentQuestionIndex];
 
+  // Guard clause: Check if currentQuestion exists
+  if (!currentQuestion) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="card p-6 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Không tìm thấy câu hỏi hoặc quiz không có câu hỏi nào
+          </h2>
+          <button onClick={() => navigate("/classes")} className="btn-primary">
+            Quay lại danh sách lớp học
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Top headers row: left = title+timer, right = submit button */}

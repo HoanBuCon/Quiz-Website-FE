@@ -226,7 +226,7 @@ const MaintenancePage: React.FC = () => {
       {/* Dark Overlay */}
       <div
         className={`absolute inset-0 transition-all duration-700
-          ${isPlaying ? "bg-black/40 backdrop-blur-sm" : "bg-black/40"}
+          ${isPlaying ? "bg-black/20" : "bg-black/40"}
         `}
       />
 
